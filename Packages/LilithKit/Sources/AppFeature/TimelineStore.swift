@@ -37,6 +37,10 @@ final class TimelineStore: TimelineQuelle {
 
     func laden() async {
         if sections.isEmpty { zustand = .laedt }
+        if case .suche(let text) = filter {
+            await ladeSuche(text)
+            return
+        }
         do {
             let geladen = try await client.timelineMonate(filter).filter { $0.anzahl > 0 }
             monate = geladen
@@ -49,6 +53,29 @@ final class TimelineStore: TimelineQuelle {
             }
             gesamt = geladen.reduce(0) { $0 + $1.anzahl }
             zustand = geladen.isEmpty ? .leer : .bereit
+            sichtbareMonate = []
+            onAllesNeu?()
+        } catch ImmichError.sitzungAbgelaufen {
+            onSitzungAbgelaufen?()
+        } catch {
+            zustand = .fehler(error.localizedDescription)
+        }
+    }
+
+    /// Suchergebnisse haben keine Monate: Sie stehen nach Relevanz sortiert in einem einzigen Abschnitt.
+    private func ladeSuche(_ text: String) async {
+        do {
+            let treffer = try await client.sucheSmart(text).map(Self.gridItem)
+            monate = []
+            laufend.values.forEach { $0.cancel() }
+            laufend = [:]
+            inhalte = [0: treffer]
+            sections = treffer.isEmpty ? [] : [GridSection(
+                id: "suche", titel: "Ergebnisse",
+                // Smart Search liefert immer die ähnlichsten Fotos, keine exakte Trefferzahl.
+                untertitel: "beste Treffer zuerst", anzahl: treffer.count)]
+            gesamt = treffer.count
+            zustand = treffer.isEmpty ? .leer : .bereit
             sichtbareMonate = []
             onAllesNeu?()
         } catch ImmichError.sitzungAbgelaufen {

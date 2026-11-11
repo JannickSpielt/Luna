@@ -31,3 +31,5 @@ filter:
     - updateAssets
     - deleteAssets
     - restoreAssets
+    # Suche
+    - searchSmart

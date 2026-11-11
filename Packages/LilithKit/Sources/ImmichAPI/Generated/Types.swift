@@ -83,6 +83,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /auth/validateToken`.
     /// - Remark: Generated from `#/paths//auth/validateToken/post(validateAccessToken)`.
     func validateAccessToken(_ input: Operations.ValidateAccessToken.Input) async throws -> Operations.ValidateAccessToken.Output
+    /// Smart asset search
+    ///
+    /// Perform a smart search for assets by using machine learning vectors to determine relevance.
+    ///
+    /// - Remark: HTTP `POST /search/smart`.
+    /// - Remark: Generated from `#/paths//search/smart/post(searchSmart)`.
+    func searchSmart(_ input: Operations.SearchSmart.Input) async throws -> Operations.SearchSmart.Output
     /// Get features
     ///
     /// Retrieve available features supported by this server.
@@ -270,6 +277,21 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//auth/validateToken/post(validateAccessToken)`.
     public func validateAccessToken(headers: Operations.ValidateAccessToken.Input.Headers = .init()) async throws -> Operations.ValidateAccessToken.Output {
         try await validateAccessToken(Operations.ValidateAccessToken.Input(headers: headers))
+    }
+    /// Smart asset search
+    ///
+    /// Perform a smart search for assets by using machine learning vectors to determine relevance.
+    ///
+    /// - Remark: HTTP `POST /search/smart`.
+    /// - Remark: Generated from `#/paths//search/smart/post(searchSmart)`.
+    public func searchSmart(
+        headers: Operations.SearchSmart.Input.Headers = .init(),
+        body: Operations.SearchSmart.Input.Body
+    ) async throws -> Operations.SearchSmart.Output {
+        try await searchSmart(Operations.SearchSmart.Input(
+            headers: headers,
+            body: body
+        ))
     }
     /// Get features
     ///
@@ -1031,6 +1053,21 @@ public enum Components {
             case hidden = "hidden"
             case locked = "locked"
         }
+        /// - Remark: Generated from `#/components/schemas/BoolFilter`.
+        public struct BoolFilter: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BoolFilter/eq`.
+            public var eq: Swift.Bool
+            /// Creates a new `BoolFilter`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            public init(eq: Swift.Bool) {
+                self.eq = eq
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+            }
+        }
         /// Error reason
         ///
         /// - Remark: Generated from `#/components/schemas/BulkIdErrorReason`.
@@ -1165,6 +1202,170 @@ public enum Components {
                 case albumUsers
                 case assetIds
                 case description
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DateFilter`.
+        public struct DateFilter: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DateFilter/eq`.
+            public var eq: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilter/gt`.
+            public var gt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilter/gte`.
+            public var gte: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilter/lt`.
+            public var lt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilter/lte`.
+            public var lte: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilter/ne`.
+            public var ne: Foundation.Date?
+            /// Creates a new `DateFilter`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - gt:
+            ///   - gte:
+            ///   - lt:
+            ///   - lte:
+            ///   - ne:
+            public init(
+                eq: Foundation.Date? = nil,
+                gt: Foundation.Date? = nil,
+                gte: Foundation.Date? = nil,
+                lt: Foundation.Date? = nil,
+                lte: Foundation.Date? = nil,
+                ne: Foundation.Date? = nil
+            ) {
+                self.eq = eq
+                self.gt = gt
+                self.gte = gte
+                self.lt = lt
+                self.lte = lte
+                self.ne = ne
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case gt
+                case gte
+                case lt
+                case lte
+                case ne
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DateFilterNullable`.
+        public struct DateFilterNullable: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DateFilterNullable/eq`.
+            public var eq: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilterNullable/gt`.
+            public var gt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilterNullable/gte`.
+            public var gte: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilterNullable/lt`.
+            public var lt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilterNullable/lte`.
+            public var lte: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/DateFilterNullable/ne`.
+            public var ne: Foundation.Date?
+            /// Creates a new `DateFilterNullable`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - gt:
+            ///   - gte:
+            ///   - lt:
+            ///   - lte:
+            ///   - ne:
+            public init(
+                eq: Foundation.Date? = nil,
+                gt: Foundation.Date? = nil,
+                gte: Foundation.Date? = nil,
+                lt: Foundation.Date? = nil,
+                lte: Foundation.Date? = nil,
+                ne: Foundation.Date? = nil
+            ) {
+                self.eq = eq
+                self.gt = gt
+                self.gte = gte
+                self.lt = lt
+                self.lte = lte
+                self.ne = ne
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case gt
+                case gte
+                case lt
+                case lte
+                case ne
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/EnumFilterAssetType`.
+        public struct EnumFilterAssetType: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/EnumFilterAssetType/eq`.
+            public var eq: Components.Schemas.AssetTypeEnum?
+            /// - Remark: Generated from `#/components/schemas/EnumFilterAssetType/in`.
+            public var _in: [Components.Schemas.AssetTypeEnum]?
+            /// - Remark: Generated from `#/components/schemas/EnumFilterAssetType/ne`.
+            public var ne: Components.Schemas.AssetTypeEnum?
+            /// - Remark: Generated from `#/components/schemas/EnumFilterAssetType/notIn`.
+            public var notIn: [Components.Schemas.AssetTypeEnum]?
+            /// Creates a new `EnumFilterAssetType`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - _in:
+            ///   - ne:
+            ///   - notIn:
+            public init(
+                eq: Components.Schemas.AssetTypeEnum? = nil,
+                _in: [Components.Schemas.AssetTypeEnum]? = nil,
+                ne: Components.Schemas.AssetTypeEnum? = nil,
+                notIn: [Components.Schemas.AssetTypeEnum]? = nil
+            ) {
+                self.eq = eq
+                self._in = _in
+                self.ne = ne
+                self.notIn = notIn
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case _in = "in"
+                case ne
+                case notIn
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/EnumFilterAssetVisibility`.
+        public struct EnumFilterAssetVisibility: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/EnumFilterAssetVisibility/eq`.
+            public var eq: Components.Schemas.AssetVisibility?
+            /// - Remark: Generated from `#/components/schemas/EnumFilterAssetVisibility/in`.
+            public var _in: [Components.Schemas.AssetVisibility]?
+            /// - Remark: Generated from `#/components/schemas/EnumFilterAssetVisibility/ne`.
+            public var ne: Components.Schemas.AssetVisibility?
+            /// - Remark: Generated from `#/components/schemas/EnumFilterAssetVisibility/notIn`.
+            public var notIn: [Components.Schemas.AssetVisibility]?
+            /// Creates a new `EnumFilterAssetVisibility`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - _in:
+            ///   - ne:
+            ///   - notIn:
+            public init(
+                eq: Components.Schemas.AssetVisibility? = nil,
+                _in: [Components.Schemas.AssetVisibility]? = nil,
+                ne: Components.Schemas.AssetVisibility? = nil,
+                notIn: [Components.Schemas.AssetVisibility]? = nil
+            ) {
+                self.eq = eq
+                self._in = _in
+                self.ne = ne
+                self.notIn = notIn
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case _in = "in"
+                case ne
+                case notIn
             }
         }
         /// EXIF response
@@ -1356,6 +1557,81 @@ public enum Components {
                 case timeZone
             }
         }
+        /// - Remark: Generated from `#/components/schemas/IdFilter`.
+        public struct IdFilter: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/IdFilter/eq`.
+            public var eq: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/IdFilter/ne`.
+            public var ne: Swift.String?
+            /// Creates a new `IdFilter`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - ne:
+            public init(
+                eq: Swift.String? = nil,
+                ne: Swift.String? = nil
+            ) {
+                self.eq = eq
+                self.ne = ne
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case ne
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/IdFilterNullable`.
+        public struct IdFilterNullable: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/IdFilterNullable/eq`.
+            public var eq: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/IdFilterNullable/ne`.
+            public var ne: Swift.String?
+            /// Creates a new `IdFilterNullable`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - ne:
+            public init(
+                eq: Swift.String? = nil,
+                ne: Swift.String? = nil
+            ) {
+                self.eq = eq
+                self.ne = ne
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case ne
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/IdsFilter`.
+        public struct IdsFilter: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/IdsFilter/all`.
+            public var all: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/IdsFilter/any`.
+            public var any: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/IdsFilter/none`.
+            public var none: [Swift.String]?
+            /// Creates a new `IdsFilter`.
+            ///
+            /// - Parameters:
+            ///   - all:
+            ///   - any:
+            ///   - none:
+            public init(
+                all: [Swift.String]? = nil,
+                any: [Swift.String]? = nil,
+                none: [Swift.String]? = nil
+            ) {
+                self.all = all
+                self.any = any
+                self.none = none
+            }
+            public enum CodingKeys: String, CodingKey {
+                case all
+                case any
+                case none
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/LoginCredentialDto`.
         public struct LoginCredentialDto: Codable, Hashable, Sendable {
             /// User email
@@ -1483,6 +1759,124 @@ public enum Components {
             public enum CodingKeys: String, CodingKey {
                 case redirectUri
                 case successful
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/NumberFilter`.
+        public struct NumberFilter: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NumberFilter/eq`.
+            public var eq: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilter/gt`.
+            public var gt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilter/gte`.
+            public var gte: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilter/in`.
+            public var _in: [Swift.Double]?
+            /// - Remark: Generated from `#/components/schemas/NumberFilter/lt`.
+            public var lt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilter/lte`.
+            public var lte: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilter/ne`.
+            public var ne: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilter/notIn`.
+            public var notIn: [Swift.Double]?
+            /// Creates a new `NumberFilter`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - gt:
+            ///   - gte:
+            ///   - _in:
+            ///   - lt:
+            ///   - lte:
+            ///   - ne:
+            ///   - notIn:
+            public init(
+                eq: Swift.Double? = nil,
+                gt: Swift.Double? = nil,
+                gte: Swift.Double? = nil,
+                _in: [Swift.Double]? = nil,
+                lt: Swift.Double? = nil,
+                lte: Swift.Double? = nil,
+                ne: Swift.Double? = nil,
+                notIn: [Swift.Double]? = nil
+            ) {
+                self.eq = eq
+                self.gt = gt
+                self.gte = gte
+                self._in = _in
+                self.lt = lt
+                self.lte = lte
+                self.ne = ne
+                self.notIn = notIn
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case gt
+                case gte
+                case _in = "in"
+                case lt
+                case lte
+                case ne
+                case notIn
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/NumberFilterNullable`.
+        public struct NumberFilterNullable: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NumberFilterNullable/eq`.
+            public var eq: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilterNullable/gt`.
+            public var gt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilterNullable/gte`.
+            public var gte: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilterNullable/in`.
+            public var _in: [Swift.Double]?
+            /// - Remark: Generated from `#/components/schemas/NumberFilterNullable/lt`.
+            public var lt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilterNullable/lte`.
+            public var lte: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilterNullable/ne`.
+            public var ne: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/NumberFilterNullable/notIn`.
+            public var notIn: [Swift.Double]?
+            /// Creates a new `NumberFilterNullable`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - gt:
+            ///   - gte:
+            ///   - _in:
+            ///   - lt:
+            ///   - lte:
+            ///   - ne:
+            ///   - notIn:
+            public init(
+                eq: Swift.Double? = nil,
+                gt: Swift.Double? = nil,
+                gte: Swift.Double? = nil,
+                _in: [Swift.Double]? = nil,
+                lt: Swift.Double? = nil,
+                lte: Swift.Double? = nil,
+                ne: Swift.Double? = nil,
+                notIn: [Swift.Double]? = nil
+            ) {
+                self.eq = eq
+                self.gt = gt
+                self.gte = gte
+                self._in = _in
+                self.lt = lt
+                self.lte = lte
+                self.ne = ne
+                self.notIn = notIn
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case gt
+                case gte
+                case _in = "in"
+                case lt
+                case lte
+                case ne
+                case notIn
             }
         }
         /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto`.
@@ -1688,6 +2082,923 @@ public enum Components {
             case write = "write"
             case admin = "admin"
         }
+        /// - Remark: Generated from `#/components/schemas/SearchAlbumResponseDto`.
+        public struct SearchAlbumResponseDto: Codable, Hashable, Sendable {
+            /// Number of albums in this page
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchAlbumResponseDto/count`.
+            public var count: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/SearchAlbumResponseDto/facets`.
+            public var facets: [Components.Schemas.SearchFacetResponseDto]
+            /// - Remark: Generated from `#/components/schemas/SearchAlbumResponseDto/items`.
+            public var items: [Components.Schemas.AlbumResponseDto]
+            /// Total number of matching albums
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchAlbumResponseDto/total`.
+            public var total: Swift.Int
+            /// Creates a new `SearchAlbumResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - count: Number of albums in this page
+            ///   - facets:
+            ///   - items:
+            ///   - total: Total number of matching albums
+            public init(
+                count: Swift.Int,
+                facets: [Components.Schemas.SearchFacetResponseDto],
+                items: [Components.Schemas.AlbumResponseDto],
+                total: Swift.Int
+            ) {
+                self.count = count
+                self.facets = facets
+                self.items = items
+                self.total = total
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case facets
+                case items
+                case total
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SearchAssetResponseDto`.
+        public struct SearchAssetResponseDto: Codable, Hashable, Sendable {
+            /// Number of assets in this page
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchAssetResponseDto/count`.
+            public var count: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/SearchAssetResponseDto/facets`.
+            public var facets: [Components.Schemas.SearchFacetResponseDto]
+            /// - Remark: Generated from `#/components/schemas/SearchAssetResponseDto/items`.
+            public var items: [Components.Schemas.AssetResponseDto]
+            /// Cursor for the next page of results
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchAssetResponseDto/nextCursor`.
+            public var nextCursor: Swift.String?
+            /// Next page token
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchAssetResponseDto/nextPage`.
+            @available(*, deprecated)
+            public var nextPage: Swift.String?
+            /// Total number of matching assets
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchAssetResponseDto/total`.
+            public var total: Swift.Int
+            /// Creates a new `SearchAssetResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - count: Number of assets in this page
+            ///   - facets:
+            ///   - items:
+            ///   - nextCursor: Cursor for the next page of results
+            ///   - nextPage: Next page token
+            ///   - total: Total number of matching assets
+            public init(
+                count: Swift.Int,
+                facets: [Components.Schemas.SearchFacetResponseDto],
+                items: [Components.Schemas.AssetResponseDto],
+                nextCursor: Swift.String? = nil,
+                nextPage: Swift.String? = nil,
+                total: Swift.Int
+            ) {
+                self.count = count
+                self.facets = facets
+                self.items = items
+                self.nextCursor = nextCursor
+                self.nextPage = nextPage
+                self.total = total
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case facets
+                case items
+                case nextCursor
+                case nextPage
+                case total
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SearchFacetCountResponseDto`.
+        public struct SearchFacetCountResponseDto: Codable, Hashable, Sendable {
+            /// Number of assets with this facet value
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchFacetCountResponseDto/count`.
+            public var count: Swift.Int
+            /// Facet value
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchFacetCountResponseDto/value`.
+            public var value: Swift.String
+            /// Creates a new `SearchFacetCountResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - count: Number of assets with this facet value
+            ///   - value: Facet value
+            public init(
+                count: Swift.Int,
+                value: Swift.String
+            ) {
+                self.count = count
+                self.value = value
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case value
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SearchFacetResponseDto`.
+        public struct SearchFacetResponseDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SearchFacetResponseDto/counts`.
+            public var counts: [Components.Schemas.SearchFacetCountResponseDto]
+            /// Facet field name
+            ///
+            /// - Remark: Generated from `#/components/schemas/SearchFacetResponseDto/fieldName`.
+            public var fieldName: Swift.String
+            /// Creates a new `SearchFacetResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - counts:
+            ///   - fieldName: Facet field name
+            public init(
+                counts: [Components.Schemas.SearchFacetCountResponseDto],
+                fieldName: Swift.String
+            ) {
+                self.counts = counts
+                self.fieldName = fieldName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case counts
+                case fieldName
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SearchFilter`.
+        public struct SearchFilter: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/albumIds`.
+            public var albumIds: Components.Schemas.IdsFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/checksum`.
+            public var checksum: Components.Schemas.StringFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/city`.
+            public var city: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/country`.
+            public var country: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/createdAt`.
+            public var createdAt: Components.Schemas.DateFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/description`.
+            public var description: Components.Schemas.StringPatternFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/encodedVideoPath`.
+            public var encodedVideoPath: Components.Schemas.StringFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/fileSizeInBytes`.
+            public var fileSizeInBytes: Components.Schemas.NumberFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/hasAlbums`.
+            public var hasAlbums: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/hasPeople`.
+            public var hasPeople: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/hasTags`.
+            public var hasTags: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/id`.
+            public var id: Components.Schemas.IdFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/isEncoded`.
+            public var isEncoded: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/isFavorite`.
+            public var isFavorite: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/isMotion`.
+            public var isMotion: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/isOffline`.
+            public var isOffline: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/lensModel`.
+            public var lensModel: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/libraryId`.
+            public var libraryId: Components.Schemas.IdFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/make`.
+            public var make: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/model`.
+            public var model: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/ocr`.
+            public var ocr: Components.Schemas.StringSimilarityFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/or`.
+            public var or: [Components.Schemas.SearchFilterBranch]?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/originalFileName`.
+            public var originalFileName: Components.Schemas.StringPatternFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/originalPath`.
+            public var originalPath: Components.Schemas.StringPatternFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/personIds`.
+            public var personIds: Components.Schemas.IdsFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/rating`.
+            public var rating: Components.Schemas.NumberFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/state`.
+            public var state: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/tagIds`.
+            public var tagIds: Components.Schemas.IdsFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/takenAt`.
+            public var takenAt: Components.Schemas.DateFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/trashedAt`.
+            public var trashedAt: Components.Schemas.DateFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/type`.
+            public var _type: Components.Schemas.EnumFilterAssetType?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/updatedAt`.
+            public var updatedAt: Components.Schemas.DateFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilter/visibility`.
+            public var visibility: Components.Schemas.EnumFilterAssetVisibility?
+            /// Creates a new `SearchFilter`.
+            ///
+            /// - Parameters:
+            ///   - albumIds:
+            ///   - checksum:
+            ///   - city:
+            ///   - country:
+            ///   - createdAt:
+            ///   - description:
+            ///   - encodedVideoPath:
+            ///   - fileSizeInBytes:
+            ///   - hasAlbums:
+            ///   - hasPeople:
+            ///   - hasTags:
+            ///   - id:
+            ///   - isEncoded:
+            ///   - isFavorite:
+            ///   - isMotion:
+            ///   - isOffline:
+            ///   - lensModel:
+            ///   - libraryId:
+            ///   - make:
+            ///   - model:
+            ///   - ocr:
+            ///   - or:
+            ///   - originalFileName:
+            ///   - originalPath:
+            ///   - personIds:
+            ///   - rating:
+            ///   - state:
+            ///   - tagIds:
+            ///   - takenAt:
+            ///   - trashedAt:
+            ///   - _type:
+            ///   - updatedAt:
+            ///   - visibility:
+            public init(
+                albumIds: Components.Schemas.IdsFilter? = nil,
+                checksum: Components.Schemas.StringFilter? = nil,
+                city: Components.Schemas.StringFilterNullable? = nil,
+                country: Components.Schemas.StringFilterNullable? = nil,
+                createdAt: Components.Schemas.DateFilter? = nil,
+                description: Components.Schemas.StringPatternFilter? = nil,
+                encodedVideoPath: Components.Schemas.StringFilter? = nil,
+                fileSizeInBytes: Components.Schemas.NumberFilter? = nil,
+                hasAlbums: Components.Schemas.BoolFilter? = nil,
+                hasPeople: Components.Schemas.BoolFilter? = nil,
+                hasTags: Components.Schemas.BoolFilter? = nil,
+                id: Components.Schemas.IdFilter? = nil,
+                isEncoded: Components.Schemas.BoolFilter? = nil,
+                isFavorite: Components.Schemas.BoolFilter? = nil,
+                isMotion: Components.Schemas.BoolFilter? = nil,
+                isOffline: Components.Schemas.BoolFilter? = nil,
+                lensModel: Components.Schemas.StringFilterNullable? = nil,
+                libraryId: Components.Schemas.IdFilterNullable? = nil,
+                make: Components.Schemas.StringFilterNullable? = nil,
+                model: Components.Schemas.StringFilterNullable? = nil,
+                ocr: Components.Schemas.StringSimilarityFilter? = nil,
+                or: [Components.Schemas.SearchFilterBranch]? = nil,
+                originalFileName: Components.Schemas.StringPatternFilter? = nil,
+                originalPath: Components.Schemas.StringPatternFilter? = nil,
+                personIds: Components.Schemas.IdsFilter? = nil,
+                rating: Components.Schemas.NumberFilterNullable? = nil,
+                state: Components.Schemas.StringFilterNullable? = nil,
+                tagIds: Components.Schemas.IdsFilter? = nil,
+                takenAt: Components.Schemas.DateFilter? = nil,
+                trashedAt: Components.Schemas.DateFilterNullable? = nil,
+                _type: Components.Schemas.EnumFilterAssetType? = nil,
+                updatedAt: Components.Schemas.DateFilter? = nil,
+                visibility: Components.Schemas.EnumFilterAssetVisibility? = nil
+            ) {
+                self.albumIds = albumIds
+                self.checksum = checksum
+                self.city = city
+                self.country = country
+                self.createdAt = createdAt
+                self.description = description
+                self.encodedVideoPath = encodedVideoPath
+                self.fileSizeInBytes = fileSizeInBytes
+                self.hasAlbums = hasAlbums
+                self.hasPeople = hasPeople
+                self.hasTags = hasTags
+                self.id = id
+                self.isEncoded = isEncoded
+                self.isFavorite = isFavorite
+                self.isMotion = isMotion
+                self.isOffline = isOffline
+                self.lensModel = lensModel
+                self.libraryId = libraryId
+                self.make = make
+                self.model = model
+                self.ocr = ocr
+                self.or = or
+                self.originalFileName = originalFileName
+                self.originalPath = originalPath
+                self.personIds = personIds
+                self.rating = rating
+                self.state = state
+                self.tagIds = tagIds
+                self.takenAt = takenAt
+                self.trashedAt = trashedAt
+                self._type = _type
+                self.updatedAt = updatedAt
+                self.visibility = visibility
+            }
+            public enum CodingKeys: String, CodingKey {
+                case albumIds
+                case checksum
+                case city
+                case country
+                case createdAt
+                case description
+                case encodedVideoPath
+                case fileSizeInBytes
+                case hasAlbums
+                case hasPeople
+                case hasTags
+                case id
+                case isEncoded
+                case isFavorite
+                case isMotion
+                case isOffline
+                case lensModel
+                case libraryId
+                case make
+                case model
+                case ocr
+                case or
+                case originalFileName
+                case originalPath
+                case personIds
+                case rating
+                case state
+                case tagIds
+                case takenAt
+                case trashedAt
+                case _type = "type"
+                case updatedAt
+                case visibility
+            }
+            public init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.albumIds = try container.decodeIfPresent(
+                    Components.Schemas.IdsFilter.self,
+                    forKey: .albumIds
+                )
+                self.checksum = try container.decodeIfPresent(
+                    Components.Schemas.StringFilter.self,
+                    forKey: .checksum
+                )
+                self.city = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .city
+                )
+                self.country = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .country
+                )
+                self.createdAt = try container.decodeIfPresent(
+                    Components.Schemas.DateFilter.self,
+                    forKey: .createdAt
+                )
+                self.description = try container.decodeIfPresent(
+                    Components.Schemas.StringPatternFilter.self,
+                    forKey: .description
+                )
+                self.encodedVideoPath = try container.decodeIfPresent(
+                    Components.Schemas.StringFilter.self,
+                    forKey: .encodedVideoPath
+                )
+                self.fileSizeInBytes = try container.decodeIfPresent(
+                    Components.Schemas.NumberFilter.self,
+                    forKey: .fileSizeInBytes
+                )
+                self.hasAlbums = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .hasAlbums
+                )
+                self.hasPeople = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .hasPeople
+                )
+                self.hasTags = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .hasTags
+                )
+                self.id = try container.decodeIfPresent(
+                    Components.Schemas.IdFilter.self,
+                    forKey: .id
+                )
+                self.isEncoded = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .isEncoded
+                )
+                self.isFavorite = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .isFavorite
+                )
+                self.isMotion = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .isMotion
+                )
+                self.isOffline = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .isOffline
+                )
+                self.lensModel = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .lensModel
+                )
+                self.libraryId = try container.decodeIfPresent(
+                    Components.Schemas.IdFilterNullable.self,
+                    forKey: .libraryId
+                )
+                self.make = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .make
+                )
+                self.model = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .model
+                )
+                self.ocr = try container.decodeIfPresent(
+                    Components.Schemas.StringSimilarityFilter.self,
+                    forKey: .ocr
+                )
+                self.or = try container.decodeIfPresent(
+                    [Components.Schemas.SearchFilterBranch].self,
+                    forKey: .or
+                )
+                self.originalFileName = try container.decodeIfPresent(
+                    Components.Schemas.StringPatternFilter.self,
+                    forKey: .originalFileName
+                )
+                self.originalPath = try container.decodeIfPresent(
+                    Components.Schemas.StringPatternFilter.self,
+                    forKey: .originalPath
+                )
+                self.personIds = try container.decodeIfPresent(
+                    Components.Schemas.IdsFilter.self,
+                    forKey: .personIds
+                )
+                self.rating = try container.decodeIfPresent(
+                    Components.Schemas.NumberFilterNullable.self,
+                    forKey: .rating
+                )
+                self.state = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .state
+                )
+                self.tagIds = try container.decodeIfPresent(
+                    Components.Schemas.IdsFilter.self,
+                    forKey: .tagIds
+                )
+                self.takenAt = try container.decodeIfPresent(
+                    Components.Schemas.DateFilter.self,
+                    forKey: .takenAt
+                )
+                self.trashedAt = try container.decodeIfPresent(
+                    Components.Schemas.DateFilterNullable.self,
+                    forKey: .trashedAt
+                )
+                self._type = try container.decodeIfPresent(
+                    Components.Schemas.EnumFilterAssetType.self,
+                    forKey: ._type
+                )
+                self.updatedAt = try container.decodeIfPresent(
+                    Components.Schemas.DateFilter.self,
+                    forKey: .updatedAt
+                )
+                self.visibility = try container.decodeIfPresent(
+                    Components.Schemas.EnumFilterAssetVisibility.self,
+                    forKey: .visibility
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "albumIds",
+                    "checksum",
+                    "city",
+                    "country",
+                    "createdAt",
+                    "description",
+                    "encodedVideoPath",
+                    "fileSizeInBytes",
+                    "hasAlbums",
+                    "hasPeople",
+                    "hasTags",
+                    "id",
+                    "isEncoded",
+                    "isFavorite",
+                    "isMotion",
+                    "isOffline",
+                    "lensModel",
+                    "libraryId",
+                    "make",
+                    "model",
+                    "ocr",
+                    "or",
+                    "originalFileName",
+                    "originalPath",
+                    "personIds",
+                    "rating",
+                    "state",
+                    "tagIds",
+                    "takenAt",
+                    "trashedAt",
+                    "type",
+                    "updatedAt",
+                    "visibility"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SearchFilterBranch`.
+        public struct SearchFilterBranch: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/albumIds`.
+            public var albumIds: Components.Schemas.IdsFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/checksum`.
+            public var checksum: Components.Schemas.StringFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/city`.
+            public var city: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/country`.
+            public var country: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/createdAt`.
+            public var createdAt: Components.Schemas.DateFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/description`.
+            public var description: Components.Schemas.StringPatternFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/encodedVideoPath`.
+            public var encodedVideoPath: Components.Schemas.StringFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/fileSizeInBytes`.
+            public var fileSizeInBytes: Components.Schemas.NumberFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/hasAlbums`.
+            public var hasAlbums: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/hasPeople`.
+            public var hasPeople: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/hasTags`.
+            public var hasTags: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/id`.
+            public var id: Components.Schemas.IdFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/isEncoded`.
+            public var isEncoded: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/isFavorite`.
+            public var isFavorite: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/isMotion`.
+            public var isMotion: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/isOffline`.
+            public var isOffline: Components.Schemas.BoolFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/lensModel`.
+            public var lensModel: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/libraryId`.
+            public var libraryId: Components.Schemas.IdFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/make`.
+            public var make: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/model`.
+            public var model: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/ocr`.
+            public var ocr: Components.Schemas.StringSimilarityFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/originalFileName`.
+            public var originalFileName: Components.Schemas.StringPatternFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/originalPath`.
+            public var originalPath: Components.Schemas.StringPatternFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/personIds`.
+            public var personIds: Components.Schemas.IdsFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/rating`.
+            public var rating: Components.Schemas.NumberFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/state`.
+            public var state: Components.Schemas.StringFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/tagIds`.
+            public var tagIds: Components.Schemas.IdsFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/takenAt`.
+            public var takenAt: Components.Schemas.DateFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/trashedAt`.
+            public var trashedAt: Components.Schemas.DateFilterNullable?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/type`.
+            public var _type: Components.Schemas.EnumFilterAssetType?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/updatedAt`.
+            public var updatedAt: Components.Schemas.DateFilter?
+            /// - Remark: Generated from `#/components/schemas/SearchFilterBranch/visibility`.
+            public var visibility: Components.Schemas.EnumFilterAssetVisibility?
+            /// Creates a new `SearchFilterBranch`.
+            ///
+            /// - Parameters:
+            ///   - albumIds:
+            ///   - checksum:
+            ///   - city:
+            ///   - country:
+            ///   - createdAt:
+            ///   - description:
+            ///   - encodedVideoPath:
+            ///   - fileSizeInBytes:
+            ///   - hasAlbums:
+            ///   - hasPeople:
+            ///   - hasTags:
+            ///   - id:
+            ///   - isEncoded:
+            ///   - isFavorite:
+            ///   - isMotion:
+            ///   - isOffline:
+            ///   - lensModel:
+            ///   - libraryId:
+            ///   - make:
+            ///   - model:
+            ///   - ocr:
+            ///   - originalFileName:
+            ///   - originalPath:
+            ///   - personIds:
+            ///   - rating:
+            ///   - state:
+            ///   - tagIds:
+            ///   - takenAt:
+            ///   - trashedAt:
+            ///   - _type:
+            ///   - updatedAt:
+            ///   - visibility:
+            public init(
+                albumIds: Components.Schemas.IdsFilter? = nil,
+                checksum: Components.Schemas.StringFilter? = nil,
+                city: Components.Schemas.StringFilterNullable? = nil,
+                country: Components.Schemas.StringFilterNullable? = nil,
+                createdAt: Components.Schemas.DateFilter? = nil,
+                description: Components.Schemas.StringPatternFilter? = nil,
+                encodedVideoPath: Components.Schemas.StringFilter? = nil,
+                fileSizeInBytes: Components.Schemas.NumberFilter? = nil,
+                hasAlbums: Components.Schemas.BoolFilter? = nil,
+                hasPeople: Components.Schemas.BoolFilter? = nil,
+                hasTags: Components.Schemas.BoolFilter? = nil,
+                id: Components.Schemas.IdFilter? = nil,
+                isEncoded: Components.Schemas.BoolFilter? = nil,
+                isFavorite: Components.Schemas.BoolFilter? = nil,
+                isMotion: Components.Schemas.BoolFilter? = nil,
+                isOffline: Components.Schemas.BoolFilter? = nil,
+                lensModel: Components.Schemas.StringFilterNullable? = nil,
+                libraryId: Components.Schemas.IdFilterNullable? = nil,
+                make: Components.Schemas.StringFilterNullable? = nil,
+                model: Components.Schemas.StringFilterNullable? = nil,
+                ocr: Components.Schemas.StringSimilarityFilter? = nil,
+                originalFileName: Components.Schemas.StringPatternFilter? = nil,
+                originalPath: Components.Schemas.StringPatternFilter? = nil,
+                personIds: Components.Schemas.IdsFilter? = nil,
+                rating: Components.Schemas.NumberFilterNullable? = nil,
+                state: Components.Schemas.StringFilterNullable? = nil,
+                tagIds: Components.Schemas.IdsFilter? = nil,
+                takenAt: Components.Schemas.DateFilter? = nil,
+                trashedAt: Components.Schemas.DateFilterNullable? = nil,
+                _type: Components.Schemas.EnumFilterAssetType? = nil,
+                updatedAt: Components.Schemas.DateFilter? = nil,
+                visibility: Components.Schemas.EnumFilterAssetVisibility? = nil
+            ) {
+                self.albumIds = albumIds
+                self.checksum = checksum
+                self.city = city
+                self.country = country
+                self.createdAt = createdAt
+                self.description = description
+                self.encodedVideoPath = encodedVideoPath
+                self.fileSizeInBytes = fileSizeInBytes
+                self.hasAlbums = hasAlbums
+                self.hasPeople = hasPeople
+                self.hasTags = hasTags
+                self.id = id
+                self.isEncoded = isEncoded
+                self.isFavorite = isFavorite
+                self.isMotion = isMotion
+                self.isOffline = isOffline
+                self.lensModel = lensModel
+                self.libraryId = libraryId
+                self.make = make
+                self.model = model
+                self.ocr = ocr
+                self.originalFileName = originalFileName
+                self.originalPath = originalPath
+                self.personIds = personIds
+                self.rating = rating
+                self.state = state
+                self.tagIds = tagIds
+                self.takenAt = takenAt
+                self.trashedAt = trashedAt
+                self._type = _type
+                self.updatedAt = updatedAt
+                self.visibility = visibility
+            }
+            public enum CodingKeys: String, CodingKey {
+                case albumIds
+                case checksum
+                case city
+                case country
+                case createdAt
+                case description
+                case encodedVideoPath
+                case fileSizeInBytes
+                case hasAlbums
+                case hasPeople
+                case hasTags
+                case id
+                case isEncoded
+                case isFavorite
+                case isMotion
+                case isOffline
+                case lensModel
+                case libraryId
+                case make
+                case model
+                case ocr
+                case originalFileName
+                case originalPath
+                case personIds
+                case rating
+                case state
+                case tagIds
+                case takenAt
+                case trashedAt
+                case _type = "type"
+                case updatedAt
+                case visibility
+            }
+            public init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.albumIds = try container.decodeIfPresent(
+                    Components.Schemas.IdsFilter.self,
+                    forKey: .albumIds
+                )
+                self.checksum = try container.decodeIfPresent(
+                    Components.Schemas.StringFilter.self,
+                    forKey: .checksum
+                )
+                self.city = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .city
+                )
+                self.country = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .country
+                )
+                self.createdAt = try container.decodeIfPresent(
+                    Components.Schemas.DateFilter.self,
+                    forKey: .createdAt
+                )
+                self.description = try container.decodeIfPresent(
+                    Components.Schemas.StringPatternFilter.self,
+                    forKey: .description
+                )
+                self.encodedVideoPath = try container.decodeIfPresent(
+                    Components.Schemas.StringFilter.self,
+                    forKey: .encodedVideoPath
+                )
+                self.fileSizeInBytes = try container.decodeIfPresent(
+                    Components.Schemas.NumberFilter.self,
+                    forKey: .fileSizeInBytes
+                )
+                self.hasAlbums = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .hasAlbums
+                )
+                self.hasPeople = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .hasPeople
+                )
+                self.hasTags = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .hasTags
+                )
+                self.id = try container.decodeIfPresent(
+                    Components.Schemas.IdFilter.self,
+                    forKey: .id
+                )
+                self.isEncoded = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .isEncoded
+                )
+                self.isFavorite = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .isFavorite
+                )
+                self.isMotion = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .isMotion
+                )
+                self.isOffline = try container.decodeIfPresent(
+                    Components.Schemas.BoolFilter.self,
+                    forKey: .isOffline
+                )
+                self.lensModel = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .lensModel
+                )
+                self.libraryId = try container.decodeIfPresent(
+                    Components.Schemas.IdFilterNullable.self,
+                    forKey: .libraryId
+                )
+                self.make = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .make
+                )
+                self.model = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .model
+                )
+                self.ocr = try container.decodeIfPresent(
+                    Components.Schemas.StringSimilarityFilter.self,
+                    forKey: .ocr
+                )
+                self.originalFileName = try container.decodeIfPresent(
+                    Components.Schemas.StringPatternFilter.self,
+                    forKey: .originalFileName
+                )
+                self.originalPath = try container.decodeIfPresent(
+                    Components.Schemas.StringPatternFilter.self,
+                    forKey: .originalPath
+                )
+                self.personIds = try container.decodeIfPresent(
+                    Components.Schemas.IdsFilter.self,
+                    forKey: .personIds
+                )
+                self.rating = try container.decodeIfPresent(
+                    Components.Schemas.NumberFilterNullable.self,
+                    forKey: .rating
+                )
+                self.state = try container.decodeIfPresent(
+                    Components.Schemas.StringFilterNullable.self,
+                    forKey: .state
+                )
+                self.tagIds = try container.decodeIfPresent(
+                    Components.Schemas.IdsFilter.self,
+                    forKey: .tagIds
+                )
+                self.takenAt = try container.decodeIfPresent(
+                    Components.Schemas.DateFilter.self,
+                    forKey: .takenAt
+                )
+                self.trashedAt = try container.decodeIfPresent(
+                    Components.Schemas.DateFilterNullable.self,
+                    forKey: .trashedAt
+                )
+                self._type = try container.decodeIfPresent(
+                    Components.Schemas.EnumFilterAssetType.self,
+                    forKey: ._type
+                )
+                self.updatedAt = try container.decodeIfPresent(
+                    Components.Schemas.DateFilter.self,
+                    forKey: .updatedAt
+                )
+                self.visibility = try container.decodeIfPresent(
+                    Components.Schemas.EnumFilterAssetVisibility.self,
+                    forKey: .visibility
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "albumIds",
+                    "checksum",
+                    "city",
+                    "country",
+                    "createdAt",
+                    "description",
+                    "encodedVideoPath",
+                    "fileSizeInBytes",
+                    "hasAlbums",
+                    "hasPeople",
+                    "hasTags",
+                    "id",
+                    "isEncoded",
+                    "isFavorite",
+                    "isMotion",
+                    "isOffline",
+                    "lensModel",
+                    "libraryId",
+                    "make",
+                    "model",
+                    "ocr",
+                    "originalFileName",
+                    "originalPath",
+                    "personIds",
+                    "rating",
+                    "state",
+                    "tagIds",
+                    "takenAt",
+                    "trashedAt",
+                    "type",
+                    "updatedAt",
+                    "visibility"
+                ])
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SearchResponseDto`.
+        public struct SearchResponseDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SearchResponseDto/albums`.
+            public var albums: Components.Schemas.SearchAlbumResponseDto
+            /// - Remark: Generated from `#/components/schemas/SearchResponseDto/assets`.
+            public var assets: Components.Schemas.SearchAssetResponseDto
+            /// Creates a new `SearchResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - albums:
+            ///   - assets:
+            public init(
+                albums: Components.Schemas.SearchAlbumResponseDto,
+                assets: Components.Schemas.SearchAssetResponseDto
+            ) {
+                self.albums = albums
+                self.assets = assets
+            }
+            public enum CodingKeys: String, CodingKey {
+                case albums
+                case assets
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ServerFeaturesDto`.
         public struct ServerFeaturesDto: Codable, Hashable, Sendable {
             /// Whether config file is available
@@ -1883,6 +3194,462 @@ public enum Components {
                 case minor
                 case patch
                 case prerelease
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SmartSearchDto`.
+        public struct SmartSearchDto: Codable, Hashable, Sendable {
+            /// Filter by album IDs
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/albumIds`.
+            @available(*, deprecated)
+            public var albumIds: [Swift.String]?
+            /// Filter by city name
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/city`.
+            @available(*, deprecated)
+            public var city: Swift.String?
+            /// Filter by country name
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/country`.
+            @available(*, deprecated)
+            public var country: Swift.String?
+            /// Filter by creation date (after)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/createdAfter`.
+            @available(*, deprecated)
+            public var createdAfter: Foundation.Date?
+            /// Filter by creation date (before)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/createdBefore`.
+            @available(*, deprecated)
+            public var createdBefore: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/filter`.
+            public var filter: Components.Schemas.SearchFilter?
+            /// Filter by encoded status
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/isEncoded`.
+            @available(*, deprecated)
+            public var isEncoded: Swift.Bool?
+            /// Filter by favorite status
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/isFavorite`.
+            @available(*, deprecated)
+            public var isFavorite: Swift.Bool?
+            /// Filter by motion photo status
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/isMotion`.
+            @available(*, deprecated)
+            public var isMotion: Swift.Bool?
+            /// Filter assets not in any album
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/isNotInAlbum`.
+            @available(*, deprecated)
+            public var isNotInAlbum: Swift.Bool?
+            /// Filter by offline status
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/isOffline`.
+            @available(*, deprecated)
+            public var isOffline: Swift.Bool?
+            /// Search language code
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/language`.
+            public var language: Swift.String?
+            /// Filter by lens model
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/lensModel`.
+            @available(*, deprecated)
+            public var lensModel: Swift.String?
+            /// Library ID to filter by
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/libraryId`.
+            @available(*, deprecated)
+            public var libraryId: Swift.String?
+            /// Filter by camera make
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/make`.
+            @available(*, deprecated)
+            public var make: Swift.String?
+            /// Filter by camera model
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/model`.
+            @available(*, deprecated)
+            public var model: Swift.String?
+            /// Filter by OCR text content
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/ocr`.
+            @available(*, deprecated)
+            public var ocr: Swift.String?
+            /// Page number
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/page`.
+            @available(*, deprecated)
+            public var page: Swift.Int?
+            /// Filter by person IDs
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/personIds`.
+            @available(*, deprecated)
+            public var personIds: [Swift.String]?
+            /// Natural language search query
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/query`.
+            public var query: Swift.String?
+            /// Asset ID to use as search reference
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/queryAssetId`.
+            public var queryAssetId: Swift.String?
+            /// Filter by rating [1-5], or null for unrated
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/rating`.
+            @available(*, deprecated)
+            public var rating: Swift.Int?
+            /// Number of results to return
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/size`.
+            public var size: Swift.Int?
+            /// Filter by state/province name
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/state`.
+            @available(*, deprecated)
+            public var state: Swift.String?
+            /// Filter by tag IDs
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/tagIds`.
+            @available(*, deprecated)
+            public var tagIds: [Swift.String]?
+            /// Filter by taken date (after)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/takenAfter`.
+            @available(*, deprecated)
+            public var takenAfter: Foundation.Date?
+            /// Filter by taken date (before)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/takenBefore`.
+            @available(*, deprecated)
+            public var takenBefore: Foundation.Date?
+            /// Filter by trash date (after)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/trashedAfter`.
+            @available(*, deprecated)
+            public var trashedAfter: Foundation.Date?
+            /// Filter by trash date (before)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/trashedBefore`.
+            @available(*, deprecated)
+            public var trashedBefore: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/type`.
+            public var _type: Components.Schemas.AssetTypeEnum?
+            /// Filter by update date (after)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/updatedAfter`.
+            @available(*, deprecated)
+            public var updatedAfter: Foundation.Date?
+            /// Filter by update date (before)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/updatedBefore`.
+            @available(*, deprecated)
+            public var updatedBefore: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/visibility`.
+            public var visibility: Components.Schemas.AssetVisibility?
+            /// Include deleted assets
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/withDeleted`.
+            @available(*, deprecated)
+            public var withDeleted: Swift.Bool?
+            /// Include EXIF data in response
+            ///
+            /// - Remark: Generated from `#/components/schemas/SmartSearchDto/withExif`.
+            public var withExif: Swift.Bool?
+            /// Creates a new `SmartSearchDto`.
+            ///
+            /// - Parameters:
+            ///   - albumIds: Filter by album IDs
+            ///   - city: Filter by city name
+            ///   - country: Filter by country name
+            ///   - createdAfter: Filter by creation date (after)
+            ///   - createdBefore: Filter by creation date (before)
+            ///   - filter:
+            ///   - isEncoded: Filter by encoded status
+            ///   - isFavorite: Filter by favorite status
+            ///   - isMotion: Filter by motion photo status
+            ///   - isNotInAlbum: Filter assets not in any album
+            ///   - isOffline: Filter by offline status
+            ///   - language: Search language code
+            ///   - lensModel: Filter by lens model
+            ///   - libraryId: Library ID to filter by
+            ///   - make: Filter by camera make
+            ///   - model: Filter by camera model
+            ///   - ocr: Filter by OCR text content
+            ///   - page: Page number
+            ///   - personIds: Filter by person IDs
+            ///   - query: Natural language search query
+            ///   - queryAssetId: Asset ID to use as search reference
+            ///   - rating: Filter by rating [1-5], or null for unrated
+            ///   - size: Number of results to return
+            ///   - state: Filter by state/province name
+            ///   - tagIds: Filter by tag IDs
+            ///   - takenAfter: Filter by taken date (after)
+            ///   - takenBefore: Filter by taken date (before)
+            ///   - trashedAfter: Filter by trash date (after)
+            ///   - trashedBefore: Filter by trash date (before)
+            ///   - _type:
+            ///   - updatedAfter: Filter by update date (after)
+            ///   - updatedBefore: Filter by update date (before)
+            ///   - visibility:
+            ///   - withDeleted: Include deleted assets
+            ///   - withExif: Include EXIF data in response
+            public init(
+                albumIds: [Swift.String]? = nil,
+                city: Swift.String? = nil,
+                country: Swift.String? = nil,
+                createdAfter: Foundation.Date? = nil,
+                createdBefore: Foundation.Date? = nil,
+                filter: Components.Schemas.SearchFilter? = nil,
+                isEncoded: Swift.Bool? = nil,
+                isFavorite: Swift.Bool? = nil,
+                isMotion: Swift.Bool? = nil,
+                isNotInAlbum: Swift.Bool? = nil,
+                isOffline: Swift.Bool? = nil,
+                language: Swift.String? = nil,
+                lensModel: Swift.String? = nil,
+                libraryId: Swift.String? = nil,
+                make: Swift.String? = nil,
+                model: Swift.String? = nil,
+                ocr: Swift.String? = nil,
+                page: Swift.Int? = nil,
+                personIds: [Swift.String]? = nil,
+                query: Swift.String? = nil,
+                queryAssetId: Swift.String? = nil,
+                rating: Swift.Int? = nil,
+                size: Swift.Int? = nil,
+                state: Swift.String? = nil,
+                tagIds: [Swift.String]? = nil,
+                takenAfter: Foundation.Date? = nil,
+                takenBefore: Foundation.Date? = nil,
+                trashedAfter: Foundation.Date? = nil,
+                trashedBefore: Foundation.Date? = nil,
+                _type: Components.Schemas.AssetTypeEnum? = nil,
+                updatedAfter: Foundation.Date? = nil,
+                updatedBefore: Foundation.Date? = nil,
+                visibility: Components.Schemas.AssetVisibility? = nil,
+                withDeleted: Swift.Bool? = nil,
+                withExif: Swift.Bool? = nil
+            ) {
+                self.albumIds = albumIds
+                self.city = city
+                self.country = country
+                self.createdAfter = createdAfter
+                self.createdBefore = createdBefore
+                self.filter = filter
+                self.isEncoded = isEncoded
+                self.isFavorite = isFavorite
+                self.isMotion = isMotion
+                self.isNotInAlbum = isNotInAlbum
+                self.isOffline = isOffline
+                self.language = language
+                self.lensModel = lensModel
+                self.libraryId = libraryId
+                self.make = make
+                self.model = model
+                self.ocr = ocr
+                self.page = page
+                self.personIds = personIds
+                self.query = query
+                self.queryAssetId = queryAssetId
+                self.rating = rating
+                self.size = size
+                self.state = state
+                self.tagIds = tagIds
+                self.takenAfter = takenAfter
+                self.takenBefore = takenBefore
+                self.trashedAfter = trashedAfter
+                self.trashedBefore = trashedBefore
+                self._type = _type
+                self.updatedAfter = updatedAfter
+                self.updatedBefore = updatedBefore
+                self.visibility = visibility
+                self.withDeleted = withDeleted
+                self.withExif = withExif
+            }
+            public enum CodingKeys: String, CodingKey {
+                case albumIds
+                case city
+                case country
+                case createdAfter
+                case createdBefore
+                case filter
+                case isEncoded
+                case isFavorite
+                case isMotion
+                case isNotInAlbum
+                case isOffline
+                case language
+                case lensModel
+                case libraryId
+                case make
+                case model
+                case ocr
+                case page
+                case personIds
+                case query
+                case queryAssetId
+                case rating
+                case size
+                case state
+                case tagIds
+                case takenAfter
+                case takenBefore
+                case trashedAfter
+                case trashedBefore
+                case _type = "type"
+                case updatedAfter
+                case updatedBefore
+                case visibility
+                case withDeleted
+                case withExif
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StringFilter`.
+        public struct StringFilter: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StringFilter/eq`.
+            public var eq: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/StringFilter/in`.
+            public var _in: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/StringFilter/ne`.
+            public var ne: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/StringFilter/notIn`.
+            public var notIn: [Swift.String]?
+            /// Creates a new `StringFilter`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - _in:
+            ///   - ne:
+            ///   - notIn:
+            public init(
+                eq: Swift.String? = nil,
+                _in: [Swift.String]? = nil,
+                ne: Swift.String? = nil,
+                notIn: [Swift.String]? = nil
+            ) {
+                self.eq = eq
+                self._in = _in
+                self.ne = ne
+                self.notIn = notIn
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case _in = "in"
+                case ne
+                case notIn
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StringFilterNullable`.
+        public struct StringFilterNullable: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StringFilterNullable/eq`.
+            public var eq: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/StringFilterNullable/in`.
+            public var _in: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/StringFilterNullable/ne`.
+            public var ne: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/StringFilterNullable/notIn`.
+            public var notIn: [Swift.String]?
+            /// Creates a new `StringFilterNullable`.
+            ///
+            /// - Parameters:
+            ///   - eq:
+            ///   - _in:
+            ///   - ne:
+            ///   - notIn:
+            public init(
+                eq: Swift.String? = nil,
+                _in: [Swift.String]? = nil,
+                ne: Swift.String? = nil,
+                notIn: [Swift.String]? = nil
+            ) {
+                self.eq = eq
+                self._in = _in
+                self.ne = ne
+                self.notIn = notIn
+            }
+            public enum CodingKeys: String, CodingKey {
+                case eq
+                case _in = "in"
+                case ne
+                case notIn
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StringPatternFilter`.
+        public struct StringPatternFilter: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StringPatternFilter/endsWith`.
+            public var endsWith: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/StringPatternFilter/eq`.
+            public var eq: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/StringPatternFilter/in`.
+            public var _in: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/StringPatternFilter/like`.
+            public var like: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/StringPatternFilter/ne`.
+            public var ne: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/StringPatternFilter/notIn`.
+            public var notIn: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/StringPatternFilter/notLike`.
+            public var notLike: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/StringPatternFilter/startsWith`.
+            public var startsWith: Swift.String?
+            /// Creates a new `StringPatternFilter`.
+            ///
+            /// - Parameters:
+            ///   - endsWith:
+            ///   - eq:
+            ///   - _in:
+            ///   - like:
+            ///   - ne:
+            ///   - notIn:
+            ///   - notLike:
+            ///   - startsWith:
+            public init(
+                endsWith: Swift.String? = nil,
+                eq: Swift.String? = nil,
+                _in: [Swift.String]? = nil,
+                like: Swift.String? = nil,
+                ne: Swift.String? = nil,
+                notIn: [Swift.String]? = nil,
+                notLike: Swift.String? = nil,
+                startsWith: Swift.String? = nil
+            ) {
+                self.endsWith = endsWith
+                self.eq = eq
+                self._in = _in
+                self.like = like
+                self.ne = ne
+                self.notIn = notIn
+                self.notLike = notLike
+                self.startsWith = startsWith
+            }
+            public enum CodingKeys: String, CodingKey {
+                case endsWith
+                case eq
+                case _in = "in"
+                case like
+                case ne
+                case notIn
+                case notLike
+                case startsWith
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/StringSimilarityFilter`.
+        public struct StringSimilarityFilter: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/StringSimilarityFilter/matches`.
+            public var matches: Swift.String
+            /// Creates a new `StringSimilarityFilter`.
+            ///
+            /// - Parameters:
+            ///   - matches:
+            public init(matches: Swift.String) {
+                self.matches = matches
+            }
+            public enum CodingKeys: String, CodingKey {
+                case matches
             }
         }
         /// - Remark: Generated from `#/components/schemas/TagResponseDto`.
@@ -3694,6 +5461,129 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
             public var ok: Operations.ValidateAccessToken.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Smart asset search
+    ///
+    /// Perform a smart search for assets by using machine learning vectors to determine relevance.
+    ///
+    /// - Remark: HTTP `POST /search/smart`.
+    /// - Remark: Generated from `#/paths//search/smart/post(searchSmart)`.
+    public enum SearchSmart {
+        public static let id: Swift.String = "searchSmart"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/search/smart/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchSmart.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchSmart.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SearchSmart.Input.Headers
+            /// - Remark: Generated from `#/paths/search/smart/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/search/smart/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.SmartSearchDto)
+            }
+            public var body: Operations.SearchSmart.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.SearchSmart.Input.Headers = .init(),
+                body: Operations.SearchSmart.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/search/smart/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/search/smart/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SearchResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SearchResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SearchSmart.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SearchSmart.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//search/smart/post(searchSmart)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SearchSmart.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SearchSmart.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):

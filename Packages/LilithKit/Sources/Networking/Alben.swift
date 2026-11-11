@@ -9,6 +9,8 @@ public enum TimelineFilter: Hashable, Sendable {
     case archiv
     case papierkorb
     case album(String)
+    /// Smart Search: Fotos, die zu einem Text passen, nach Relevanz sortiert.
+    case suche(String)
 }
 
 /// Ein Album.

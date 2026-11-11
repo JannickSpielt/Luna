@@ -87,11 +87,7 @@ struct HauptView: View {
                 AlbenView()
             }
             Tab(value: Bereich.suche, role: .search) {
-                Platzhalter(titel: "Suche", symbol: "magnifyingglass",
-                            text: account.server.capabilities.smartSearch
-                                ? "Smart Search kommt bald."
-                                : "Smart Search ist auf deinem Server ausgeschaltet.",
-                            account: account, zeigeKonto: $zeigeKonto)
+                SucheView()
             }
         }
         .tabViewStyle(.sidebarAdaptable)
@@ -103,7 +99,8 @@ struct HauptView: View {
     private func richteEin() {
         guard kontext == nil else { return }
         let sitzung = session
-        let neu = BibliothekKontext(client: session.client, papierkorbAktiv: account.server.capabilities.trash)
+        let neu = BibliothekKontext(client: session.client, papierkorbAktiv: account.server.capabilities.trash,
+                                    smartSearch: account.server.capabilities.smartSearch)
         neu.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
         if let client = session.client {
             let store = TimelineStore(client: client)

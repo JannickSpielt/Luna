@@ -173,6 +173,7 @@ struct TimelineInhalt: View {
         case .favoriten: ("Noch keine Favoriten", "Tippe bei einem Foto auf das Herz, dann findest du es hier wieder.", "heart")
         case .archiv: ("Archiv ist leer", "Archivierte Fotos verschwinden aus der Bibliothek und liegen hier.", "archivebox")
         case .papierkorb: ("Papierkorb ist leer", "Gelöschte Fotos liegen hier, bis der Server sie endgültig entfernt.", "trash")
+        case .suche: ("Nichts gefunden", "Versuch es mit anderen Worten, zum Beispiel einem Ort, einem Tier oder einer Farbe.", "magnifyingglass")
         case .album: ("Album ist leer", "Wähle in der Bibliothek Fotos aus und füge sie diesem Album hinzu.", "rectangle.stack")
         }
     }

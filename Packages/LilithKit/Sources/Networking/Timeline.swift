@@ -109,6 +109,7 @@ extension ImmichClient {
         case .archiv: (nil, nil, nil, .archive)
         case .papierkorb: (nil, nil, true, nil)
         case .album(let id): (id, nil, nil, nil)
+        case .suche: (nil, nil, nil, .timeline)
         }
     }
 

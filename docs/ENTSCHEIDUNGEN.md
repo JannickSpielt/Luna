@@ -66,3 +66,11 @@ Der Sprung ist entscheidend, weil Scrubber, „Heute vor X Jahren“ und Sucherg
 - **Veraltete Schnittstelle:** Das Ändern mehrerer Fotos (`PUT /assets`) ist in Immich v3 als veraltet markiert, einen Nachfolger gibt es in v3.3.5 aber noch nicht.
 
 **Offen:** Fotos aus einem Album entfernen, Alben umbenennen und löschen, Papierkorb leeren, geteilte Alben getrennt anzeigen, Auswahl per Wischen.
+
+## 5. Smart Search (Schritt 7, 11.11.2026)
+
+- **Suche in normaler Sprache** über Immichs `POST /search/smart`. Der Suchen-Tab zeigt Beispiele zum Antippen. Ist Machine Learning auf dem Server aus, erklärt die App das, statt ein leeres Suchfeld zu zeigen.
+- **Ergebnisse als Timeline ohne Monate:** Die Treffer stehen nach Relevanz in einem einzigen Abschnitt und nutzen dieselbe Ansicht wie die Bibliothek. Detailansicht, Auswahl und Aktionen funktionieren dadurch auch in den Suchergebnissen.
+- **Feste Obergrenze von 500 Fotos:** Smart Search liefert immer die ähnlichsten Fotos, keine exakte Trefferzahl. Die Schnittstelle hat in v3.3.5 kein Weiterblättern mehr (die Seitenzahl ist veraltet), deshalb holt Lilith einmal 500 Stück.
+
+**Offen:** Filter (Zeitraum, Ort, Person, nur Videos), Suche nach Dateiname oder Text im Bild (OCR), letzte Suchen merken.
