@@ -13,9 +13,11 @@ public struct TimelineGridView {
     @Binding var zoom: GridZoom
     let sprung: SprungAnfrage?
     let onScroll: ((Double) -> Void)?
+    let onTap: ((Int, Int, CGRect) -> Void)?
 
     public init(quelle: TimelineQuelle, zoom: Binding<GridZoom>, sprung: SprungAnfrage? = nil,
-                onScroll: ((Double) -> Void)? = nil) {
+                onTap: ((Int, Int, CGRect) -> Void)? = nil, onScroll: ((Double) -> Void)? = nil) {
+        self.onTap = onTap
         self.quelle = quelle
         self._zoom = zoom
         self.sprung = sprung
@@ -26,6 +28,7 @@ public struct TimelineGridView {
     func macheController() -> TimelineGridController {
         let controller = TimelineGridController(quelle: quelle, zoom: zoom)
         controller.onScroll = onScroll
+        controller.onTap = onTap
         let binding = $zoom
         controller.onZoomChange = { neu in
             if binding.wrappedValue != neu { binding.wrappedValue = neu }
@@ -37,6 +40,7 @@ public struct TimelineGridView {
     func aktualisiere(_ controller: TimelineGridController) {
         if controller.quelle !== quelle { controller.quelle = quelle }
         controller.onScroll = onScroll
+        controller.onTap = onTap
         controller.setZoom(zoom)
         if let sprung, sprung.id != controller.letzterSprung {
             controller.letzterSprung = sprung.id

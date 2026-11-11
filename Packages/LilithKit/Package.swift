@@ -45,6 +45,7 @@ let package = Package(
         ),
         .target(name: "AppFeature", dependencies: ["DesignSystem", "Networking", "TimelineGrid"]),
         .testTarget(name: "TimelineGridTests", dependencies: ["TimelineGrid"]),
+        .testTarget(name: "AppFeatureTests", dependencies: ["AppFeature", "TimelineGrid"]),
         .testTarget(name: "DesignSystemTests", dependencies: ["DesignSystem"]),
         .testTarget(
             name: "NetworkingTests",

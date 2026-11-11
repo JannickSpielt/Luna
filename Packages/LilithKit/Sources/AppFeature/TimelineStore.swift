@@ -24,7 +24,7 @@ final class TimelineStore: TimelineQuelle {
     @ObservationIgnored private var inhalte: [Int: [GridItem]] = [:]
     @ObservationIgnored private var laufend: [Int: Task<Void, Never>] = [:]
     @ObservationIgnored private var sichtbareMonate: Set<Int> = []
-    @ObservationIgnored private let client: ImmichClient
+    @ObservationIgnored let client: ImmichClient
     /// Wird aufgerufen, wenn der Server die Anmeldung ablehnt.
     @ObservationIgnored var onSitzungAbgelaufen: (() -> Void)?
 
@@ -75,15 +75,22 @@ final class TimelineStore: TimelineQuelle {
     }
 
     func ladeMonat(_ section: Int) {
-        guard section < monate.count, inhalte[section] == nil, laufend[section] == nil else { return }
+        ladeMonat(section, erzwingen: false)
+    }
+
+    /// `erzwingen`: sofort laden, auch wenn der Monat im Grid gerade nicht zu sehen ist (für die Detailansicht).
+    func ladeMonat(_ section: Int, erzwingen: Bool) {
+        guard section >= 0, section < monate.count, inhalte[section] == nil, laufend[section] == nil else { return }
         let monat = monate[section]
         laufend[section] = Task {
             defer { if laufend[section] != nil, !Task.isCancelled { laufend[section] = nil } }
             // Kurz warten: Beim schnellen Scrubben ist der Monat danach oft schon wieder weg.
-            try? await Task.sleep(for: .milliseconds(120))
-            guard !Task.isCancelled, wirdGebraucht(section) else {
-                laufend[section] = nil
-                return
+            if !erzwingen {
+                try? await Task.sleep(for: .milliseconds(120))
+                guard !Task.isCancelled, wirdGebraucht(section) else {
+                    laufend[section] = nil
+                    return
+                }
             }
             do {
                 let assets = try await client.timelineInhalt(monat)
@@ -103,6 +110,24 @@ final class TimelineStore: TimelineQuelle {
         }
     }
 
+    /// Setzt oder entfernt den Favoriten: sofort in der Ansicht, dann auf dem Server. Bei Fehler wird zurückgestellt.
+    func setzeFavorit(section: Int, index: Int, _ favorit: Bool) async throws {
+        guard let alt = item(section: section, index: index) else { return }
+        ersetze(alt.mit(favorit: favorit), section: section, index: index)
+        do {
+            try await client.setzeFavorit(id: alt.id, favorit)
+        } catch {
+            if item(section: section, index: index)?.id == alt.id { ersetze(alt, section: section, index: index) }
+            if case ImmichError.sitzungAbgelaufen = error { onSitzungAbgelaufen?() }
+            throw error
+        }
+    }
+
+    private func ersetze(_ neu: GridItem, section: Int, index: Int) {
+        inhalte[section]?[index] = neu
+        onMonatGeladen?(section, false)
+    }
+
     func bildAnfragen(fuer item: GridItem, pixel: CGFloat) -> [URLRequest] {
         // Immichs „thumbnail“ hat ca. 250 px und kommt schnell. Für große Kacheln danach die schärfere Vorschau.
         let klein = client.vorschauAnfrage(assetId: item.id, groesse: .thumbnail)
@@ -116,7 +141,7 @@ final class TimelineStore: TimelineQuelle {
         let farbe = asset.thumbhash.flatMap(Thumbhash.durchschnittsfarbe)
             ?? GridPalette.farben[asset.id.utf8.reduce(0) { $0 &+ Int($1) } % GridPalette.farben.count]
         return GridItem(id: asset.id, farbe: farbe, art: art, favorit: asset.istFavorit,
-                        dauer: (asset.dauerMs ?? 0) / 1000)
+                        dauer: (asset.dauerMs ?? 0) / 1000, liveVideoId: asset.livePhotoVideoId)
     }
 
     static func titel(_ monat: TimelineMonat) -> String {

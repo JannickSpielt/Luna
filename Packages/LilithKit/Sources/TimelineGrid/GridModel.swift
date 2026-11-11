@@ -17,13 +17,20 @@ public struct GridItem: Hashable, Sendable {
     public let favorit: Bool
     /// Videodauer in Sekunden, sonst 0.
     public let dauer: Int
+    /// Bei Live Photos: ID des zugehörigen kurzen Videos.
+    public let liveVideoId: String?
 
-    public init(id: String, farbe: UInt32, art: GridItemKind, favorit: Bool, dauer: Int) {
+    public init(id: String, farbe: UInt32, art: GridItemKind, favorit: Bool, dauer: Int, liveVideoId: String? = nil) {
         self.id = id
         self.farbe = farbe
         self.art = art
         self.favorit = favorit
         self.dauer = dauer
+        self.liveVideoId = liveVideoId
+    }
+
+    public func mit(favorit: Bool) -> GridItem {
+        GridItem(id: id, farbe: farbe, art: art, favorit: favorit, dauer: dauer, liveVideoId: liveVideoId)
     }
 
     public var rgb: (r: Double, g: Double, b: Double) {

@@ -11,6 +11,21 @@ import struct Foundation.Date
 #endif
 /// A type that performs HTTP operations defined by the OpenAPI document.
 public protocol APIProtocol: Sendable {
+    /// Retrieve an asset
+    ///
+    /// Retrieve detailed information about a specific asset.
+    ///
+    /// - Remark: HTTP `GET /assets/{id}`.
+    /// - Remark: Generated from `#/paths//assets/{id}/get(getAssetInfo)`.
+    func getAssetInfo(_ input: Operations.GetAssetInfo.Input) async throws -> Operations.GetAssetInfo.Output
+    /// Update an asset
+    ///
+    /// Update information of a specific asset.
+    ///
+    /// - Remark: HTTP `PUT /assets/{id}`.
+    /// - Remark: Generated from `#/paths//assets/{id}/put(updateAsset)`.
+    @available(*, deprecated)
+    func updateAsset(_ input: Operations.UpdateAsset.Input) async throws -> Operations.UpdateAsset.Output
     /// Login
     ///
     /// Login with username and password and receive a session token.
@@ -79,6 +94,41 @@ public protocol APIProtocol: Sendable {
 
 /// Convenience overloads for operation inputs.
 extension APIProtocol {
+    /// Retrieve an asset
+    ///
+    /// Retrieve detailed information about a specific asset.
+    ///
+    /// - Remark: HTTP `GET /assets/{id}`.
+    /// - Remark: Generated from `#/paths//assets/{id}/get(getAssetInfo)`.
+    public func getAssetInfo(
+        path: Operations.GetAssetInfo.Input.Path,
+        query: Operations.GetAssetInfo.Input.Query = .init(),
+        headers: Operations.GetAssetInfo.Input.Headers = .init()
+    ) async throws -> Operations.GetAssetInfo.Output {
+        try await getAssetInfo(Operations.GetAssetInfo.Input(
+            path: path,
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Update an asset
+    ///
+    /// Update information of a specific asset.
+    ///
+    /// - Remark: HTTP `PUT /assets/{id}`.
+    /// - Remark: Generated from `#/paths//assets/{id}/put(updateAsset)`.
+    @available(*, deprecated)
+    public func updateAsset(
+        path: Operations.UpdateAsset.Input.Path,
+        headers: Operations.UpdateAsset.Input.Headers = .init(),
+        body: Operations.UpdateAsset.Input.Body
+    ) async throws -> Operations.UpdateAsset.Output {
+        try await updateAsset(Operations.UpdateAsset.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
     /// Login
     ///
     /// Login with username and password and receive a session token.
@@ -218,6 +268,321 @@ public enum Components {
             case takenAt = "takenAt"
             case createdAt = "createdAt"
         }
+        /// - Remark: Generated from `#/components/schemas/AssetResponseDto`.
+        public struct AssetResponseDto: Codable, Hashable, Sendable {
+            /// Base64 encoded SHA1 hash
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/checksum`.
+            public var checksum: Swift.String
+            /// The UTC timestamp when the asset was originally uploaded to Immich.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Duplicate group ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/duplicateId`.
+            public var duplicateId: Swift.String?
+            /// Video/gif duration in milliseconds (null for static images)
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/duration`.
+            public var duration: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/exifInfo`.
+            public var exifInfo: Components.Schemas.ExifResponseDto?
+            /// The actual UTC timestamp when the file was created/captured, preserving timezone information. This is the authoritative timestamp for chronological sorting within timeline groups. Combined with timezone data, this can be used to determine the exact moment the photo was taken.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/fileCreatedAt`.
+            public var fileCreatedAt: Foundation.Date
+            /// The UTC timestamp when the file was last modified on the filesystem. This reflects the last time the physical file was changed, which may be different from when the photo was originally taken.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/fileModifiedAt`.
+            public var fileModifiedAt: Foundation.Date
+            /// Whether asset has metadata
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/hasMetadata`.
+            public var hasMetadata: Swift.Bool
+            /// Asset height
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/height`.
+            public var height: Swift.Int?
+            /// Asset ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/id`.
+            public var id: Swift.String
+            /// Is archived
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/isArchived`.
+            public var isArchived: Swift.Bool
+            /// Is edited
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/isEdited`.
+            public var isEdited: Swift.Bool
+            /// Is favorite
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/isFavorite`.
+            public var isFavorite: Swift.Bool
+            /// Is offline
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/isOffline`.
+            public var isOffline: Swift.Bool
+            /// Is trashed
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/isTrashed`.
+            public var isTrashed: Swift.Bool
+            /// Library ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/libraryId`.
+            public var libraryId: Swift.String?
+            /// Live photo video ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/livePhotoVideoId`.
+            public var livePhotoVideoId: Swift.String?
+            /// The local date and time when the photo/video was taken, derived from EXIF metadata. This represents the photographer's local time regardless of timezone, stored as a timezone-agnostic timestamp. Used for timeline grouping by "local" days and months.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/localDateTime`.
+            public var localDateTime: Foundation.Date
+            /// Original file name
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/originalFileName`.
+            public var originalFileName: Swift.String
+            /// Original MIME type
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/originalMimeType`.
+            public var originalMimeType: Swift.String?
+            /// Original file path
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/originalPath`.
+            public var originalPath: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/owner`.
+            public var owner: Components.Schemas.UserResponseDto?
+            /// Owner user ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/ownerId`.
+            public var ownerId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/people`.
+            public var people: [Components.Schemas.PersonResponseDto]?
+            /// Is resized
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/resized`.
+            public var resized: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/stack`.
+            public struct StackPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/AssetResponseDto/stack/value1`.
+                public var value1: Components.Schemas.AssetStackResponseDto
+                /// Creates a new `StackPayload`.
+                ///
+                /// - Parameters:
+                ///   - value1:
+                public init(value1: Components.Schemas.AssetStackResponseDto) {
+                    self.value1 = value1
+                }
+                public init(from decoder: any Decoder) throws {
+                    self.value1 = try .init(from: decoder)
+                }
+                public func encode(to encoder: any Encoder) throws {
+                    try self.value1.encode(to: encoder)
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/stack`.
+            public var stack: Components.Schemas.AssetResponseDto.StackPayload?
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/tags`.
+            public var tags: [Components.Schemas.TagResponseDto]?
+            /// Thumbhash for thumbnail generation (base64) also used as the c query param for thumbnail cache busting.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/thumbhash`.
+            public var thumbhash: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/type`.
+            public var _type: Components.Schemas.AssetTypeEnum
+            /// The UTC timestamp when the asset record was last updated in the database. This is automatically maintained by the database and reflects when any field in the asset was last modified.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/visibility`.
+            public var visibility: Components.Schemas.AssetVisibility
+            /// Asset width
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetResponseDto/width`.
+            public var width: Swift.Int?
+            /// Creates a new `AssetResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - checksum: Base64 encoded SHA1 hash
+            ///   - createdAt: The UTC timestamp when the asset was originally uploaded to Immich.
+            ///   - duplicateId: Duplicate group ID
+            ///   - duration: Video/gif duration in milliseconds (null for static images)
+            ///   - exifInfo:
+            ///   - fileCreatedAt: The actual UTC timestamp when the file was created/captured, preserving timezone information. This is the authoritative timestamp for chronological sorting within timeline groups. Combined with timezone data, this can be used to determine the exact moment the photo was taken.
+            ///   - fileModifiedAt: The UTC timestamp when the file was last modified on the filesystem. This reflects the last time the physical file was changed, which may be different from when the photo was originally taken.
+            ///   - hasMetadata: Whether asset has metadata
+            ///   - height: Asset height
+            ///   - id: Asset ID
+            ///   - isArchived: Is archived
+            ///   - isEdited: Is edited
+            ///   - isFavorite: Is favorite
+            ///   - isOffline: Is offline
+            ///   - isTrashed: Is trashed
+            ///   - libraryId: Library ID
+            ///   - livePhotoVideoId: Live photo video ID
+            ///   - localDateTime: The local date and time when the photo/video was taken, derived from EXIF metadata. This represents the photographer's local time regardless of timezone, stored as a timezone-agnostic timestamp. Used for timeline grouping by "local" days and months.
+            ///   - originalFileName: Original file name
+            ///   - originalMimeType: Original MIME type
+            ///   - originalPath: Original file path
+            ///   - owner:
+            ///   - ownerId: Owner user ID
+            ///   - people:
+            ///   - resized: Is resized
+            ///   - stack:
+            ///   - tags:
+            ///   - thumbhash: Thumbhash for thumbnail generation (base64) also used as the c query param for thumbnail cache busting.
+            ///   - _type:
+            ///   - updatedAt: The UTC timestamp when the asset record was last updated in the database. This is automatically maintained by the database and reflects when any field in the asset was last modified.
+            ///   - visibility:
+            ///   - width: Asset width
+            public init(
+                checksum: Swift.String,
+                createdAt: Foundation.Date,
+                duplicateId: Swift.String? = nil,
+                duration: Swift.Int? = nil,
+                exifInfo: Components.Schemas.ExifResponseDto? = nil,
+                fileCreatedAt: Foundation.Date,
+                fileModifiedAt: Foundation.Date,
+                hasMetadata: Swift.Bool,
+                height: Swift.Int? = nil,
+                id: Swift.String,
+                isArchived: Swift.Bool,
+                isEdited: Swift.Bool,
+                isFavorite: Swift.Bool,
+                isOffline: Swift.Bool,
+                isTrashed: Swift.Bool,
+                libraryId: Swift.String? = nil,
+                livePhotoVideoId: Swift.String? = nil,
+                localDateTime: Foundation.Date,
+                originalFileName: Swift.String,
+                originalMimeType: Swift.String? = nil,
+                originalPath: Swift.String,
+                owner: Components.Schemas.UserResponseDto? = nil,
+                ownerId: Swift.String,
+                people: [Components.Schemas.PersonResponseDto]? = nil,
+                resized: Swift.Bool? = nil,
+                stack: Components.Schemas.AssetResponseDto.StackPayload? = nil,
+                tags: [Components.Schemas.TagResponseDto]? = nil,
+                thumbhash: Swift.String? = nil,
+                _type: Components.Schemas.AssetTypeEnum,
+                updatedAt: Foundation.Date,
+                visibility: Components.Schemas.AssetVisibility,
+                width: Swift.Int? = nil
+            ) {
+                self.checksum = checksum
+                self.createdAt = createdAt
+                self.duplicateId = duplicateId
+                self.duration = duration
+                self.exifInfo = exifInfo
+                self.fileCreatedAt = fileCreatedAt
+                self.fileModifiedAt = fileModifiedAt
+                self.hasMetadata = hasMetadata
+                self.height = height
+                self.id = id
+                self.isArchived = isArchived
+                self.isEdited = isEdited
+                self.isFavorite = isFavorite
+                self.isOffline = isOffline
+                self.isTrashed = isTrashed
+                self.libraryId = libraryId
+                self.livePhotoVideoId = livePhotoVideoId
+                self.localDateTime = localDateTime
+                self.originalFileName = originalFileName
+                self.originalMimeType = originalMimeType
+                self.originalPath = originalPath
+                self.owner = owner
+                self.ownerId = ownerId
+                self.people = people
+                self.resized = resized
+                self.stack = stack
+                self.tags = tags
+                self.thumbhash = thumbhash
+                self._type = _type
+                self.updatedAt = updatedAt
+                self.visibility = visibility
+                self.width = width
+            }
+            public enum CodingKeys: String, CodingKey {
+                case checksum
+                case createdAt
+                case duplicateId
+                case duration
+                case exifInfo
+                case fileCreatedAt
+                case fileModifiedAt
+                case hasMetadata
+                case height
+                case id
+                case isArchived
+                case isEdited
+                case isFavorite
+                case isOffline
+                case isTrashed
+                case libraryId
+                case livePhotoVideoId
+                case localDateTime
+                case originalFileName
+                case originalMimeType
+                case originalPath
+                case owner
+                case ownerId
+                case people
+                case resized
+                case stack
+                case tags
+                case thumbhash
+                case _type = "type"
+                case updatedAt
+                case visibility
+                case width
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AssetStackResponseDto`.
+        public struct AssetStackResponseDto: Codable, Hashable, Sendable {
+            /// Number of assets in stack
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetStackResponseDto/assetCount`.
+            public var assetCount: Swift.Int
+            /// Stack ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetStackResponseDto/id`.
+            public var id: Swift.String
+            /// Primary asset ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetStackResponseDto/primaryAssetId`.
+            public var primaryAssetId: Swift.String
+            /// Creates a new `AssetStackResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - assetCount: Number of assets in stack
+            ///   - id: Stack ID
+            ///   - primaryAssetId: Primary asset ID
+            public init(
+                assetCount: Swift.Int,
+                id: Swift.String,
+                primaryAssetId: Swift.String
+            ) {
+                self.assetCount = assetCount
+                self.id = id
+                self.primaryAssetId = primaryAssetId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case assetCount
+                case id
+                case primaryAssetId
+            }
+        }
+        /// Asset type
+        ///
+        /// - Remark: Generated from `#/components/schemas/AssetTypeEnum`.
+        @frozen public enum AssetTypeEnum: String, Codable, Hashable, Sendable, CaseIterable {
+            case image = "IMAGE"
+            case video = "VIDEO"
+            case audio = "AUDIO"
+            case other = "OTHER"
+        }
         /// Asset visibility
         ///
         /// - Remark: Generated from `#/components/schemas/AssetVisibility`.
@@ -226,6 +591,195 @@ public enum Components {
             case timeline = "timeline"
             case hidden = "hidden"
             case locked = "locked"
+        }
+        /// EXIF response
+        ///
+        /// - Remark: Generated from `#/components/schemas/ExifResponseDto`.
+        public struct ExifResponseDto: Codable, Hashable, Sendable {
+            /// City name
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/city`.
+            public var city: Swift.String?
+            /// Country name
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/country`.
+            public var country: Swift.String?
+            /// Original date/time
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/dateTimeOriginal`.
+            public var dateTimeOriginal: Foundation.Date?
+            /// Image description
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/description`.
+            public var description: Swift.String?
+            /// Image height in pixels
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/exifImageHeight`.
+            public var exifImageHeight: Swift.Int?
+            /// Image width in pixels
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/exifImageWidth`.
+            public var exifImageWidth: Swift.Int?
+            /// Exposure time
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/exposureTime`.
+            public var exposureTime: Swift.String?
+            /// F-number (aperture)
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/fNumber`.
+            public var fNumber: Swift.Double?
+            /// File size in bytes
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/fileSizeInByte`.
+            public var fileSizeInByte: Swift.Int?
+            /// Focal length in mm
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/focalLength`.
+            public var focalLength: Swift.Double?
+            /// ISO sensitivity
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/iso`.
+            public var iso: Swift.Int?
+            /// GPS latitude
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/latitude`.
+            public var latitude: Swift.Double?
+            /// Lens model
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/lensModel`.
+            public var lensModel: Swift.String?
+            /// GPS longitude
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/longitude`.
+            public var longitude: Swift.Double?
+            /// Camera make
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/make`.
+            public var make: Swift.String?
+            /// Camera model
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/model`.
+            public var model: Swift.String?
+            /// Modification date/time
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/modifyDate`.
+            public var modifyDate: Foundation.Date?
+            /// Image orientation
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/orientation`.
+            public var orientation: Swift.String?
+            /// Projection type
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/projectionType`.
+            public var projectionType: Swift.String?
+            /// Rating
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/rating`.
+            public var rating: Swift.Int?
+            /// State/province name
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/state`.
+            public var state: Swift.String?
+            /// Time zone
+            ///
+            /// - Remark: Generated from `#/components/schemas/ExifResponseDto/timeZone`.
+            public var timeZone: Swift.String?
+            /// Creates a new `ExifResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - city: City name
+            ///   - country: Country name
+            ///   - dateTimeOriginal: Original date/time
+            ///   - description: Image description
+            ///   - exifImageHeight: Image height in pixels
+            ///   - exifImageWidth: Image width in pixels
+            ///   - exposureTime: Exposure time
+            ///   - fNumber: F-number (aperture)
+            ///   - fileSizeInByte: File size in bytes
+            ///   - focalLength: Focal length in mm
+            ///   - iso: ISO sensitivity
+            ///   - latitude: GPS latitude
+            ///   - lensModel: Lens model
+            ///   - longitude: GPS longitude
+            ///   - make: Camera make
+            ///   - model: Camera model
+            ///   - modifyDate: Modification date/time
+            ///   - orientation: Image orientation
+            ///   - projectionType: Projection type
+            ///   - rating: Rating
+            ///   - state: State/province name
+            ///   - timeZone: Time zone
+            public init(
+                city: Swift.String? = nil,
+                country: Swift.String? = nil,
+                dateTimeOriginal: Foundation.Date? = nil,
+                description: Swift.String? = nil,
+                exifImageHeight: Swift.Int? = nil,
+                exifImageWidth: Swift.Int? = nil,
+                exposureTime: Swift.String? = nil,
+                fNumber: Swift.Double? = nil,
+                fileSizeInByte: Swift.Int? = nil,
+                focalLength: Swift.Double? = nil,
+                iso: Swift.Int? = nil,
+                latitude: Swift.Double? = nil,
+                lensModel: Swift.String? = nil,
+                longitude: Swift.Double? = nil,
+                make: Swift.String? = nil,
+                model: Swift.String? = nil,
+                modifyDate: Foundation.Date? = nil,
+                orientation: Swift.String? = nil,
+                projectionType: Swift.String? = nil,
+                rating: Swift.Int? = nil,
+                state: Swift.String? = nil,
+                timeZone: Swift.String? = nil
+            ) {
+                self.city = city
+                self.country = country
+                self.dateTimeOriginal = dateTimeOriginal
+                self.description = description
+                self.exifImageHeight = exifImageHeight
+                self.exifImageWidth = exifImageWidth
+                self.exposureTime = exposureTime
+                self.fNumber = fNumber
+                self.fileSizeInByte = fileSizeInByte
+                self.focalLength = focalLength
+                self.iso = iso
+                self.latitude = latitude
+                self.lensModel = lensModel
+                self.longitude = longitude
+                self.make = make
+                self.model = model
+                self.modifyDate = modifyDate
+                self.orientation = orientation
+                self.projectionType = projectionType
+                self.rating = rating
+                self.state = state
+                self.timeZone = timeZone
+            }
+            public enum CodingKeys: String, CodingKey {
+                case city
+                case country
+                case dateTimeOriginal
+                case description
+                case exifImageHeight
+                case exifImageWidth
+                case exposureTime
+                case fNumber
+                case fileSizeInByte
+                case focalLength
+                case iso
+                case latitude
+                case lensModel
+                case longitude
+                case make
+                case model
+                case modifyDate
+                case orientation
+                case projectionType
+                case rating
+                case state
+                case timeZone
+            }
         }
         /// - Remark: Generated from `#/components/schemas/LoginCredentialDto`.
         public struct LoginCredentialDto: Codable, Hashable, Sendable {
@@ -355,6 +909,209 @@ public enum Components {
                 case redirectUri
                 case successful
             }
+        }
+        /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto`.
+        public struct PeopleUserResponseDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto/avatarColor`.
+            public var avatarColor: Components.Schemas.UserAvatarColor
+            /// User email
+            ///
+            /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto/email`.
+            public var email: Swift.String
+            /// User ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto/id`.
+            public var id: Swift.String
+            /// User name
+            ///
+            /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto/name`.
+            public var name: Swift.String
+            /// Profile change date
+            ///
+            /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto/profileChangedAt`.
+            public var profileChangedAt: Foundation.Date
+            /// Profile image path
+            ///
+            /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto/profileImagePath`.
+            public var profileImagePath: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto/role`.
+            public var role: Components.Schemas.PersonUserRole
+            /// Creates a new `PeopleUserResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - avatarColor:
+            ///   - email: User email
+            ///   - id: User ID
+            ///   - name: User name
+            ///   - profileChangedAt: Profile change date
+            ///   - profileImagePath: Profile image path
+            ///   - role:
+            public init(
+                avatarColor: Components.Schemas.UserAvatarColor,
+                email: Swift.String,
+                id: Swift.String,
+                name: Swift.String,
+                profileChangedAt: Foundation.Date,
+                profileImagePath: Swift.String,
+                role: Components.Schemas.PersonUserRole
+            ) {
+                self.avatarColor = avatarColor
+                self.email = email
+                self.id = id
+                self.name = name
+                self.profileChangedAt = profileChangedAt
+                self.profileImagePath = profileImagePath
+                self.role = role
+            }
+            public enum CodingKeys: String, CodingKey {
+                case avatarColor
+                case email
+                case id
+                case name
+                case profileChangedAt
+                case profileImagePath
+                case role
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/PersonOtherResponseDto`.
+        public struct PersonOtherResponseDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PersonOtherResponseDto/birthDate`.
+            public var birthDate: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PersonOtherResponseDto/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PersonOtherResponseDto/role`.
+            public var role: Components.Schemas.PersonUserRole
+            /// - Remark: Generated from `#/components/schemas/PersonOtherResponseDto/sharedById`.
+            public var sharedById: Swift.String
+            /// Creates a new `PersonOtherResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - birthDate:
+            ///   - name:
+            ///   - role:
+            ///   - sharedById:
+            public init(
+                birthDate: Swift.String? = nil,
+                name: Swift.String,
+                role: Components.Schemas.PersonUserRole,
+                sharedById: Swift.String
+            ) {
+                self.birthDate = birthDate
+                self.name = name
+                self.role = role
+                self.sharedById = sharedById
+            }
+            public enum CodingKeys: String, CodingKey {
+                case birthDate
+                case name
+                case role
+                case sharedById
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/PersonResponseDto`.
+        public struct PersonResponseDto: Codable, Hashable, Sendable {
+            /// Person date of birth
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/birthDate`.
+            public var birthDate: Swift.String?
+            /// Person color (hex)
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/color`.
+            public var color: Swift.String?
+            /// Person ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/id`.
+            public var id: Swift.String
+            /// Is favorite
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/isFavorite`.
+            public var isFavorite: Swift.Bool?
+            /// Is hidden
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/isHidden`.
+            public var isHidden: Swift.Bool
+            /// Person name
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/otherPeople`.
+            public var otherPeople: [Components.Schemas.PersonOtherResponseDto]
+            /// Users that gave the current user access to this person
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/sharedBy`.
+            public var sharedBy: [Components.Schemas.PeopleUserResponseDto]
+            /// Users the current user gave access to this person
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/sharedWith`.
+            public var sharedWith: [Components.Schemas.PeopleUserResponseDto]
+            /// Thumbnail path
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/thumbnailPath`.
+            public var thumbnailPath: Swift.String
+            /// Last update date
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonResponseDto/updatedAt`.
+            public var updatedAt: Foundation.Date?
+            /// Creates a new `PersonResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - birthDate: Person date of birth
+            ///   - color: Person color (hex)
+            ///   - id: Person ID
+            ///   - isFavorite: Is favorite
+            ///   - isHidden: Is hidden
+            ///   - name: Person name
+            ///   - otherPeople:
+            ///   - sharedBy: Users that gave the current user access to this person
+            ///   - sharedWith: Users the current user gave access to this person
+            ///   - thumbnailPath: Thumbnail path
+            ///   - updatedAt: Last update date
+            public init(
+                birthDate: Swift.String? = nil,
+                color: Swift.String? = nil,
+                id: Swift.String,
+                isFavorite: Swift.Bool? = nil,
+                isHidden: Swift.Bool,
+                name: Swift.String,
+                otherPeople: [Components.Schemas.PersonOtherResponseDto],
+                sharedBy: [Components.Schemas.PeopleUserResponseDto],
+                sharedWith: [Components.Schemas.PeopleUserResponseDto],
+                thumbnailPath: Swift.String,
+                updatedAt: Foundation.Date? = nil
+            ) {
+                self.birthDate = birthDate
+                self.color = color
+                self.id = id
+                self.isFavorite = isFavorite
+                self.isHidden = isHidden
+                self.name = name
+                self.otherPeople = otherPeople
+                self.sharedBy = sharedBy
+                self.sharedWith = sharedWith
+                self.thumbnailPath = thumbnailPath
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case birthDate
+                case color
+                case id
+                case isFavorite
+                case isHidden
+                case name
+                case otherPeople
+                case sharedBy
+                case sharedWith
+                case thumbnailPath
+                case updatedAt
+            }
+        }
+        /// Levels of access for managing people resources on behalf of another user.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PersonUserRole`.
+        @frozen public enum PersonUserRole: String, Codable, Hashable, Sendable, CaseIterable {
+            case read = "read"
+            case write = "write"
+            case admin = "admin"
         }
         /// - Remark: Generated from `#/components/schemas/ServerFeaturesDto`.
         public struct ServerFeaturesDto: Codable, Hashable, Sendable {
@@ -553,6 +1310,73 @@ public enum Components {
                 case prerelease
             }
         }
+        /// - Remark: Generated from `#/components/schemas/TagResponseDto`.
+        public struct TagResponseDto: Codable, Hashable, Sendable {
+            /// Tag color (hex)
+            ///
+            /// - Remark: Generated from `#/components/schemas/TagResponseDto/color`.
+            public var color: Swift.String?
+            /// Creation date
+            ///
+            /// - Remark: Generated from `#/components/schemas/TagResponseDto/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Tag ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/TagResponseDto/id`.
+            public var id: Swift.String
+            /// Tag name
+            ///
+            /// - Remark: Generated from `#/components/schemas/TagResponseDto/name`.
+            public var name: Swift.String
+            /// Parent tag ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/TagResponseDto/parentId`.
+            public var parentId: Swift.String?
+            /// Last update date
+            ///
+            /// - Remark: Generated from `#/components/schemas/TagResponseDto/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Tag value (full path)
+            ///
+            /// - Remark: Generated from `#/components/schemas/TagResponseDto/value`.
+            public var value: Swift.String
+            /// Creates a new `TagResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - color: Tag color (hex)
+            ///   - createdAt: Creation date
+            ///   - id: Tag ID
+            ///   - name: Tag name
+            ///   - parentId: Parent tag ID
+            ///   - updatedAt: Last update date
+            ///   - value: Tag value (full path)
+            public init(
+                color: Swift.String? = nil,
+                createdAt: Foundation.Date,
+                id: Swift.String,
+                name: Swift.String,
+                parentId: Swift.String? = nil,
+                updatedAt: Foundation.Date,
+                value: Swift.String
+            ) {
+                self.color = color
+                self.createdAt = createdAt
+                self.id = id
+                self.name = name
+                self.parentId = parentId
+                self.updatedAt = updatedAt
+                self.value = value
+            }
+            public enum CodingKeys: String, CodingKey {
+                case color
+                case createdAt
+                case id
+                case name
+                case parentId
+                case updatedAt
+                case value
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto`.
         public struct TimeBucketAssetResponseDto: Codable, Hashable, Sendable {
             /// Array of city names extracted from EXIF GPS data
@@ -741,6 +1565,79 @@ public enum Components {
             public enum CodingKeys: String, CodingKey {
                 case count
                 case timeBucket
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UpdateAssetDto`.
+        public struct UpdateAssetDto: Codable, Hashable, Sendable {
+            /// Original date and time
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAssetDto/dateTimeOriginal`.
+            public var dateTimeOriginal: Swift.String?
+            /// Asset description
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAssetDto/description`.
+            public var description: Swift.String?
+            /// Mark as favorite
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAssetDto/isFavorite`.
+            public var isFavorite: Swift.Bool?
+            /// Latitude coordinate
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAssetDto/latitude`.
+            public var latitude: Swift.Double?
+            /// Live photo video ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAssetDto/livePhotoVideoId`.
+            public var livePhotoVideoId: Swift.String?
+            /// Longitude coordinate
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAssetDto/longitude`.
+            public var longitude: Swift.Double?
+            /// Rating in range [1-5] (starred), -1 (rejected), or null (unrated)
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAssetDto/rating`.
+            public var rating: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/UpdateAssetDto/visibility`.
+            public var visibility: Components.Schemas.AssetVisibility?
+            /// Creates a new `UpdateAssetDto`.
+            ///
+            /// - Parameters:
+            ///   - dateTimeOriginal: Original date and time
+            ///   - description: Asset description
+            ///   - isFavorite: Mark as favorite
+            ///   - latitude: Latitude coordinate
+            ///   - livePhotoVideoId: Live photo video ID
+            ///   - longitude: Longitude coordinate
+            ///   - rating: Rating in range [1-5] (starred), -1 (rejected), or null (unrated)
+            ///   - visibility:
+            public init(
+                dateTimeOriginal: Swift.String? = nil,
+                description: Swift.String? = nil,
+                isFavorite: Swift.Bool? = nil,
+                latitude: Swift.Double? = nil,
+                livePhotoVideoId: Swift.String? = nil,
+                longitude: Swift.Double? = nil,
+                rating: Swift.Int? = nil,
+                visibility: Components.Schemas.AssetVisibility? = nil
+            ) {
+                self.dateTimeOriginal = dateTimeOriginal
+                self.description = description
+                self.isFavorite = isFavorite
+                self.latitude = latitude
+                self.livePhotoVideoId = livePhotoVideoId
+                self.longitude = longitude
+                self.rating = rating
+                self.visibility = visibility
+            }
+            public enum CodingKeys: String, CodingKey {
+                case dateTimeOriginal
+                case description
+                case isFavorite
+                case latitude
+                case livePhotoVideoId
+                case longitude
+                case rating
+                case visibility
             }
         }
         /// - Remark: Generated from `#/components/schemas/UserAdminResponseDto`.
@@ -960,6 +1857,63 @@ public enum Components {
                 case licenseKey
             }
         }
+        /// - Remark: Generated from `#/components/schemas/UserResponseDto`.
+        public struct UserResponseDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UserResponseDto/avatarColor`.
+            public var avatarColor: Components.Schemas.UserAvatarColor
+            /// User email
+            ///
+            /// - Remark: Generated from `#/components/schemas/UserResponseDto/email`.
+            public var email: Swift.String
+            /// User ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/UserResponseDto/id`.
+            public var id: Swift.String
+            /// User name
+            ///
+            /// - Remark: Generated from `#/components/schemas/UserResponseDto/name`.
+            public var name: Swift.String
+            /// Profile change date
+            ///
+            /// - Remark: Generated from `#/components/schemas/UserResponseDto/profileChangedAt`.
+            public var profileChangedAt: Foundation.Date
+            /// Profile image path
+            ///
+            /// - Remark: Generated from `#/components/schemas/UserResponseDto/profileImagePath`.
+            public var profileImagePath: Swift.String
+            /// Creates a new `UserResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - avatarColor:
+            ///   - email: User email
+            ///   - id: User ID
+            ///   - name: User name
+            ///   - profileChangedAt: Profile change date
+            ///   - profileImagePath: Profile image path
+            public init(
+                avatarColor: Components.Schemas.UserAvatarColor,
+                email: Swift.String,
+                id: Swift.String,
+                name: Swift.String,
+                profileChangedAt: Foundation.Date,
+                profileImagePath: Swift.String
+            ) {
+                self.avatarColor = avatarColor
+                self.email = email
+                self.id = id
+                self.name = name
+                self.profileChangedAt = profileChangedAt
+                self.profileImagePath = profileImagePath
+            }
+            public enum CodingKeys: String, CodingKey {
+                case avatarColor
+                case email
+                case id
+                case name
+                case profileChangedAt
+                case profileImagePath
+            }
+        }
         /// User status
         ///
         /// - Remark: Generated from `#/components/schemas/UserStatus`.
@@ -998,6 +1952,298 @@ public enum Components {
 
 /// API operations, with input and output types, generated from `#/paths` in the OpenAPI document.
 public enum Operations {
+    /// Retrieve an asset
+    ///
+    /// Retrieve detailed information about a specific asset.
+    ///
+    /// - Remark: HTTP `GET /assets/{id}`.
+    /// - Remark: Generated from `#/paths//assets/{id}/get(getAssetInfo)`.
+    public enum GetAssetInfo {
+        public static let id: Swift.String = "getAssetInfo"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/assets/{id}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/{id}/GET/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.GetAssetInfo.Input.Path
+            /// - Remark: Generated from `#/paths/assets/{id}/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/{id}/GET/query/key`.
+                public var key: Swift.String?
+                /// - Remark: Generated from `#/paths/assets/{id}/GET/query/slug`.
+                public var slug: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - key:
+                ///   - slug:
+                public init(
+                    key: Swift.String? = nil,
+                    slug: Swift.String? = nil
+                ) {
+                    self.key = key
+                    self.slug = slug
+                }
+            }
+            public var query: Operations.GetAssetInfo.Input.Query
+            /// - Remark: Generated from `#/paths/assets/{id}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAssetInfo.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAssetInfo.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetAssetInfo.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - query:
+            ///   - headers:
+            public init(
+                path: Operations.GetAssetInfo.Input.Path,
+                query: Operations.GetAssetInfo.Input.Query = .init(),
+                headers: Operations.GetAssetInfo.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/{id}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/assets/{id}/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AssetResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AssetResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetAssetInfo.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetAssetInfo.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//assets/{id}/get(getAssetInfo)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetAssetInfo.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetAssetInfo.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Update an asset
+    ///
+    /// Update information of a specific asset.
+    ///
+    /// - Remark: HTTP `PUT /assets/{id}`.
+    /// - Remark: Generated from `#/paths//assets/{id}/put(updateAsset)`.
+    public enum UpdateAsset {
+        public static let id: Swift.String = "updateAsset"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/assets/{id}/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/{id}/PUT/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.UpdateAsset.Input.Path
+            /// - Remark: Generated from `#/paths/assets/{id}/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateAsset.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateAsset.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateAsset.Input.Headers
+            /// - Remark: Generated from `#/paths/assets/{id}/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/{id}/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.UpdateAssetDto)
+            }
+            public var body: Operations.UpdateAsset.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UpdateAsset.Input.Path,
+                headers: Operations.UpdateAsset.Input.Headers = .init(),
+                body: Operations.UpdateAsset.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/{id}/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/assets/{id}/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AssetResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AssetResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateAsset.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateAsset.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//assets/{id}/put(updateAsset)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateAsset.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateAsset.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Login
     ///
     /// Login with username and password and receive a session token.

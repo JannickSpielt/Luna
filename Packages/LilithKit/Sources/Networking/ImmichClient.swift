@@ -33,6 +33,7 @@ public struct ImmichClient: Sendable {
         configuration.timeoutIntervalForRequest = 15
         self.client = ImmichAPI.Client(
             serverURL: address.apiURL,
+            configuration: .init(dateTranscoder: ImmichDatum()),
             transport: transport ?? URLSessionTransport(configuration: .init(session: URLSession(configuration: configuration))),
             middlewares: [AuthMiddleware(credential: credential)]
         )

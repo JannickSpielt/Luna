@@ -43,3 +43,16 @@ Der Sprung ist entscheidend, weil Scrubber, „Heute vor X Jahren“ und Sucherg
   2. Überflogene Monate werden nicht geladen: kurze Wartezeit von 120 ms und nur Monate in der Nähe des Sichtbaren. Laufende Anfragen für verlassene Monate werden abgebrochen.
   3. Vorladen für die alte Position wird beim Sprung gestoppt.
 - **Noch kein Offline-Spiegel:** Die Monatsdaten liegen nur im Arbeitsspeicher. Die Datenbank (GRDB) für einen Offline-Spiegel und schnelleren Start folgt als eigener Schritt.
+
+## 3. Detailansicht (Schritt 5, 11.11.2026)
+
+- **Öffnen:** Antippen im Grid (auf dem Mac Doppelklick) öffnet das Foto über der Bibliothek, mit Zoom-Übergang aus der Kachel. Schließen: Zurück-Knopf, nach unten ziehen oder Esc.
+- **Blättern:** Es werden nie alle Fotos als Seiten angelegt, sondern ein Fenster von 40 Fotos vor und nach dem aktuellen. Kommt man dem Rand nahe, wird das Fenster neu um das aktuelle Foto gelegt. Monate, die dabei erreicht werden, lädt die App sofort nach.
+- **Bilder:** Erst das kleine Vorschaubild (meist schon im Cache), dann Immichs „preview“ (ca. 1440 px). Das Original wird nur zum Teilen geladen, noch nicht beim Hineinzoomen.
+- **Videos:** `AVPlayer` mit Anmelde-Headern über Immichs Wiedergabe-Adresse. Geprüft gegen den echten Server.
+- **Live Photos:** Der „Live“-Knopf spielt das zugehörige kurze Video einmal über dem Foto ab.
+- **Favorit:** Wird sofort angezeigt und dann an den Server geschickt. Bei einem Fehler wird die Anzeige zurückgestellt.
+- **Teilen:** Die Originaldatei wird erst geladen, wenn wirklich geteilt wird.
+- **Datumsangaben:** Immich schickt Zeitpunkte mit und ohne Sekundenbruchteile. Beides wird gelesen (vorher konnte das Laden von Nutzerdaten daran still scheitern).
+
+**Offen:** Original in voller Auflösung beim starken Hineinzoomen, Löschen/Archivieren (Schritt 6), nach oben wischen für das Info-Panel.

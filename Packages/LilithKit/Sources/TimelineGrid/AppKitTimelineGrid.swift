@@ -13,6 +13,17 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
     /// Scroll-Position von 0 (neuester Monat) bis 1 (ältester Monat).
     public var onScroll: ((Double) -> Void)?
     var letzterSprung: UUID?
+    /// Ein Foto wurde doppelt angeklickt: Monat, Position und Rahmen der Kachel im Fenster (Ursprung oben links).
+    public var onTap: ((Int, Int, CGRect) -> Void)?
+
+    @objc private func doppelklick(_ geste: NSClickGestureRecognizer) {
+        guard let pfad = collectionView.indexPathForItem(at: geste.location(in: collectionView)),
+              quelle.item(section: pfad.section, index: pfad.item) != nil,
+              let ansicht = collectionView.item(at: pfad)?.view else { return }
+        var rahmen = ansicht.convert(ansicht.bounds, to: nil)
+        if let hoehe = view.window?.contentView?.bounds.height { rahmen.origin.y = hoehe - rahmen.maxY }
+        onTap?(pfad.section, pfad.item, rahmen)
+    }
 
     private var collectionView: NSCollectionView!
     private var scrollView: NSScrollView!
@@ -53,6 +64,10 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
         NotificationCenter.default.addObserver(self, selector: #selector(gescrollt),
                                                name: NSView.boundsDidChangeNotification, object: scrollView.contentView)
         collectionView.addGestureRecognizer(NSMagnificationGestureRecognizer(target: self, action: #selector(lupe(_:))))
+        let klick = NSClickGestureRecognizer(target: self, action: #selector(doppelklick(_:)))
+        klick.numberOfClicksRequired = 2
+        klick.delaysPrimaryMouseButtonEvents = false
+        collectionView.addGestureRecognizer(klick)
         verbindeQuelle()
     }
 

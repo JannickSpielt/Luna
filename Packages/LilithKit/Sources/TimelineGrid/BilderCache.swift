@@ -15,6 +15,11 @@ public enum BilderCache {
         ImagePipeline.shared = ImagePipeline(configuration: konfiguration)
     }
 
+    /// Lädt ein Bild in voller Größe (über denselben Cache), z. B. für die Detailansicht.
+    public static func lade(_ anfrage: URLRequest) async throws -> PlattformBild {
+        try await ImagePipeline.shared.image(for: ImageRequest(urlRequest: anfrage))
+    }
+
     /// Anfrage für eine Kachel mit passender Größe (spart Speicher beim Dekodieren).
     static func anfrage(_ urlRequest: URLRequest, pixel: CGFloat) -> ImageRequest {
         ImageRequest(urlRequest: urlRequest,

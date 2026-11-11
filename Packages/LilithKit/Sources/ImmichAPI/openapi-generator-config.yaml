@@ -20,3 +20,6 @@ filter:
     # Timeline
     - getTimeBuckets
     - getTimeBucket
+    # Einzelnes Foto
+    - getAssetInfo
+    - updateAsset

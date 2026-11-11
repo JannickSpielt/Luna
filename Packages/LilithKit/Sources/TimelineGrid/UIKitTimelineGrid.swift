@@ -17,6 +17,15 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
     /// Scroll-Position von 0 (neuester Monat) bis 1 (ältester Monat).
     public var onScroll: ((Double) -> Void)?
     var letzterSprung: UUID?
+    /// Ein Foto wurde angetippt: Monat, Position und Rahmen der Kachel im Fenster.
+    public var onTap: ((Int, Int, CGRect) -> Void)?
+
+    public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: false)
+        guard quelle.item(section: indexPath.section, index: indexPath.item) != nil,
+              let zelle = collectionView.cellForItem(at: indexPath) else { return }
+        onTap?(indexPath.section, indexPath.item, zelle.convert(zelle.bounds, to: nil))
+    }
 
     private var collectionView: UICollectionView!
     private var pinchSchonGestuft = false

@@ -118,14 +118,6 @@ extension ImmichClient {
 
     /// Anfrage für ein Vorschaubild, inklusive Anmeldung. Wird vom Bilder-Cache (Nuke) geladen.
     public func vorschauAnfrage(assetId: String, groesse: VorschauGroesse) -> URLRequest {
-        var url = address.apiURL.appending(path: "assets").appending(path: assetId).appending(path: "thumbnail")
-        url.append(queryItems: [URLQueryItem(name: "size", value: groesse.rawValue)])
-        var anfrage = URLRequest(url: url)
-        switch credential {
-        case .accessToken(let token): anfrage.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        case .apiKey(let key): anfrage.setValue(key, forHTTPHeaderField: "x-api-key")
-        case nil: break
-        }
-        return anfrage
+        anfrage(["assets", assetId, "thumbnail"], query: [URLQueryItem(name: "size", value: groesse.rawValue)])
     }
 }

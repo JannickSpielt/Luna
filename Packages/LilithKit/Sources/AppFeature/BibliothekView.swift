@@ -13,6 +13,14 @@ struct BibliothekView: View {
     @State private var zoom: GridZoom = Self.startZoom
     @State private var sprung: SprungAnfrage?
     @State private var scrollAnteil = 0.0
+    @State private var detail: DetailStart?
+
+    /// Welches Foto geöffnet wurde und wo seine Kachel im Fenster liegt (für den Zoom-Übergang).
+    struct DetailStart: Equatable {
+        let id = UUID()
+        let position: DetailPosition
+        let rahmen: CGRect
+    }
 
     private static var startZoom: GridZoom {
         #if os(macOS)
@@ -29,6 +37,25 @@ struct BibliothekView: View {
                 .navigationTitle("Bibliothek")
                 .toolbar { werkzeuge }
         }
+        .overlay {
+            GeometryReader { geo in
+                if let detail {
+                    let flaeche = geo.frame(in: .global)
+                    DetailView(quelle: quelle, store: store, start: detail.position) { ende in
+                        // Das Grid dorthin mitnehmen, wo man beim Blättern gelandet ist.
+                        if ende.section != detail.position.section { sprung = SprungAnfrage(section: ende.section) }
+                        self.detail = nil
+                    }
+                    .transition(.scale(scale: 0.15, anchor: UnitPoint(
+                        x: (detail.rahmen.midX - flaeche.minX) / max(flaeche.width, 1),
+                        y: (detail.rahmen.midY - flaeche.minY) / max(flaeche.height, 1))).combined(with: .opacity))
+                }
+            }
+        }
+        .animation(.spring(duration: 0.32), value: detail)
+        #if os(iOS)
+        .toolbarVisibility(detail == nil ? .automatic : .hidden, for: .tabBar)
+        #endif
         .task {
             if let store, store.zustand == .laedt { await store.laden() }
             #if DEBUG
@@ -65,7 +92,9 @@ struct BibliothekView: View {
                     .buttonStyle(.borderedProminent)
             }
         case .bereit:
-            TimelineGridView(quelle: quelle, zoom: $zoom, sprung: sprung) { scrollAnteil = $0 }
+            TimelineGridView(quelle: quelle, zoom: $zoom, sprung: sprung, onTap: { section, index, rahmen in
+                detail = DetailStart(position: DetailPosition(section: section, index: index), rahmen: rahmen)
+            }, onScroll: { scrollAnteil = $0 })
                 .ignoresSafeArea(edges: .bottom)
                 .overlay(alignment: .trailing) {
                     Scrubber(quelle: quelle, anteil: scrollAnteil) { sprung = SprungAnfrage(section: $0) }
