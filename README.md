@@ -1,76 +1,92 @@
 <!-- Swimmich | Project README -->
 
 <div align="center">
-  <img src="assets/swimmich-logo.svg" alt="Swimmich logo" width="160" />
+  <img src="assets/swimmich-logo.svg" alt="Swimmich Logo" width="150" />
 
   <h1>Swimmich</h1>
-  <p><strong>Deine Immich-Fotobibliothek. Nativ auf iOS.</strong></p>
-  <p>Ein unabhängiges SwiftUI-Projekt, das Immich mit einer speziell für iPhone und iPad entwickelten Oberfläche verbindet.</p>
+  <p><strong>Deine Immich-Fotobibliothek. Nativ auf Apple-Geräten.</strong></p>
+  <p>Ein SwiftUI-App-Konzept für den Zugriff auf den eigenen Immich-Server – mit Fokus auf eine moderne, flüssige Fotoerfahrung.</p>
 
   <p>
-    <img src="https://img.shields.io/badge/platform-iOS%20%2F%20iPadOS-147EFB?style=flat-square" alt="iOS and iPadOS" />
-    <img src="https://img.shields.io/badge/built%20with-SwiftUI-orange?style=flat-square&logo=swift&logoColor=white" alt="Built with SwiftUI" />
-    <img src="https://img.shields.io/badge/status-Planning-8B8B8B?style=flat-square" alt="Planning" />
-    <img src="https://img.shields.io/badge/backend-Immich-4250AF?style=flat-square" alt="Immich backend" />
+    <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS-147EFB?style=flat-square&logo=apple&logoColor=white" alt="iOS and iPadOS" />
+    <img src="https://img.shields.io/badge/Technologie-SwiftUI-orange?style=flat-square&logo=swift&logoColor=white" alt="SwiftUI" />
+    <img src="https://img.shields.io/badge/Backend-Immich-4250AF?style=flat-square" alt="Immich" />
+    <img src="https://img.shields.io/badge/Status-Konzept-64748b?style=flat-square" alt="Konzeptphase" />
+  </p>
+
+  <p>
+    <a href="https://immich.app/">Immich kennenlernen</a>
+    ·
+    <a href="https://api.immich.app/">Immich API</a>
   </p>
 </div>
 
 ---
 
-## Über Swimmich
+## Die Idee
 
-Swimmich soll eine native iOS-App für bestehende **[Immich](https://immich.app/)-Server** werden. Statt eine eigene Foto-Cloud aufzubauen, nutzt die App die vorhandene Immich-Instanz und deren API.
+**Swimmich** soll eine native Begleit-App für selbst gehostete [Immich](https://immich.app/)-Instanzen werden. Die Fotos und Videos bleiben auf deinem eigenen Server. Swimmich stellt dafür eine Oberfläche bereit, die sich auf iPhone und iPad zu Hause fühlt.
 
-Das Ziel: eine flüssige, auf Apple-Geräte abgestimmte Fotoverwaltung mit einer vertrauten Bedienung und direkter Verbindung zum eigenen Server.
+Das Projekt baut keine eigene Cloud und ersetzt keinen Immich-Server. Es soll dessen vorhandene Schnittstellen nutzen und den Zugriff auf die persönliche Medienbibliothek angenehmer machen.
 
-> **Hinweis:** Swimmich ist ein unabhängiges Community-Projekt und kein offizielles Produkt des Immich-Teams.
+> Swimmich ist ein unabhängiges Community-Projekt und steht in keiner offiziellen Verbindung zum Immich-Team.
 
-## Geplant
+## Geplante Funktionen
 
-| Bereich | Geplante Funktionen |
+| Bereich | Ziel |
 | --- | --- |
-| Verbindung | Eigene Immich-Serveradresse eintragen |
-| Anmeldung | Anmeldung mit dem bestehenden Immich-Konto |
-| Timeline | Fotos und Videos chronologisch durchsuchen |
-| Medienansicht | Fotos im Vollbild ansehen und Videos abspielen |
-| Alben | Alben anzeigen und verwalten |
-| Favoriten | Lieblingsfotos schnell wiederfinden |
-| Später | Suche, Erinnerungen und lokaler Cache |
+| **Serververbindung** | Adresse der eigenen Immich-Instanz hinterlegen |
+| **Anmeldung** | Mit dem bestehenden Immich-Konto verbinden |
+| **Timeline** | Fotos und Videos chronologisch durchstöbern |
+| **Medienansicht** | Bilder groß ansehen und Videos wiedergeben |
+| **Alben** | Eigene Alben anzeigen und verwalten |
+| **Favoriten** | Markierte Medien schnell wiederfinden |
+| **Performance** | Zwischenspeicherung für flüssiges Laden |
 
-Die Funktionen sind geplant und noch nicht als verfügbar zu verstehen.
+Alle Punkte sind Entwicklungsziele. Sie sind noch keine bestätigten oder verfügbaren App-Funktionen.
 
 ## Technischer Ansatz
 
-- **Swift** als Programmiersprache
-- **SwiftUI** für eine native Benutzeroberfläche
-- **Immich REST API** für die Kommunikation mit dem Server
-- **Keychain** für die sichere Aufbewahrung von Sitzungstokens
-- **Lokaler Cache** für eine schnelle und zuverlässige Medienansicht
+Swimmich ist als native Apple-App geplant:
 
-API-Dokumentation: [api.immich.app](https://api.immich.app/)
+- **Swift** als Programmiersprache
+- **SwiftUI** für die Benutzeroberfläche
+- **Immich REST API** als Verbindung zum eigenen Server
+- **Keychain** zur sicheren Speicherung sensibler Anmeldedaten
+- **Lokaler Cache** zur Unterstützung einer schnellen Medienansicht
+
+Die konkrete Architektur wird während der Entwicklung festgelegt. Sicherheit, zuverlässige Synchronisierung und eine gute Bedienbarkeit haben dabei Vorrang.
+
+## Entwicklungsplan
+
+Die Entwicklung soll in überschaubaren Schritten erfolgen:
+
+- [ ] Grundgerüst der SwiftUI-App
+- [ ] Serveradresse und Verbindung einrichten
+- [ ] Anmeldung und sichere Sitzungsspeicherung
+- [ ] Foto- und Video-Timeline
+- [ ] Detailansicht und Videowiedergabe
+- [ ] Alben und Favoriten
+- [ ] Cache und Performance-Optimierung
 
 ## Projektstatus
 
-Swimmich befindet sich in der frühen Planungsphase. Der erste Meilenstein ist eine zuverlässige Verbindung zu einem selbst gehosteten Immich-Server.
+<badge>Konzeptphase</badge>
 
-- [ ] Projektgrundlage in SwiftUI
-- [ ] Serveradresse konfigurieren
-- [ ] Anmeldung und Sitzungsverwaltung
-- [ ] Foto- und Video-Timeline
-- [ ] Detailansicht für Medien
-- [ ] Alben und Favoriten
-- [ ] Caching und Performance
+Swimmich befindet sich noch am Anfang der Entwicklung. Es gibt derzeit keine veröffentlichte, installierbare Version. Sobald ein erster funktionsfähiger Stand existiert, werden hier Screenshots, Einrichtungshinweise und weitere technische Informationen ergänzt.
 
-## Entwicklung
+## Voraussetzungen
 
-Sobald die erste lauffähige Projektversion bereitsteht, werden hier die Voraussetzungen, Einrichtung und Entwicklungsanleitung ergänzt.
+Für die geplante Nutzung wird ein erreichbarer Immich-Server benötigt. Die App soll mit einer bestehenden Immich-Instanz und einem dort eingerichteten Benutzerkonto arbeiten.
+
+Weitere Mindestversionen und Build-Anleitungen werden ergänzt, sobald die technische Basis feststeht.
 
 ## Lizenz und Nutzung
 
-Für dieses Repository wurde derzeit **keine Lizenz** hinterlegt. Es gelten daher die standardmäßigen urheberrechtlichen Bestimmungen. Eine öffentliche Nutzung, Weiterverbreitung oder Änderung wird durch dieses Repository nicht pauschal gestattet.
+Für dieses Repository wurde derzeit **keine Lizenz** hinterlegt. Es gelten daher die standardmäßigen urheberrechtlichen Bestimmungen. Das Einsehen des Quellcodes ist keine pauschale Erlaubnis zur Nutzung, Änderung oder Weiterverbreitung.
 
 ---
 
 <div align="center">
-  <sub>Made with Swift · Designed for your own photo library</sub>
+  <sub>Ein unabhängiges SwiftUI-Projekt für die eigene Immich-Bibliothek.</sub>
 </div>
