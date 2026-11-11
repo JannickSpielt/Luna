@@ -1,11 +1,11 @@
-<!-- Swimmich | Project README -->
+<!-- Lilith | Project README -->
 
 <div align="center">
-  <img src="assets/swimmich-logo.svg" alt="Swimmich Logo" width="150" />
+  <img src="assets/swimmich-logo.svg" alt="Lilith App Icon Placeholder" width="150" />
 
-  <h1>Swimmich</h1>
+  <h1>Lilith</h1>
   <p><strong>Deine Immich-Fotobibliothek. Nativ auf Apple-Geräten.</strong></p>
-  <p>Ein SwiftUI-App-Konzept für den Zugriff auf den eigenen Immich-Server – mit Fokus auf eine moderne, flüssige Fotoerfahrung.</p>
+  <p>Eine native SwiftUI-App für den Zugriff auf den eigenen Immich-Server – mit Fokus auf eine moderne, flüssige Fotoerfahrung.</p>
 
   <p>
     <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS-147EFB?style=flat-square&logo=apple&logoColor=white" alt="iOS and iPadOS" />
@@ -25,11 +25,11 @@
 
 ## Die Idee
 
-**Swimmich** soll eine native Begleit-App für selbst gehostete [Immich](https://immich.app/)-Instanzen werden. Die Fotos und Videos bleiben auf deinem eigenen Server. Swimmich stellt dafür eine Oberfläche bereit, die sich auf iPhone und iPad zu Hause fühlt.
+**Lilith** soll eine native Begleit-App für selbst gehostete [Immich](https://immich.app/)-Instanzen werden. Die Fotos und Videos bleiben auf deinem eigenen Server. Lilith stellt dafür eine Oberfläche bereit, die sich auf iPhone und iPad zu Hause fühlt.
 
 Das Projekt baut keine eigene Cloud und ersetzt keinen Immich-Server. Es soll dessen vorhandene Schnittstellen nutzen und den Zugriff auf die persönliche Medienbibliothek angenehmer machen.
 
-> Swimmich ist ein unabhängiges Community-Projekt und steht in keiner offiziellen Verbindung zum Immich-Team.
+> Lilith ist ein unabhängiges Community-Projekt und steht in keiner offiziellen Verbindung zum Immich-Team.
 
 ## Geplante Funktionen
 
@@ -47,7 +47,7 @@ Alle Punkte sind Entwicklungsziele. Sie sind noch keine bestätigten oder verfü
 
 ## Technischer Ansatz
 
-Swimmich ist als native Apple-App geplant:
+Lilith ist als native Apple-App geplant:
 
 - **Swift** als Programmiersprache
 - **SwiftUI** für die Benutzeroberfläche
@@ -73,7 +73,7 @@ Die Entwicklung soll in überschaubaren Schritten erfolgen:
 
 <badge>Konzeptphase</badge>
 
-Swimmich befindet sich noch am Anfang der Entwicklung. Es gibt derzeit keine veröffentlichte, installierbare Version. Sobald ein erster funktionsfähiger Stand existiert, werden hier Screenshots, Einrichtungshinweise und weitere technische Informationen ergänzt.
+Lilith befindet sich noch am Anfang der Entwicklung. Es gibt derzeit keine veröffentlichte, installierbare Version. Sobald ein erster funktionsfähiger Stand existiert, werden hier Screenshots, Einrichtungshinweise und weitere technische Informationen ergänzt.
 
 ## Voraussetzungen
 
@@ -88,5 +88,5 @@ Für dieses Repository wurde derzeit **keine Lizenz** hinterlegt. Es gelten dahe
 ---
 
 <div align="center">
-  <sub>Ein unabhängiges SwiftUI-Projekt für die eigene Immich-Bibliothek.</sub>
+  <sub>Lilith – ein unabhängiges SwiftUI-Projekt für die eigene Immich-Bibliothek.</sub>
 </div>
