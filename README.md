@@ -8,7 +8,7 @@
   <p>Eine native SwiftUI-App für den Zugriff auf den eigenen Immich-Server – mit Fokus auf eine moderne, flüssige Fotoerfahrung.</p>
 
   <p>
-    <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS-147EFB?style=flat-square&logo=apple&logoColor=white" alt="iOS and iPadOS" />
+    <img src="https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS%20%7C%20macOS-147EFB?style=flat-square&logo=apple&logoColor=white" alt="iOS, iPadOS and macOS" />
     <img src="https://img.shields.io/badge/Technologie-SwiftUI-orange?style=flat-square&logo=swift&logoColor=white" alt="SwiftUI" />
     <img src="https://img.shields.io/badge/Backend-Immich-4250AF?style=flat-square" alt="Immich" />
     <img src="https://img.shields.io/badge/Status-Konzept-64748b?style=flat-square" alt="Konzeptphase" />
@@ -47,7 +47,7 @@ Alle Punkte sind Entwicklungsziele. Sie sind noch keine bestätigten oder verfü
 
 ## Technischer Ansatz
 
-Lilith ist als native Apple-App geplant:
+Lilith ist als native Apple-App für iPhone, iPad und Mac geplant:
 
 - **Swift** als Programmiersprache
 - **SwiftUI** für die Benutzeroberfläche
@@ -61,7 +61,7 @@ Die konkrete Architektur wird während der Entwicklung festgelegt. Sicherheit, z
 
 Die Entwicklung soll in überschaubaren Schritten erfolgen:
 
-- [ ] Grundgerüst der SwiftUI-App
+- [x] Grundgerüst der SwiftUI-App
 - [ ] Serveradresse und Verbindung einrichten
 - [ ] Anmeldung und sichere Sitzungsspeicherung
 - [ ] Foto- und Video-Timeline
@@ -90,3 +90,15 @@ Für dieses Repository wurde derzeit **keine Lizenz** hinterlegt. Es gelten dahe
 <div align="center">
   <sub>Lilith – ein unabhängiges SwiftUI-Projekt für die eigene Immich-Bibliothek.</sub>
 </div>
+
+## Entwicklung
+
+Den vollständigen, freigegebenen Plan findest du in [docs/PLAN.md](docs/PLAN.md).
+
+Voraussetzungen: Xcode 26 oder neuer und [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+
+```bash
+cd App && xcodegen && open Lilith.xcodeproj
+```
+
+Die Logik liegt im Swift Package `Packages/LilithKit`. Tests laufen mit `swift test` in diesem Ordner.

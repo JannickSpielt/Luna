@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Xcode-Version anzeigen
+        run: xcodebuild -version
+
+      - name: LilithKit testen
+        working-directory: Packages/LilithKit
+        run: swift test
+
+      - name: Xcode-Projekt erzeugen
+        run: |
+          brew install xcodegen
+          cd App && xcodegen
+
+      - name: App für iOS bauen
+        working-directory: App
+        run: >
+          xcodebuild -project Lilith.xcodeproj -scheme Lilith
+          -destination 'generic/platform=iOS Simulator'
+          build CODE_SIGNING_ALLOWED=NO
+
+      - name: App für macOS bauen
+        working-directory: App
+        run: >
+          xcodebuild -project Lilith.xcodeproj -scheme Lilith
+          -destination 'platform=macOS'
+          build CODE_SIGNING_ALLOWED=NO
