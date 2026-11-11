@@ -1,19 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 512 512" fill="none">
+  <title>Swimmich placeholder app icon</title>
   <defs>
-    <linearGradient id="g" x1="70" y1="55" x2="440" y2="455" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#69C8FF"/>
-      <stop offset="1" stop-color="#5265E8"/>
-    </linearGradient>
-    <linearGradient id="shine" x1="142" y1="112" x2="370" y2="395" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFFFFF" stop-opacity=".95"/>
-      <stop offset="1" stop-color="#D9E8FF" stop-opacity=".82"/>
-    </linearGradient>
+    <clipPath id="app"><rect x="20" y="20" width="472" height="472" rx="112"/></clipPath>
   </defs>
-  <rect x="24" y="24" width="464" height="464" rx="112" fill="#101B35"/>
-  <rect x="24" y="24" width="464" height="464" rx="112" stroke="#FFFFFF" stroke-opacity=".12" stroke-width="2"/>
-  <path d="M114 178C114 145.967 139.967 120 172 120H340C372.033 120 398 145.967 398 178V334C398 366.033 372.033 392 340 392H172C139.967 392 114 366.033 114 334V178Z" fill="url(#g)" fill-opacity=".18" stroke="url(#g)" stroke-width="10"/>
-  <path d="M153 311L215 245L258 286L302 230L359 311H153Z" fill="url(#shine)"/>
-  <circle cx="324" cy="184" r="25" fill="#F8FCFF"/>
-  <path d="M112 353C153 389 205 410 263 410C319 410 368 390 405 356" stroke="url(#g)" stroke-width="12" stroke-linecap="round"/>
-  <path d="M116 354C151 378 190 390 230 393" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="5" stroke-linecap="round"/>
+  <g clip-path="url(#app)">
+    <rect x="20" y="20" width="472" height="472" fill="#fff"/>
+    <g stroke="#9B9B9B" stroke-width="2.5" opacity=".58">
+      <path d="M20 104H492M20 188H492M20 256H492M20 324H492M20 408H492"/>
+      <path d="M104 20V492M188 20V492M256 20V492M324 20V492M408 20V492"/>
+      <path d="M20 20L492 492M492 20L20 492"/>
+      <circle cx="256" cy="256" r="64"/>
+      <circle cx="256" cy="256" r="112"/>
+      <circle cx="256" cy="256" r="196"/>
+      <path d="M60 20V492M452 20V492M20 60H492M20 452H492" opacity=".35"/>
+    </g>
+  </g>
+  <rect x="20.75" y="20.75" width="470.5" height="470.5" rx="111.25" stroke="#D6D6D6" stroke-width="1.5"/>
 </svg>
