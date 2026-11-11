@@ -102,3 +102,6 @@ cd App && xcodegen && open Lilith.xcodeproj
 ```
 
 Die Logik liegt im Swift Package `Packages/LilithKit`. Tests laufen mit `swift test` in diesem Ordner.
+
+Neue Immich-Endpunkte nutzen: in `Packages/LilithKit/Sources/ImmichAPI/openapi-generator-config.yaml` eintragen und `scripts/generate-api.sh` ausführen.
+Tests gegen einen echten Server: `LILITH_LIVE_SERVER=https://dein-server swift test` im Ordner `Packages/LilithKit`.

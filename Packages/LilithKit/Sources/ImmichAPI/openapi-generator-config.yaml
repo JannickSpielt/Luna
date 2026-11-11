@@ -1,0 +1,19 @@
+# Nur die Endpunkte, die Lilith wirklich nutzt. Neue Endpunkte hier eintragen
+# und danach scripts/generate-api.sh ausführen.
+generate:
+  - types
+  - client
+accessModifier: public
+namingStrategy: idiomatic
+filter:
+  operations:
+    # Server
+    - pingServer
+    - getServerVersion
+    - getServerFeatures
+    # Anmeldung
+    - login
+    - logout
+    - validateAccessToken
+    # Konto
+    - getMyUser
