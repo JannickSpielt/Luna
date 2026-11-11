@@ -20,7 +20,43 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
     /// Ein Foto wurde angetippt: Monat, Position und Rahmen der Kachel im Fenster.
     public var onTap: ((Int, Int, CGRect) -> Void)?
 
+    /// Mehrfachauswahl: Antippen markiert Fotos, statt sie zu öffnen.
+    public var auswahlModus = false {
+        didSet {
+            guard auswahlModus != oldValue, let collectionView else { return }
+            collectionView.allowsMultipleSelection = auswahlModus
+            if !auswahlModus { leereAuswahl() }
+        }
+    }
+    /// Meldet die IDs der markierten Fotos.
+    public var onAuswahl: (([String]) -> Void)?
+    var auswahlStand = 0
+
+    public func leereAuswahl() {
+        guard let collectionView else { return }
+        for pfad in collectionView.indexPathsForSelectedItems ?? [] { collectionView.deselectItem(at: pfad, animated: false) }
+        onAuswahl?([])
+    }
+
+    private func meldeAuswahl() {
+        let ids = (collectionView.indexPathsForSelectedItems ?? []).compactMap { quelle.item(section: $0.section, index: $0.item)?.id }
+        onAuswahl?(ids)
+    }
+
+    public func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
+        quelle.item(section: indexPath.section, index: indexPath.item) != nil
+    }
+
+    public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+        if auswahlModus { meldeAuswahl() }
+    }
+
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if auswahlModus {
+            meldeAuswahl()
+            UISelectionFeedbackGenerator().selectionChanged()
+            return
+        }
         collectionView.deselectItem(at: indexPath, animated: false)
         guard quelle.item(section: indexPath.section, index: indexPath.item) != nil,
               let zelle = collectionView.cellForItem(at: indexPath) else { return }
@@ -64,6 +100,12 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
     private func verbindeQuelle() {
         quelle.onMonatGeladen = { [weak self] section, anzahlGeaendert in
             self?.monatGeladen(section, anzahlGeaendert: anzahlGeaendert)
+        }
+        quelle.onAllesNeu = { [weak self] in
+            guard let self, let collectionView = self.collectionView else { return }
+            self.letzteSichtbare = []
+            collectionView.reloadData()
+            self.onAuswahl?([])
         }
     }
 
@@ -289,6 +331,16 @@ final class GridZelle: UICollectionViewCell {
     private let bild = UIImageView()
     private let badge = UILabel()
     private let herz = UIImageView(image: UIImage(systemName: "heart.fill"))
+    private let haken = UIImageView(image: UIImage(systemName: "checkmark.circle.fill"))
+    private let schleier = UIView()
+
+    override var isSelected: Bool {
+        didSet {
+            haken.isHidden = !isSelected
+            schleier.isHidden = !isSelected
+            if isSelected { accessibilityTraits.insert(.selected) } else { accessibilityTraits.remove(.selected) }
+        }
+    }
     private let live = UIImageView(image: UIImage(systemName: "livephoto"))
     private let lader = StufenLader()
     private(set) var hatBild = false
@@ -313,7 +365,20 @@ final class GridZelle: UICollectionViewCell {
         }
         herz.tintColor = .white
         live.tintColor = .white
+        schleier.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+        schleier.frame = contentView.bounds
+        schleier.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        schleier.isHidden = true
+        contentView.insertSubview(schleier, aboveSubview: bild)
+        haken.preferredSymbolConfiguration = UIImage.SymbolConfiguration(paletteColors: [
+            .white, UIColor(red: 0.69, green: 0.19, blue: 0.35, alpha: 1)])
+        haken.translatesAutoresizingMaskIntoConstraints = false
+        haken.isHidden = true
+        contentView.addSubview(haken)
         NSLayoutConstraint.activate([
+            haken.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -5),
+            haken.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 5),
+            haken.widthAnchor.constraint(equalToConstant: 24), haken.heightAnchor.constraint(equalToConstant: 24),
             badge.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -5),
             badge.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -4),
             herz.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 5),

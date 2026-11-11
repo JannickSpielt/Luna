@@ -58,10 +58,12 @@ public enum VorschauGroesse: String, Sendable {
 
 extension ImmichClient {
     /// Alle Monate der Timeline (neueste zuerst) mit Anzahl. Archiv, Papierkorb und gesperrte Fotos sind nicht dabei.
-    public func timelineMonate() async throws -> [TimelineMonat] {
+    public func timelineMonate(_ filter: TimelineFilter = .alle) async throws -> [TimelineMonat] {
         let output: Operations.GetTimeBuckets.Output
         do {
-            output = try await client.getTimeBuckets(query: .init(visibility: .timeline, withPartners: nil))
+            let f = Self.abfrage(filter)
+            output = try await client.getTimeBuckets(query: .init(
+                albumId: f.album, isFavorite: f.favorit, isTrashed: f.papierkorb, visibility: f.sichtbarkeit))
         } catch {
             throw ImmichError.nichtErreichbar(Self.kurzerGrund(error))
         }
@@ -77,17 +79,20 @@ extension ImmichClient {
     }
 
     /// Inhalt eines Monats. Immich liefert die Daten spaltenweise; hier werden sie zu Einträgen zusammengesetzt.
-    public func timelineInhalt(_ monat: TimelineMonat) async throws -> [TimelineAsset] {
+    public func timelineInhalt(_ monat: TimelineMonat, filter: TimelineFilter = .alle) async throws -> [TimelineAsset] {
         let output: Operations.GetTimeBucket.Output
         do {
-            output = try await client.getTimeBucket(query: .init(timeBucket: monat.schluessel, visibility: .timeline))
+            let f = Self.abfrage(filter)
+            output = try await client.getTimeBucket(query: .init(
+                albumId: f.album, isFavorite: f.favorit, isTrashed: f.papierkorb,
+                timeBucket: monat.schluessel, visibility: f.sichtbarkeit))
         } catch {
             throw ImmichError.nichtErreichbar(Self.kurzerGrund(error))
         }
         switch output {
         case .ok(let ok):
             let d = try await rufe { try ok.body.json }
-            return Self.zusammensetzen(d)
+            return Self.zusammensetzen(d, mitPapierkorb: filter == .papierkorb)
         case .undocumented(statusCode: 401, _):
             throw ImmichError.sitzungAbgelaufen
         case .undocumented(let code, _):
@@ -95,13 +100,25 @@ extension ImmichClient {
         }
     }
 
-    static func zusammensetzen(_ d: Components.Schemas.TimeBucketAssetResponseDto) -> [TimelineAsset] {
+    /// Übersetzt den Filter in die Abfrage-Parameter von Immich.
+    static func abfrage(_ filter: TimelineFilter)
+        -> (album: String?, favorit: Bool?, papierkorb: Bool?, sichtbarkeit: Components.Schemas.AssetVisibility?) {
+        switch filter {
+        case .alle: (nil, nil, nil, .timeline)
+        case .favoriten: (nil, true, nil, .timeline)
+        case .archiv: (nil, nil, nil, .archive)
+        case .papierkorb: (nil, nil, true, nil)
+        case .album(let id): (id, nil, nil, nil)
+        }
+    }
+
+    static func zusammensetzen(_ d: Components.Schemas.TimeBucketAssetResponseDto, mitPapierkorb: Bool = false) -> [TimelineAsset] {
         let n = d.id.count
         // Spalten mit falscher Länge würden zu Abstürzen führen: lieber sicher zugreifen.
         func wert<T>(_ spalte: [T], _ i: Int) -> T? { i < spalte.count ? spalte[i] : nil }
         var ergebnis: [TimelineAsset] = []
         ergebnis.reserveCapacity(n)
-        for i in 0..<n where wert(d.isTrashed, i) != true {
+        for i in 0..<n where mitPapierkorb || wert(d.isTrashed, i) != true {
             ergebnis.append(TimelineAsset(
                 id: d.id[i],
                 istBild: wert(d.isImage, i) ?? true,

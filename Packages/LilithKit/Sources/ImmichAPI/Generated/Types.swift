@@ -11,6 +11,42 @@ import struct Foundation.Date
 #endif
 /// A type that performs HTTP operations defined by the OpenAPI document.
 public protocol APIProtocol: Sendable {
+    /// List all albums
+    ///
+    /// Retrieve a list of albums available to the authenticated user.
+    ///
+    /// - Remark: HTTP `GET /albums`.
+    /// - Remark: Generated from `#/paths//albums/get(getAllAlbums)`.
+    func getAllAlbums(_ input: Operations.GetAllAlbums.Input) async throws -> Operations.GetAllAlbums.Output
+    /// Create an album
+    ///
+    /// Create a new album. The album can also be created with initial users and assets.
+    ///
+    /// - Remark: HTTP `POST /albums`.
+    /// - Remark: Generated from `#/paths//albums/post(createAlbum)`.
+    func createAlbum(_ input: Operations.CreateAlbum.Input) async throws -> Operations.CreateAlbum.Output
+    /// Add assets to an album
+    ///
+    /// Add multiple assets to a specific album by its ID.
+    ///
+    /// - Remark: HTTP `PUT /albums/{id}/assets`.
+    /// - Remark: Generated from `#/paths//albums/{id}/assets/put(addAssetsToAlbum)`.
+    func addAssetsToAlbum(_ input: Operations.AddAssetsToAlbum.Input) async throws -> Operations.AddAssetsToAlbum.Output
+    /// Update assets
+    ///
+    /// Updates multiple assets at the same time.
+    ///
+    /// - Remark: HTTP `PUT /assets`.
+    /// - Remark: Generated from `#/paths//assets/put(updateAssets)`.
+    @available(*, deprecated)
+    func updateAssets(_ input: Operations.UpdateAssets.Input) async throws -> Operations.UpdateAssets.Output
+    /// Delete assets
+    ///
+    /// Deletes multiple assets at the same time.
+    ///
+    /// - Remark: HTTP `DELETE /assets`.
+    /// - Remark: Generated from `#/paths//assets/delete(deleteAssets)`.
+    func deleteAssets(_ input: Operations.DeleteAssets.Input) async throws -> Operations.DeleteAssets.Output
     /// Retrieve an asset
     ///
     /// Retrieve detailed information about a specific asset.
@@ -83,6 +119,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /timeline/buckets`.
     /// - Remark: Generated from `#/paths//timeline/buckets/get(getTimeBuckets)`.
     func getTimeBuckets(_ input: Operations.GetTimeBuckets.Input) async throws -> Operations.GetTimeBuckets.Output
+    /// Restore assets
+    ///
+    /// Restore specific assets from the trash.
+    ///
+    /// - Remark: HTTP `POST /trash/restore/assets`.
+    /// - Remark: Generated from `#/paths//trash/restore/assets/post(restoreAssets)`.
+    func restoreAssets(_ input: Operations.RestoreAssets.Input) async throws -> Operations.RestoreAssets.Output
     /// Get current user
     ///
     /// Retrieve information about the user making the API request.
@@ -94,6 +137,72 @@ public protocol APIProtocol: Sendable {
 
 /// Convenience overloads for operation inputs.
 extension APIProtocol {
+    /// List all albums
+    ///
+    /// Retrieve a list of albums available to the authenticated user.
+    ///
+    /// - Remark: HTTP `GET /albums`.
+    /// - Remark: Generated from `#/paths//albums/get(getAllAlbums)`.
+    public func getAllAlbums(
+        query: Operations.GetAllAlbums.Input.Query = .init(),
+        headers: Operations.GetAllAlbums.Input.Headers = .init()
+    ) async throws -> Operations.GetAllAlbums.Output {
+        try await getAllAlbums(Operations.GetAllAlbums.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Create an album
+    ///
+    /// Create a new album. The album can also be created with initial users and assets.
+    ///
+    /// - Remark: HTTP `POST /albums`.
+    /// - Remark: Generated from `#/paths//albums/post(createAlbum)`.
+    public func createAlbum(
+        headers: Operations.CreateAlbum.Input.Headers = .init(),
+        body: Operations.CreateAlbum.Input.Body
+    ) async throws -> Operations.CreateAlbum.Output {
+        try await createAlbum(Operations.CreateAlbum.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Add assets to an album
+    ///
+    /// Add multiple assets to a specific album by its ID.
+    ///
+    /// - Remark: HTTP `PUT /albums/{id}/assets`.
+    /// - Remark: Generated from `#/paths//albums/{id}/assets/put(addAssetsToAlbum)`.
+    public func addAssetsToAlbum(
+        path: Operations.AddAssetsToAlbum.Input.Path,
+        headers: Operations.AddAssetsToAlbum.Input.Headers = .init(),
+        body: Operations.AddAssetsToAlbum.Input.Body
+    ) async throws -> Operations.AddAssetsToAlbum.Output {
+        try await addAssetsToAlbum(Operations.AddAssetsToAlbum.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Update assets
+    ///
+    /// Updates multiple assets at the same time.
+    ///
+    /// - Remark: HTTP `PUT /assets`.
+    /// - Remark: Generated from `#/paths//assets/put(updateAssets)`.
+    @available(*, deprecated)
+    public func updateAssets(body: Operations.UpdateAssets.Input.Body) async throws -> Operations.UpdateAssets.Output {
+        try await updateAssets(Operations.UpdateAssets.Input(body: body))
+    }
+    /// Delete assets
+    ///
+    /// Deletes multiple assets at the same time.
+    ///
+    /// - Remark: HTTP `DELETE /assets`.
+    /// - Remark: Generated from `#/paths//assets/delete(deleteAssets)`.
+    public func deleteAssets(body: Operations.DeleteAssets.Input.Body) async throws -> Operations.DeleteAssets.Output {
+        try await deleteAssets(Operations.DeleteAssets.Input(body: body))
+    }
     /// Retrieve an asset
     ///
     /// Retrieve detailed information about a specific asset.
@@ -220,6 +329,21 @@ extension APIProtocol {
             headers: headers
         ))
     }
+    /// Restore assets
+    ///
+    /// Restore specific assets from the trash.
+    ///
+    /// - Remark: HTTP `POST /trash/restore/assets`.
+    /// - Remark: Generated from `#/paths//trash/restore/assets/post(restoreAssets)`.
+    public func restoreAssets(
+        headers: Operations.RestoreAssets.Input.Headers = .init(),
+        body: Operations.RestoreAssets.Input.Body
+    ) async throws -> Operations.RestoreAssets.Output {
+        try await restoreAssets(Operations.RestoreAssets.Input(
+            headers: headers,
+            body: body
+        ))
+    }
     /// Get current user
     ///
     /// Retrieve information about the user making the API request.
@@ -254,6 +378,321 @@ public enum Servers {
 public enum Components {
     /// Types generated from the `#/components/schemas` section of the OpenAPI document.
     public enum Schemas {
+        /// - Remark: Generated from `#/components/schemas/AlbumResponseDto`.
+        public struct AlbumResponseDto: Codable, Hashable, Sendable {
+            /// Album name
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/albumName`.
+            public var albumName: Swift.String
+            /// Thumbnail asset ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/albumThumbnailAssetId`.
+            public var albumThumbnailAssetId: Swift.String?
+            /// First entry is always the album owner. Second entry is the auth user, if it differs from the owner. The rest are ordered alphabetically.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/albumUsers`.
+            public var albumUsers: [Components.Schemas.AlbumUserResponseDto]
+            /// Number of assets
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/assetCount`.
+            public var assetCount: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/contributorCounts`.
+            public var contributorCounts: [Components.Schemas.ContributorCountResponseDto]?
+            /// Creation date
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Album description
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/description`.
+            public var description: Swift.String
+            /// UTC representation of (local) end date (latest asset)
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/endDate`.
+            public var endDate: Foundation.Date?
+            /// Has shared link
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/hasSharedLink`.
+            public var hasSharedLink: Swift.Bool
+            /// Album ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/id`.
+            public var id: Swift.String
+            /// Activity feed enabled
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/isActivityEnabled`.
+            public var isActivityEnabled: Swift.Bool
+            /// Last modified asset timestamp
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/lastModifiedAssetTimestamp`.
+            public var lastModifiedAssetTimestamp: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/order`.
+            public var order: Components.Schemas.AssetOrder?
+            /// Is shared album
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/shared`.
+            public var shared: Swift.Bool
+            /// UTC representation of (local) start date (earliest asset)
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/startDate`.
+            public var startDate: Foundation.Date?
+            /// Last update date
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumResponseDto/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Creates a new `AlbumResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - albumName: Album name
+            ///   - albumThumbnailAssetId: Thumbnail asset ID
+            ///   - albumUsers: First entry is always the album owner. Second entry is the auth user, if it differs from the owner. The rest are ordered alphabetically.
+            ///   - assetCount: Number of assets
+            ///   - contributorCounts:
+            ///   - createdAt: Creation date
+            ///   - description: Album description
+            ///   - endDate: UTC representation of (local) end date (latest asset)
+            ///   - hasSharedLink: Has shared link
+            ///   - id: Album ID
+            ///   - isActivityEnabled: Activity feed enabled
+            ///   - lastModifiedAssetTimestamp: Last modified asset timestamp
+            ///   - order:
+            ///   - shared: Is shared album
+            ///   - startDate: UTC representation of (local) start date (earliest asset)
+            ///   - updatedAt: Last update date
+            public init(
+                albumName: Swift.String,
+                albumThumbnailAssetId: Swift.String? = nil,
+                albumUsers: [Components.Schemas.AlbumUserResponseDto],
+                assetCount: Swift.Int,
+                contributorCounts: [Components.Schemas.ContributorCountResponseDto]? = nil,
+                createdAt: Foundation.Date,
+                description: Swift.String,
+                endDate: Foundation.Date? = nil,
+                hasSharedLink: Swift.Bool,
+                id: Swift.String,
+                isActivityEnabled: Swift.Bool,
+                lastModifiedAssetTimestamp: Foundation.Date? = nil,
+                order: Components.Schemas.AssetOrder? = nil,
+                shared: Swift.Bool,
+                startDate: Foundation.Date? = nil,
+                updatedAt: Foundation.Date
+            ) {
+                self.albumName = albumName
+                self.albumThumbnailAssetId = albumThumbnailAssetId
+                self.albumUsers = albumUsers
+                self.assetCount = assetCount
+                self.contributorCounts = contributorCounts
+                self.createdAt = createdAt
+                self.description = description
+                self.endDate = endDate
+                self.hasSharedLink = hasSharedLink
+                self.id = id
+                self.isActivityEnabled = isActivityEnabled
+                self.lastModifiedAssetTimestamp = lastModifiedAssetTimestamp
+                self.order = order
+                self.shared = shared
+                self.startDate = startDate
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case albumName
+                case albumThumbnailAssetId
+                case albumUsers
+                case assetCount
+                case contributorCounts
+                case createdAt
+                case description
+                case endDate
+                case hasSharedLink
+                case id
+                case isActivityEnabled
+                case lastModifiedAssetTimestamp
+                case order
+                case shared
+                case startDate
+                case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AlbumUserCreateDto`.
+        public struct AlbumUserCreateDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AlbumUserCreateDto/role`.
+            public var role: Components.Schemas.AlbumUserRole
+            /// User ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AlbumUserCreateDto/userId`.
+            public var userId: Swift.String
+            /// Creates a new `AlbumUserCreateDto`.
+            ///
+            /// - Parameters:
+            ///   - role:
+            ///   - userId: User ID
+            public init(
+                role: Components.Schemas.AlbumUserRole,
+                userId: Swift.String
+            ) {
+                self.role = role
+                self.userId = userId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case role
+                case userId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AlbumUserResponseDto`.
+        public struct AlbumUserResponseDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AlbumUserResponseDto/role`.
+            public var role: Components.Schemas.AlbumUserRole
+            /// - Remark: Generated from `#/components/schemas/AlbumUserResponseDto/user`.
+            public var user: Components.Schemas.UserResponseDto
+            /// Creates a new `AlbumUserResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - role:
+            ///   - user:
+            public init(
+                role: Components.Schemas.AlbumUserRole,
+                user: Components.Schemas.UserResponseDto
+            ) {
+                self.role = role
+                self.user = user
+            }
+            public enum CodingKeys: String, CodingKey {
+                case role
+                case user
+            }
+        }
+        /// Album user role
+        ///
+        /// - Remark: Generated from `#/components/schemas/AlbumUserRole`.
+        @frozen public enum AlbumUserRole: String, Codable, Hashable, Sendable, CaseIterable {
+            case editor = "editor"
+            case owner = "owner"
+            case viewer = "viewer"
+        }
+        /// - Remark: Generated from `#/components/schemas/AssetBulkDeleteDto`.
+        public struct AssetBulkDeleteDto: Codable, Hashable, Sendable {
+            /// Force delete even if in use
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkDeleteDto/force`.
+            public var force: Swift.Bool?
+            /// IDs to process
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkDeleteDto/ids`.
+            public var ids: [Swift.String]
+            /// Creates a new `AssetBulkDeleteDto`.
+            ///
+            /// - Parameters:
+            ///   - force: Force delete even if in use
+            ///   - ids: IDs to process
+            public init(
+                force: Swift.Bool? = nil,
+                ids: [Swift.String]
+            ) {
+                self.force = force
+                self.ids = ids
+            }
+            public enum CodingKeys: String, CodingKey {
+                case force
+                case ids
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto`.
+        public struct AssetBulkUpdateDto: Codable, Hashable, Sendable {
+            /// Original date and time
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/dateTimeOriginal`.
+            public var dateTimeOriginal: Swift.String?
+            /// Relative time offset in minutes
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/dateTimeRelative`.
+            public var dateTimeRelative: Swift.Int?
+            /// Asset description
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/description`.
+            public var description: Swift.String?
+            /// Duplicate ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/duplicateId`.
+            public var duplicateId: Swift.String?
+            /// Asset IDs to update
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/ids`.
+            public var ids: [Swift.String]
+            /// Mark as favorite
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/isFavorite`.
+            public var isFavorite: Swift.Bool?
+            /// Latitude coordinate
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/latitude`.
+            public var latitude: Swift.Double?
+            /// Longitude coordinate
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/longitude`.
+            public var longitude: Swift.Double?
+            /// Rating in range [1-5] (starred), -1 (rejected), or null (unrated)
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/rating`.
+            public var rating: Swift.Int?
+            /// Time zone (IANA timezone)
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/timeZone`.
+            public var timeZone: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUpdateDto/visibility`.
+            public var visibility: Components.Schemas.AssetVisibility?
+            /// Creates a new `AssetBulkUpdateDto`.
+            ///
+            /// - Parameters:
+            ///   - dateTimeOriginal: Original date and time
+            ///   - dateTimeRelative: Relative time offset in minutes
+            ///   - description: Asset description
+            ///   - duplicateId: Duplicate ID
+            ///   - ids: Asset IDs to update
+            ///   - isFavorite: Mark as favorite
+            ///   - latitude: Latitude coordinate
+            ///   - longitude: Longitude coordinate
+            ///   - rating: Rating in range [1-5] (starred), -1 (rejected), or null (unrated)
+            ///   - timeZone: Time zone (IANA timezone)
+            ///   - visibility:
+            public init(
+                dateTimeOriginal: Swift.String? = nil,
+                dateTimeRelative: Swift.Int? = nil,
+                description: Swift.String? = nil,
+                duplicateId: Swift.String? = nil,
+                ids: [Swift.String],
+                isFavorite: Swift.Bool? = nil,
+                latitude: Swift.Double? = nil,
+                longitude: Swift.Double? = nil,
+                rating: Swift.Int? = nil,
+                timeZone: Swift.String? = nil,
+                visibility: Components.Schemas.AssetVisibility? = nil
+            ) {
+                self.dateTimeOriginal = dateTimeOriginal
+                self.dateTimeRelative = dateTimeRelative
+                self.description = description
+                self.duplicateId = duplicateId
+                self.ids = ids
+                self.isFavorite = isFavorite
+                self.latitude = latitude
+                self.longitude = longitude
+                self.rating = rating
+                self.timeZone = timeZone
+                self.visibility = visibility
+            }
+            public enum CodingKeys: String, CodingKey {
+                case dateTimeOriginal
+                case dateTimeRelative
+                case description
+                case duplicateId
+                case ids
+                case isFavorite
+                case latitude
+                case longitude
+                case rating
+                case timeZone
+                case visibility
+            }
+        }
         /// Asset sort order
         ///
         /// - Remark: Generated from `#/components/schemas/AssetOrder`.
@@ -591,6 +1030,142 @@ public enum Components {
             case timeline = "timeline"
             case hidden = "hidden"
             case locked = "locked"
+        }
+        /// Error reason
+        ///
+        /// - Remark: Generated from `#/components/schemas/BulkIdErrorReason`.
+        @frozen public enum BulkIdErrorReason: String, Codable, Hashable, Sendable, CaseIterable {
+            case duplicate = "duplicate"
+            case noPermission = "no_permission"
+            case notFound = "not_found"
+            case unknown = "unknown"
+            case validation = "validation"
+        }
+        /// - Remark: Generated from `#/components/schemas/BulkIdResponseDto`.
+        public struct BulkIdResponseDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/BulkIdResponseDto/error`.
+            public var error: Components.Schemas.BulkIdErrorReason?
+            /// - Remark: Generated from `#/components/schemas/BulkIdResponseDto/errorMessage`.
+            public var errorMessage: Swift.String?
+            /// ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/BulkIdResponseDto/id`.
+            public var id: Swift.String
+            /// Whether operation succeeded
+            ///
+            /// - Remark: Generated from `#/components/schemas/BulkIdResponseDto/success`.
+            public var success: Swift.Bool
+            /// Creates a new `BulkIdResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - error:
+            ///   - errorMessage:
+            ///   - id: ID
+            ///   - success: Whether operation succeeded
+            public init(
+                error: Components.Schemas.BulkIdErrorReason? = nil,
+                errorMessage: Swift.String? = nil,
+                id: Swift.String,
+                success: Swift.Bool
+            ) {
+                self.error = error
+                self.errorMessage = errorMessage
+                self.id = id
+                self.success = success
+            }
+            public enum CodingKeys: String, CodingKey {
+                case error
+                case errorMessage
+                case id
+                case success
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/BulkIdsDto`.
+        public struct BulkIdsDto: Codable, Hashable, Sendable {
+            /// IDs to process
+            ///
+            /// - Remark: Generated from `#/components/schemas/BulkIdsDto/ids`.
+            public var ids: [Swift.String]
+            /// Creates a new `BulkIdsDto`.
+            ///
+            /// - Parameters:
+            ///   - ids: IDs to process
+            public init(ids: [Swift.String]) {
+                self.ids = ids
+            }
+            public enum CodingKeys: String, CodingKey {
+                case ids
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ContributorCountResponseDto`.
+        public struct ContributorCountResponseDto: Codable, Hashable, Sendable {
+            /// Number of assets contributed
+            ///
+            /// - Remark: Generated from `#/components/schemas/ContributorCountResponseDto/assetCount`.
+            public var assetCount: Swift.Int
+            /// User ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/ContributorCountResponseDto/userId`.
+            public var userId: Swift.String
+            /// Creates a new `ContributorCountResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - assetCount: Number of assets contributed
+            ///   - userId: User ID
+            public init(
+                assetCount: Swift.Int,
+                userId: Swift.String
+            ) {
+                self.assetCount = assetCount
+                self.userId = userId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case assetCount
+                case userId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CreateAlbumDto`.
+        public struct CreateAlbumDto: Codable, Hashable, Sendable {
+            /// Album name
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateAlbumDto/albumName`.
+            public var albumName: Swift.String
+            /// Album users
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateAlbumDto/albumUsers`.
+            public var albumUsers: [Components.Schemas.AlbumUserCreateDto]?
+            /// Initial asset IDs
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateAlbumDto/assetIds`.
+            public var assetIds: [Swift.String]?
+            /// Album description
+            ///
+            /// - Remark: Generated from `#/components/schemas/CreateAlbumDto/description`.
+            public var description: Swift.String?
+            /// Creates a new `CreateAlbumDto`.
+            ///
+            /// - Parameters:
+            ///   - albumName: Album name
+            ///   - albumUsers: Album users
+            ///   - assetIds: Initial asset IDs
+            ///   - description: Album description
+            public init(
+                albumName: Swift.String,
+                albumUsers: [Components.Schemas.AlbumUserCreateDto]? = nil,
+                assetIds: [Swift.String]? = nil,
+                description: Swift.String? = nil
+            ) {
+                self.albumName = albumName
+                self.albumUsers = albumUsers
+                self.assetIds = assetIds
+                self.description = description
+            }
+            public enum CodingKeys: String, CodingKey {
+                case albumName
+                case albumUsers
+                case assetIds
+                case description
+            }
         }
         /// EXIF response
         ///
@@ -1567,6 +2142,23 @@ public enum Components {
                 case timeBucket
             }
         }
+        /// - Remark: Generated from `#/components/schemas/TrashResponseDto`.
+        public struct TrashResponseDto: Codable, Hashable, Sendable {
+            /// Number of items in trash
+            ///
+            /// - Remark: Generated from `#/components/schemas/TrashResponseDto/count`.
+            public var count: Swift.Int
+            /// Creates a new `TrashResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - count: Number of items in trash
+            public init(count: Swift.Int) {
+                self.count = count
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/UpdateAssetDto`.
         public struct UpdateAssetDto: Codable, Hashable, Sendable {
             /// Original date and time
@@ -1952,6 +2544,560 @@ public enum Components {
 
 /// API operations, with input and output types, generated from `#/paths` in the OpenAPI document.
 public enum Operations {
+    /// List all albums
+    ///
+    /// Retrieve a list of albums available to the authenticated user.
+    ///
+    /// - Remark: HTTP `GET /albums`.
+    /// - Remark: Generated from `#/paths//albums/get(getAllAlbums)`.
+    public enum GetAllAlbums {
+        public static let id: Swift.String = "getAllAlbums"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/albums/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Filter albums containing this asset ID (ignores other parameters)
+                ///
+                /// - Remark: Generated from `#/paths/albums/GET/query/assetId`.
+                public var assetId: Swift.String?
+                /// Album ID
+                ///
+                /// - Remark: Generated from `#/paths/albums/GET/query/id`.
+                public var id: Swift.String?
+                /// Filter by ownership: true = only owned, false = only shared-with-me, undefined = no filter
+                ///
+                /// - Remark: Generated from `#/paths/albums/GET/query/isOwned`.
+                public var isOwned: Swift.Bool?
+                /// Filter by shared status: true = only shared, false = not shared, undefined = no filter
+                ///
+                /// - Remark: Generated from `#/paths/albums/GET/query/isShared`.
+                public var isShared: Swift.Bool?
+                /// Album name (exact match)
+                ///
+                /// - Remark: Generated from `#/paths/albums/GET/query/name`.
+                public var name: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - assetId: Filter albums containing this asset ID (ignores other parameters)
+                ///   - id: Album ID
+                ///   - isOwned: Filter by ownership: true = only owned, false = only shared-with-me, undefined = no filter
+                ///   - isShared: Filter by shared status: true = only shared, false = not shared, undefined = no filter
+                ///   - name: Album name (exact match)
+                public init(
+                    assetId: Swift.String? = nil,
+                    id: Swift.String? = nil,
+                    isOwned: Swift.Bool? = nil,
+                    isShared: Swift.Bool? = nil,
+                    name: Swift.String? = nil
+                ) {
+                    self.assetId = assetId
+                    self.id = id
+                    self.isOwned = isOwned
+                    self.isShared = isShared
+                    self.name = name
+                }
+            }
+            public var query: Operations.GetAllAlbums.Input.Query
+            /// - Remark: Generated from `#/paths/albums/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAllAlbums.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAllAlbums.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetAllAlbums.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetAllAlbums.Input.Query = .init(),
+                headers: Operations.GetAllAlbums.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/albums/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/albums/GET/responses/200/content/application\/json`.
+                    case json([Components.Schemas.AlbumResponseDto])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Components.Schemas.AlbumResponseDto] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetAllAlbums.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetAllAlbums.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//albums/get(getAllAlbums)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetAllAlbums.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetAllAlbums.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Create an album
+    ///
+    /// Create a new album. The album can also be created with initial users and assets.
+    ///
+    /// - Remark: HTTP `POST /albums`.
+    /// - Remark: Generated from `#/paths//albums/post(createAlbum)`.
+    public enum CreateAlbum {
+        public static let id: Swift.String = "createAlbum"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/albums/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateAlbum.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateAlbum.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateAlbum.Input.Headers
+            /// - Remark: Generated from `#/paths/albums/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/albums/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.CreateAlbumDto)
+            }
+            public var body: Operations.CreateAlbum.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateAlbum.Input.Headers = .init(),
+                body: Operations.CreateAlbum.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Created: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/albums/POST/responses/201/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/albums/POST/responses/201/content/application\/json`.
+                    case json(Components.Schemas.AlbumResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AlbumResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateAlbum.Output.Created.Body
+                /// Creates a new `Created`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateAlbum.Output.Created.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//albums/post(createAlbum)/responses/201`.
+            ///
+            /// HTTP response code: `201 created`.
+            case created(Operations.CreateAlbum.Output.Created)
+            /// The associated value of the enum case if `self` is `.created`.
+            ///
+            /// - Throws: An error if `self` is not `.created`.
+            /// - SeeAlso: `.created`.
+            public var created: Operations.CreateAlbum.Output.Created {
+                get throws {
+                    switch self {
+                    case let .created(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "created",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Add assets to an album
+    ///
+    /// Add multiple assets to a specific album by its ID.
+    ///
+    /// - Remark: HTTP `PUT /albums/{id}/assets`.
+    /// - Remark: Generated from `#/paths//albums/{id}/assets/put(addAssetsToAlbum)`.
+    public enum AddAssetsToAlbum {
+        public static let id: Swift.String = "addAssetsToAlbum"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/albums/{id}/assets/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/albums/{id}/assets/PUT/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.AddAssetsToAlbum.Input.Path
+            /// - Remark: Generated from `#/paths/albums/{id}/assets/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddAssetsToAlbum.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.AddAssetsToAlbum.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.AddAssetsToAlbum.Input.Headers
+            /// - Remark: Generated from `#/paths/albums/{id}/assets/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/albums/{id}/assets/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.BulkIdsDto)
+            }
+            public var body: Operations.AddAssetsToAlbum.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.AddAssetsToAlbum.Input.Path,
+                headers: Operations.AddAssetsToAlbum.Input.Headers = .init(),
+                body: Operations.AddAssetsToAlbum.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/albums/{id}/assets/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/albums/{id}/assets/PUT/responses/200/content/application\/json`.
+                    case json([Components.Schemas.BulkIdResponseDto])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Components.Schemas.BulkIdResponseDto] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.AddAssetsToAlbum.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.AddAssetsToAlbum.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//albums/{id}/assets/put(addAssetsToAlbum)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.AddAssetsToAlbum.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.AddAssetsToAlbum.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Update assets
+    ///
+    /// Updates multiple assets at the same time.
+    ///
+    /// - Remark: HTTP `PUT /assets`.
+    /// - Remark: Generated from `#/paths//assets/put(updateAssets)`.
+    public enum UpdateAssets {
+        public static let id: Swift.String = "updateAssets"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/assets/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.AssetBulkUpdateDto)
+            }
+            public var body: Operations.UpdateAssets.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - body:
+            public init(body: Operations.UpdateAssets.Input.Body) {
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//assets/put(updateAssets)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.UpdateAssets.Output.NoContent)
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//assets/put(updateAssets)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.UpdateAssets.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+    }
+    /// Delete assets
+    ///
+    /// Deletes multiple assets at the same time.
+    ///
+    /// - Remark: HTTP `DELETE /assets`.
+    /// - Remark: Generated from `#/paths//assets/delete(deleteAssets)`.
+    public enum DeleteAssets {
+        public static let id: Swift.String = "deleteAssets"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/assets/DELETE/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/DELETE/requestBody/content/application\/json`.
+                case json(Components.Schemas.AssetBulkDeleteDto)
+            }
+            public var body: Operations.DeleteAssets.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - body:
+            public init(body: Operations.DeleteAssets.Input.Body) {
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//assets/delete(deleteAssets)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.DeleteAssets.Output.NoContent)
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//assets/delete(deleteAssets)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.DeleteAssets.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+    }
     /// Retrieve an asset
     ///
     /// Retrieve detailed information about a specific asset.
@@ -3347,6 +4493,129 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
             public var ok: Operations.GetTimeBuckets.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Restore assets
+    ///
+    /// Restore specific assets from the trash.
+    ///
+    /// - Remark: HTTP `POST /trash/restore/assets`.
+    /// - Remark: Generated from `#/paths//trash/restore/assets/post(restoreAssets)`.
+    public enum RestoreAssets {
+        public static let id: Swift.String = "restoreAssets"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/trash/restore/assets/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RestoreAssets.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.RestoreAssets.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.RestoreAssets.Input.Headers
+            /// - Remark: Generated from `#/paths/trash/restore/assets/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/trash/restore/assets/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.BulkIdsDto)
+            }
+            public var body: Operations.RestoreAssets.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.RestoreAssets.Input.Headers = .init(),
+                body: Operations.RestoreAssets.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/trash/restore/assets/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/trash/restore/assets/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TrashResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TrashResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.RestoreAssets.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.RestoreAssets.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//trash/restore/assets/post(restoreAssets)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.RestoreAssets.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.RestoreAssets.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):

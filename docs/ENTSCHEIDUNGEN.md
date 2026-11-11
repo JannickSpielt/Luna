@@ -56,3 +56,13 @@ Der Sprung ist entscheidend, weil Scrubber, „Heute vor X Jahren“ und Sucherg
 - **Datumsangaben:** Immich schickt Zeitpunkte mit und ohne Sekundenbruchteile. Beides wird gelesen (vorher konnte das Laden von Nutzerdaten daran still scheitern).
 
 **Offen:** Original in voller Auflösung beim starken Hineinzoomen, Löschen/Archivieren (Schritt 6), nach oben wischen für das Info-Panel.
+
+## 4. Alben, Favoriten, Archiv, Papierkorb (Schritt 6, 11.11.2026)
+
+- **Eine Timeline für alles:** Bibliothek, Favoriten, Archiv, Papierkorb und jedes Album nutzen dieselbe Ansicht (`TimelineInhalt`) mit einem Filter. Immich liefert für alle dieselben Monats-Abfragen, nur mit anderen Parametern. Scrubber, Detailansicht und Auswahl gibt es dadurch überall.
+- **Mehrfachauswahl:** Auf iPhone und iPad über „Auswählen“, dann Antippen. Auf dem Mac wie im Finder mit Klick, ⌘-Klick und ⇧-Klick. Auswahl per Wischen über mehrere Fotos fehlt noch.
+- **Aktionen:** Favorit, Archivieren, Zu Album (vorhandenes oder neues), Löschen. Im Papierkorb: Wiederherstellen und endgültig Löschen. Löschen fragt immer nach. Ist der Papierkorb auf dem Server aus, sagt die Frage, dass endgültig gelöscht wird.
+- **Nach einer Aktion** lädt die betroffene Ansicht neu und meldet die Änderung, damit auch die anderen Ansichten (z. B. die Bibliothek) neu laden.
+- **Veraltete Schnittstelle:** Das Ändern mehrerer Fotos (`PUT /assets`) ist in Immich v3 als veraltet markiert, einen Nachfolger gibt es in v3.3.5 aber noch nicht.
+
+**Offen:** Fotos aus einem Album entfernen, Alben umbenennen und löschen, Papierkorb leeren, geteilte Alben getrennt anzeigen, Auswahl per Wischen.

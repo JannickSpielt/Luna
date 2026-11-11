@@ -53,6 +53,7 @@ struct HauptView: View {
     /// Einmal pro Anmeldung, damit Daten nicht doppelt geladen werden.
     @State private var timeline: TimelineStore?
     @State private var demo: BeispielQuelle?
+    @State private var kontext: BibliothekKontext?
 
     private var quelle: TimelineQuelle? { timeline ?? demo }
 
@@ -60,6 +61,14 @@ struct HauptView: View {
     private let zeigeErinnerungen = false
 
     var body: some View {
+        if let kontext {
+            tabs.environment(kontext)
+        } else {
+            Color.clear.onAppear(perform: richteEin)
+        }
+    }
+
+    private var tabs: some View {
         TabView(selection: $auswahl) {
             Tab("Bibliothek", systemImage: "square.grid.2x2", value: Bereich.bibliothek) {
                 if let quelle {
@@ -75,9 +84,7 @@ struct HauptView: View {
                 }
             }
             Tab("Alben", systemImage: "rectangle.stack", value: Bereich.alben) {
-                Platzhalter(titel: "Alben", symbol: "rectangle.stack",
-                            text: "Hier erscheinen bald deine Alben.",
-                            account: account, zeigeKonto: $zeigeKonto)
+                AlbenView()
             }
             Tab(value: Bereich.suche, role: .search) {
                 Platzhalter(titel: "Suche", symbol: "magnifyingglass",
@@ -88,20 +95,24 @@ struct HauptView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
-        .onAppear {
-            guard quelle == nil else { return }
-            if let client = session.client {
-                let store = TimelineStore(client: client)
-                let sitzung = session
-                store.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
-                timeline = store
-            } else {
-                demo = BeispielQuelle()
-            }
-        }
         .sheet(isPresented: $zeigeKonto) {
             KontoView(account: account)
         }
+    }
+
+    private func richteEin() {
+        guard kontext == nil else { return }
+        let sitzung = session
+        let neu = BibliothekKontext(client: session.client, papierkorbAktiv: account.server.capabilities.trash)
+        neu.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
+        if let client = session.client {
+            let store = TimelineStore(client: client)
+            store.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
+            timeline = store
+        } else {
+            demo = BeispielQuelle()
+        }
+        kontext = neu
     }
 }
 

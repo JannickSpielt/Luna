@@ -4,7 +4,8 @@ import Nuke
 
 /// Timeline-Grid für den Mac auf Basis von `NSCollectionView`.
 @MainActor
-public final class TimelineGridController: NSViewController, NSCollectionViewDataSource, NSCollectionViewPrefetching {
+public final class TimelineGridController: NSViewController, NSCollectionViewDataSource, NSCollectionViewPrefetching,
+    NSCollectionViewDelegate {
     public var quelle: TimelineQuelle {
         didSet { verbindeQuelle(); collectionView?.reloadData() }
     }
@@ -15,6 +16,25 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
     var letzterSprung: UUID?
     /// Ein Foto wurde doppelt angeklickt: Monat, Position und Rahmen der Kachel im Fenster (Ursprung oben links).
     public var onTap: ((Int, Int, CGRect) -> Void)?
+
+    /// Auf dem Mac ist die Auswahl immer möglich (Klick, ⌘-Klick, ⇧-Klick). Der Schalter existiert nur für iOS.
+    public var auswahlModus = false
+    /// Meldet die IDs der markierten Fotos.
+    public var onAuswahl: (([String]) -> Void)?
+    var auswahlStand = 0
+
+    public func leereAuswahl() {
+        collectionView?.deselectAll(nil)
+        onAuswahl?([])
+    }
+
+    private func meldeAuswahl() {
+        let ids = collectionView.selectionIndexPaths.sorted().compactMap { quelle.item(section: $0.section, index: $0.item)?.id }
+        onAuswahl?(ids)
+    }
+
+    public func collectionView(_ collectionView: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) { meldeAuswahl() }
+    public func collectionView(_ collectionView: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) { meldeAuswahl() }
 
     @objc private func doppelklick(_ geste: NSClickGestureRecognizer) {
         guard let pfad = collectionView.indexPathForItem(at: geste.location(in: collectionView)),
@@ -45,6 +65,7 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
             self?.section(breite: umgebung.container.effectiveContentSize.width)
         }
         collectionView.dataSource = self
+        collectionView.delegate = self
         collectionView.prefetchDataSource = self
         collectionView.isSelectable = true
         collectionView.allowsMultipleSelection = true
@@ -74,6 +95,12 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
     private func verbindeQuelle() {
         quelle.onMonatGeladen = { [weak self] section, anzahlGeaendert in
             self?.monatGeladen(section, anzahlGeaendert: anzahlGeaendert)
+        }
+        quelle.onAllesNeu = { [weak self] in
+            guard let self, let collectionView = self.collectionView else { return }
+            self.letzteSichtbare = []
+            collectionView.reloadData()
+            self.onAuswahl?([])
         }
     }
 

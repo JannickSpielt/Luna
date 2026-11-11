@@ -69,6 +69,8 @@ public protocol TimelineQuelle: AnyObject {
     func bildAnfragen(fuer item: GridItem, pixel: CGFloat) -> [URLRequest]
     /// Wird aufgerufen, wenn ein Monat geladen ist. `anzahlGeaendert`: Die Anzahl stimmte nicht mit der Vorschau überein.
     var onMonatGeladen: ((_ section: Int, _ anzahlGeaendert: Bool) -> Void)? { get set }
+    /// Wird aufgerufen, wenn die ganze Timeline neu geladen wurde (Monate und Anzahlen können anders sein).
+    var onAllesNeu: (() -> Void)? { get set }
 }
 
 extension TimelineQuelle {
@@ -99,6 +101,7 @@ public final class BeispielQuelle: TimelineQuelle {
     public private(set) var sections: [GridSection] = []
     private var items: [[GridItem]] = []
     public var onMonatGeladen: ((Int, Bool) -> Void)?
+    public var onAllesNeu: (() -> Void)?
 
     public init(anzahl: Int = 100_000, seed: UInt64 = 42, bisJahr: Int = 2026, bisMonat: Int = 11) {
         (sections, items) = Self.erzeuge(anzahl: anzahl, seed: seed, bisJahr: bisJahr, bisMonat: bisMonat)

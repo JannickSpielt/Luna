@@ -23,3 +23,11 @@ filter:
     # Einzelnes Foto
     - getAssetInfo
     - updateAsset
+    # Alben
+    - getAllAlbums
+    - createAlbum
+    - addAssetsToAlbum
+    # Mehrere Fotos
+    - updateAssets
+    - deleteAssets
+    - restoreAssets

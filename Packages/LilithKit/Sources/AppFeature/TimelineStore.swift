@@ -20,6 +20,8 @@ final class TimelineStore: TimelineQuelle {
 
     @ObservationIgnored private(set) var sections: [GridSection] = []
     @ObservationIgnored var onMonatGeladen: ((Int, Bool) -> Void)?
+    @ObservationIgnored var onAllesNeu: (() -> Void)?
+    @ObservationIgnored let filter: TimelineFilter
     @ObservationIgnored private var monate: [TimelineMonat] = []
     @ObservationIgnored private var inhalte: [Int: [GridItem]] = [:]
     @ObservationIgnored private var laufend: [Int: Task<Void, Never>] = [:]
@@ -28,14 +30,15 @@ final class TimelineStore: TimelineQuelle {
     /// Wird aufgerufen, wenn der Server die Anmeldung ablehnt.
     @ObservationIgnored var onSitzungAbgelaufen: (() -> Void)?
 
-    init(client: ImmichClient) {
+    init(client: ImmichClient, filter: TimelineFilter = .alle) {
         self.client = client
+        self.filter = filter
     }
 
     func laden() async {
         if sections.isEmpty { zustand = .laedt }
         do {
-            let geladen = try await client.timelineMonate().filter { $0.anzahl > 0 }
+            let geladen = try await client.timelineMonate(filter).filter { $0.anzahl > 0 }
             monate = geladen
             inhalte = [:]
             laufend.values.forEach { $0.cancel() }
@@ -46,6 +49,8 @@ final class TimelineStore: TimelineQuelle {
             }
             gesamt = geladen.reduce(0) { $0 + $1.anzahl }
             zustand = geladen.isEmpty ? .leer : .bereit
+            sichtbareMonate = []
+            onAllesNeu?()
         } catch ImmichError.sitzungAbgelaufen {
             onSitzungAbgelaufen?()
         } catch {
@@ -93,7 +98,7 @@ final class TimelineStore: TimelineQuelle {
                 }
             }
             do {
-                let assets = try await client.timelineInhalt(monat)
+                let assets = try await client.timelineInhalt(monat, filter: filter)
                 guard !Task.isCancelled else { return }
                 // Die Monate könnten inzwischen neu geladen worden sein.
                 guard section < monate.count, monate[section] == monat else { return }

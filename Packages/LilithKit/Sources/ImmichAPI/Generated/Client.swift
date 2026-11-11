@@ -38,6 +38,342 @@ public struct Client: APIProtocol {
     private var converter: Converter {
         client.converter
     }
+    /// List all albums
+    ///
+    /// Retrieve a list of albums available to the authenticated user.
+    ///
+    /// - Remark: HTTP `GET /albums`.
+    /// - Remark: Generated from `#/paths//albums/get(getAllAlbums)`.
+    public func getAllAlbums(_ input: Operations.GetAllAlbums.Input) async throws -> Operations.GetAllAlbums.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetAllAlbums.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/albums",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "assetId",
+                    value: input.query.assetId
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "id",
+                    value: input.query.id
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "isOwned",
+                    value: input.query.isOwned
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "isShared",
+                    value: input.query.isShared
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "name",
+                    value: input.query.name
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetAllAlbums.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            [Components.Schemas.AlbumResponseDto].self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Create an album
+    ///
+    /// Create a new album. The album can also be created with initial users and assets.
+    ///
+    /// - Remark: HTTP `POST /albums`.
+    /// - Remark: Generated from `#/paths//albums/post(createAlbum)`.
+    public func createAlbum(_ input: Operations.CreateAlbum.Input) async throws -> Operations.CreateAlbum.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.CreateAlbum.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/albums",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 201:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.CreateAlbum.Output.Created.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AlbumResponseDto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .created(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Add assets to an album
+    ///
+    /// Add multiple assets to a specific album by its ID.
+    ///
+    /// - Remark: HTTP `PUT /albums/{id}/assets`.
+    /// - Remark: Generated from `#/paths//albums/{id}/assets/put(addAssetsToAlbum)`.
+    public func addAssetsToAlbum(_ input: Operations.AddAssetsToAlbum.Input) async throws -> Operations.AddAssetsToAlbum.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.AddAssetsToAlbum.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/albums/{}/assets",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .put
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.AddAssetsToAlbum.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            [Components.Schemas.BulkIdResponseDto].self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Update assets
+    ///
+    /// Updates multiple assets at the same time.
+    ///
+    /// - Remark: HTTP `PUT /assets`.
+    /// - Remark: Generated from `#/paths//assets/put(updateAssets)`.
+    @available(*, deprecated)
+    public func updateAssets(_ input: Operations.UpdateAssets.Input) async throws -> Operations.UpdateAssets.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.UpdateAssets.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/assets",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .put
+                )
+                suppressMutabilityWarning(&request)
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Delete assets
+    ///
+    /// Deletes multiple assets at the same time.
+    ///
+    /// - Remark: HTTP `DELETE /assets`.
+    /// - Remark: Generated from `#/paths//assets/delete(deleteAssets)`.
+    public func deleteAssets(_ input: Operations.DeleteAssets.Input) async throws -> Operations.DeleteAssets.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.DeleteAssets.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/assets",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Retrieve an asset
     ///
     /// Retrieve detailed information about a specific asset.
@@ -892,6 +1228,77 @@ public struct Client: APIProtocol {
                     case "application/json":
                         body = try await converter.getResponseBodyAsJSON(
                             [Components.Schemas.TimeBucketsResponseDto].self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Restore assets
+    ///
+    /// Restore specific assets from the trash.
+    ///
+    /// - Remark: HTTP `POST /trash/restore/assets`.
+    /// - Remark: Generated from `#/paths//trash/restore/assets/post(restoreAssets)`.
+    public func restoreAssets(_ input: Operations.RestoreAssets.Input) async throws -> Operations.RestoreAssets.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.RestoreAssets.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/trash/restore/assets",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.RestoreAssets.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.TrashResponseDto.self,
                             from: responseBody,
                             transforming: { value in
                                 .json(value)

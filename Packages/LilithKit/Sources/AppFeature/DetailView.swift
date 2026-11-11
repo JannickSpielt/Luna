@@ -10,6 +10,8 @@ import TimelineGrid
 struct DetailView: View {
     let quelle: TimelineQuelle
     let store: TimelineStore?
+    /// Löscht das Foto mit dieser ID. `nil`, wenn Löschen hier nicht angeboten wird.
+    let loeschen: ((String) async -> Bool)?
     let schliessen: (DetailPosition) -> Void
 
     @State private var seiten: [DetailPosition]
@@ -22,11 +24,15 @@ struct DetailView: View {
     @State private var zug: CGFloat = 0
     @State private var zugAktiv = false
     @State private var fehler: String?
+    @State private var frageLoeschen = false
+    @State private var loescht = false
     @FocusState private var fokus: Bool
 
-    init(quelle: TimelineQuelle, store: TimelineStore?, start: DetailPosition, schliessen: @escaping (DetailPosition) -> Void) {
+    init(quelle: TimelineQuelle, store: TimelineStore?, start: DetailPosition,
+         loeschen: ((String) async -> Bool)? = nil, schliessen: @escaping (DetailPosition) -> Void) {
         self.quelle = quelle
         self.store = store
+        self.loeschen = loeschen
         self.schliessen = schliessen
         _seiten = State(initialValue: Self.fenster(um: start, quelle: quelle))
         _aktuell = State(initialValue: start)
@@ -222,6 +228,18 @@ struct DetailView: View {
                 }
                 .accessibilityLabel("Informationen")
                 .keyboardShortcut("i", modifiers: .command)
+                if loeschen != nil {
+                    Button {
+                        frageLoeschen = true
+                    } label: {
+                        Image(systemName: "trash").frame(width: 52, height: 44)
+                    }
+                    .accessibilityLabel("Löschen")
+                    .disabled(item == nil || loescht)
+                    .confirmationDialog("Dieses Objekt löschen?", isPresented: $frageLoeschen, titleVisibility: .visible) {
+                        Button("Löschen", role: .destructive) { loesche() }
+                    }
+                }
             }
             .font(.title3)
             .padding(.horizontal, 8)
@@ -262,6 +280,17 @@ struct DetailView: View {
         guard let info else { return nil }
         let zeit = InfoPanel.uhrzeit(info.aufgenommenLokal)
         return info.ort.map { "\($0.split(separator: ",").first.map(String.init) ?? $0) · \(zeit)" } ?? zeit
+    }
+
+    private func loesche() {
+        guard let id = item?.id, let loeschen, !loescht else { return }
+        loescht = true
+        Task {
+            if await loeschen(id) {
+                schliesse()
+            }
+            loescht = false
+        }
     }
 
     private func wechsleFavorit() {
