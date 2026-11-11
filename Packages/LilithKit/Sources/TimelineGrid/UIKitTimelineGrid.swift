@@ -60,6 +60,11 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     private func monatGeladen(_ section: Int, anzahlGeaendert: Bool) {
         guard let collectionView, section < collectionView.numberOfSections else { return }
+        #if DEBUG
+        if let start = messStart, section == messZiel, messMonatMs == nil {
+            messMonatMs = Int(Date().timeIntervalSince(start) * 1000)
+        }
+        #endif
         if anzahlGeaendert {
             UIView.performWithoutAnimation { collectionView.reloadSections([section]) }
         } else {
@@ -72,15 +77,51 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         }
     }
 
+    #if DEBUG
+    // Messung (nur Debug): Zeit vom letzten Sprung bis Monat geladen und bis alle sichtbaren Kacheln ein Bild haben.
+    private var messStart: Date?
+    private var messZiel = -1
+    private var messMonatMs: Int?
+    private var messTimer: Timer?
+
+    private func starteMessung(_ section: Int) {
+        messStart = Date()
+        messZiel = section
+        messMonatMs = quelle.item(section: section, index: 0) != nil ? 0 : nil
+        messTimer?.invalidate()
+        messTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, let start = self.messStart else { return }
+                let zellen = self.collectionView.visibleCells.compactMap { $0 as? GridZelle }
+                let ms = Int(Date().timeIntervalSince(start) * 1000)
+                if (!zellen.isEmpty && zellen.allSatisfy(\.hatBild)) || ms > 20_000 {
+                    print("LILITH-MESSUNG sprung→monat=\(self.messMonatMs.map(String.init) ?? "?")ms sprung→bilder=\(ms)ms "
+                          + "zellen=\(zellen.count) mitBild=\(zellen.filter(\.hatBild).count)")
+                    fflush(stdout)
+                    self.messTimer?.invalidate()
+                    self.messStart = nil
+                }
+            }
+        }
+    }
+    #endif
+
     /// Springt ohne Animation an den Anfang eines Monats.
     public func springe(zuSection section: Int) {
         guard section < quelle.sections.count, quelle.sections[section].anzahl > 0 else { return }
+        #if DEBUG
+        starteMessung(section)
+        #endif
         collectionView.layoutIfNeeded()
         if let kopf = collectionView.layoutAttributesForSupplementaryElement(
             ofKind: UICollectionView.elementKindSectionHeader, at: IndexPath(item: 0, section: section)) {
             let maxY = max(-collectionView.adjustedContentInset.top,
                            collectionView.contentSize.height - collectionView.bounds.height + collectionView.adjustedContentInset.bottom)
+            // Vorladen für die alte Position abbrechen: Die Bilder dort werden nicht mehr gebraucht.
+            vorlader.stopPrefetching()
             collectionView.contentOffset.y = min(kopf.frame.minY - collectionView.adjustedContentInset.top, maxY)
+            collectionView.layoutIfNeeded()
+            meldeSichtbare()
         }
     }
 
@@ -89,7 +130,18 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         wechsleZoom(zu: neu, anker: nil, animiert: animiert)
     }
 
+    private var letzteSichtbare: Set<Int> = []
+
+    private func meldeSichtbare() {
+        let jetzt = Set(collectionView.indexPathsForVisibleItems.map(\.section))
+        if jetzt != letzteSichtbare {
+            letzteSichtbare = jetzt
+            quelle.sichtbar(jetzt)
+        }
+    }
+
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        meldeSichtbare()
         let max = scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom
             + scrollView.adjustedContentInset.top
         onScroll?(max > 0 ? Double((scrollView.contentOffset.y + scrollView.adjustedContentInset.top) / max) : 0)
@@ -230,6 +282,7 @@ final class GridZelle: UICollectionViewCell {
     private let herz = UIImageView(image: UIImage(systemName: "heart.fill"))
     private let live = UIImageView(image: UIImage(systemName: "livephoto"))
     private let lader = StufenLader()
+    private(set) var hatBild = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -271,6 +324,7 @@ final class GridZelle: UICollectionViewCell {
         super.prepareForReuse()
         lader.abbrechen()
         bild.image = nil
+        hatBild = false
     }
 
     func zeigePlatzhalter() {
@@ -287,8 +341,10 @@ final class GridZelle: UICollectionViewCell {
         let c = item.rgb
         contentView.backgroundColor = UIColor(red: c.r, green: c.g, blue: c.b, alpha: 1)
         bild.image = nil
+        hatBild = false
         let ansicht = bild
-        lader.lade(anfragen) { neu, sofort in
+        lader.lade(anfragen) { [weak self] neu, sofort in
+            self?.hatBild = true
             if sofort || ansicht.image != nil {
                 ansicht.image = neu
             } else {

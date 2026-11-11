@@ -31,4 +31,15 @@ Der Sprung ist entscheidend, weil Scrubber, „Heute vor X Jahren“ und Sucherg
 - **Monate zuerst, Inhalt später:** Beim Öffnen lädt Lilith nur die Liste der Monate mit Anzahl (`/timeline/buckets`). Den Inhalt eines Monats (`/timeline/bucket`) holt sie erst, wenn das Grid ihn anzeigen will oder bald braucht.
 - **Platzhalter:** Bis das Vorschaubild da ist, zeigt jede Kachel die Durchschnittsfarbe aus dem Thumbhash.
 - **Vorschaubilder:** Nuke mit bis zu 1 GB Festplatten-Cache. Kleine Kacheln laden Immichs „thumbnail“ (ca. 250 px), große Kacheln (ab 320 px) die schärfere „preview“.
+- **Ladezeit nach Sprüngen (gemessen 11.11.2026):** Gemessen wurde mit leerem Cache, wie lange es nach einem Scrubber-Sprung über rund vier Jahre dauert, bis alle sichtbaren Kacheln ein Foto zeigen (iPhone-Simulator, echter Server).
+
+  | | Monat geladen | Alle Fotos sichtbar |
+  |---|---|---|
+  | vorher | 0,37–0,40 s | 6,5 s |
+  | nachher | 0,24–0,35 s | **1,1–1,2 s** |
+
+  Was geholfen hat:
+  1. Das kleine Vorschaubild hat hohe Priorität. Das scharfe startet erst danach und mit niedriger Priorität, statt beide gleichzeitig.
+  2. Überflogene Monate werden nicht geladen: kurze Wartezeit von 120 ms und nur Monate in der Nähe des Sichtbaren. Laufende Anfragen für verlassene Monate werden abgebrochen.
+  3. Vorladen für die alte Position wird beim Sprung gestoppt.
 - **Noch kein Offline-Spiegel:** Die Monatsdaten liegen nur im Arbeitsspeicher. Die Datenbank (GRDB) für einen Offline-Spiegel und schnelleren Start folgt als eigener Schritt.

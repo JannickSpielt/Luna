@@ -22,7 +22,8 @@ final class TimelineStore: TimelineQuelle {
     @ObservationIgnored var onMonatGeladen: ((Int, Bool) -> Void)?
     @ObservationIgnored private var monate: [TimelineMonat] = []
     @ObservationIgnored private var inhalte: [Int: [GridItem]] = [:]
-    @ObservationIgnored private var laufend: Set<Int> = []
+    @ObservationIgnored private var laufend: [Int: Task<Void, Never>] = [:]
+    @ObservationIgnored private var sichtbareMonate: Set<Int> = []
     @ObservationIgnored private let client: ImmichClient
     /// Wird aufgerufen, wenn der Server die Anmeldung ablehnt.
     @ObservationIgnored var onSitzungAbgelaufen: (() -> Void)?
@@ -37,7 +38,8 @@ final class TimelineStore: TimelineQuelle {
             let geladen = try await client.timelineMonate().filter { $0.anzahl > 0 }
             monate = geladen
             inhalte = [:]
-            laufend = []
+            laufend.values.forEach { $0.cancel() }
+            laufend = [:]
             sections = geladen.map { monat in
                 GridSection(id: monat.schluessel, titel: Self.titel(monat),
                             untertitel: "\(monat.anzahl.formatted()) Objekte", anzahl: monat.anzahl)
@@ -58,14 +60,34 @@ final class TimelineStore: TimelineQuelle {
         return liste[index]
     }
 
+    /// Monate in der Nähe des Sichtbaren (±1) werden gebraucht, alles andere wurde nur überflogen.
+    private func wirdGebraucht(_ section: Int) -> Bool {
+        sichtbareMonate.isEmpty || sichtbareMonate.contains { abs($0 - section) <= 1 }
+    }
+
+    func sichtbar(_ sections: Set<Int>) {
+        sichtbareMonate = sections
+        // Ladevorgänge für überflogene Monate abbrechen, damit der Zielmonat schneller drankommt.
+        for (section, aufgabe) in laufend where !wirdGebraucht(section) {
+            aufgabe.cancel()
+            laufend[section] = nil
+        }
+    }
+
     func ladeMonat(_ section: Int) {
-        guard section < monate.count, inhalte[section] == nil, !laufend.contains(section) else { return }
-        laufend.insert(section)
+        guard section < monate.count, inhalte[section] == nil, laufend[section] == nil else { return }
         let monat = monate[section]
-        Task {
-            defer { laufend.remove(section) }
+        laufend[section] = Task {
+            defer { if laufend[section] != nil, !Task.isCancelled { laufend[section] = nil } }
+            // Kurz warten: Beim schnellen Scrubben ist der Monat danach oft schon wieder weg.
+            try? await Task.sleep(for: .milliseconds(120))
+            guard !Task.isCancelled, wirdGebraucht(section) else {
+                laufend[section] = nil
+                return
+            }
             do {
                 let assets = try await client.timelineInhalt(monat)
+                guard !Task.isCancelled else { return }
                 // Die Monate könnten inzwischen neu geladen worden sein.
                 guard section < monate.count, monate[section] == monat else { return }
                 inhalte[section] = assets.map(Self.gridItem)

@@ -81,7 +81,14 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
         }
     }
 
+    private var letzteSichtbare: Set<Int> = []
+
     @objc private func gescrollt() {
+        let jetzt = Set(collectionView.indexPathsForVisibleItems().map(\.section))
+        if jetzt != letzteSichtbare {
+            letzteSichtbare = jetzt
+            quelle.sichtbar(jetzt)
+        }
         let clip = scrollView.contentView
         let max = collectionView.frame.height - clip.bounds.height
         onScroll?(max > 0 ? Double(clip.bounds.minY / max) : 0)
@@ -95,6 +102,7 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
             ofKind: NSCollectionView.elementKindSectionHeader, at: IndexPath(item: 0, section: section)) {
             let clip = scrollView.contentView
             let maxY = max(0, collectionView.frame.height - clip.bounds.height)
+            vorlader.stopPrefetching()
             clip.scroll(to: NSPoint(x: 0, y: min(kopf.frame.minY, maxY)))
             scrollView.reflectScrolledClipView(clip)
             gescrollt()

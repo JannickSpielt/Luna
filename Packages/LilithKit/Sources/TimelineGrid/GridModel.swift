@@ -56,6 +56,8 @@ public protocol TimelineQuelle: AnyObject {
     func item(section: Int, index: Int) -> GridItem?
     /// Bittet darum, einen Monat zu laden. Mehrfache Aufrufe sind unschädlich.
     func ladeMonat(_ section: Int)
+    /// Welche Monate gerade auf dem Bildschirm sind. Monate, die nur überflogen wurden, muss die Quelle nicht laden.
+    func sichtbar(_ sections: Set<Int>)
     /// Anfragen für das Vorschaubild, von klein und schnell bis scharf. `pixel` ist die Kantenlänge der Kachel in Pixeln.
     func bildAnfragen(fuer item: GridItem, pixel: CGFloat) -> [URLRequest]
     /// Wird aufgerufen, wenn ein Monat geladen ist. `anzahlGeaendert`: Die Anzahl stimmte nicht mit der Vorschau überein.
@@ -98,6 +100,7 @@ public final class BeispielQuelle: TimelineQuelle {
     public var gesamt: Int { items.reduce(0) { $0 + $1.count } }
     public func item(section: Int, index: Int) -> GridItem? { items[section][index] }
     public func ladeMonat(_ section: Int) {}
+    public func sichtbar(_ sections: Set<Int>) {}
     public func bildAnfragen(fuer item: GridItem, pixel: CGFloat) -> [URLRequest] { [] }
 
     nonisolated static func erzeuge(anzahl: Int, seed: UInt64, bisJahr: Int, bisMonat: Int) -> ([GridSection], [[GridItem]]) {
