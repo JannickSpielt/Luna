@@ -171,14 +171,14 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
 
     public func collectionView(_ collectionView: NSCollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
         var angefragt = Set<Int>()
-        let anfragen = indexPaths.compactMap { pfad -> ImageRequest? in
+        let vorzuladen = indexPaths.compactMap { pfad -> ImageRequest? in
             guard let item = quelle.item(section: pfad.section, index: pfad.item) else {
                 if angefragt.insert(pfad.section).inserted { quelle.ladeMonat(pfad.section) }
                 return nil
             }
             return anfragen(fuer: item).first
         }
-        vorlader.startPrefetching(with: anfragen)
+        vorlader.startPrefetching(with: vorzuladen)
     }
 
     // MARK: - Zoom (Trackpad und ⌘+ / ⌘−)
