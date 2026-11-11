@@ -35,7 +35,9 @@ let package = Package(
                 .product(name: "HTTPTypes", package: "swift-http-types"),
             ]
         ),
-        .target(name: "AppFeature", dependencies: ["DesignSystem", "Networking"]),
+        .target(name: "TimelineGrid", dependencies: ["DesignSystem"]),
+        .target(name: "AppFeature", dependencies: ["DesignSystem", "Networking", "TimelineGrid"]),
+        .testTarget(name: "TimelineGridTests", dependencies: ["TimelineGrid"]),
         .testTarget(name: "DesignSystemTests", dependencies: ["DesignSystem"]),
         .testTarget(
             name: "NetworkingTests",

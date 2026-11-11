@@ -49,9 +49,8 @@ struct HauptView: View {
     var body: some View {
         TabView(selection: $auswahl) {
             Tab("Bibliothek", systemImage: "square.grid.2x2", value: Bereich.bibliothek) {
-                Platzhalter(titel: "Bibliothek", symbol: "square.grid.2x2",
-                            text: "Hier erscheint bald deine Timeline.",
-                            account: account, zeigeKonto: $zeigeKonto)
+                GridPrototypView(zeigeKonto: $zeigeKonto,
+                                 kontoBuchstabe: String(account.user.name.prefix(1)).uppercased())
             }
             if zeigeErinnerungen {
                 Tab("Erinnerungen", systemImage: "moon", value: Bereich.erinnerungen) {

@@ -1,7 +1,7 @@
 <!-- Lilith | Project README -->
 
 <div align="center">
-  <img src="assets/swimmich-logo.svg" alt="Lilith App Icon Placeholder" width="150" />
+  <img src="assets/lilith-icon.png" alt="Lilith App-Icon: Mondsichel mit Kamerablende" width="150" />
 
   <h1>Lilith</h1>
   <p><strong>Deine Immich-Fotobibliothek. Nativ auf Apple-Geräten.</strong></p>

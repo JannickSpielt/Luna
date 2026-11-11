@@ -29,6 +29,18 @@ public final class SessionStore {
     /// Beim App-Start: gespeichertes Konto laden und im Hintergrund prüfen.
     public func start() async {
         guard phase == .startet else { return }
+        #if DEBUG
+        // Zum Testen ohne Server: Start mit „-LilithDemo YES“ überspringt die Anmeldung.
+        if UserDefaults.standard.bool(forKey: "LilithDemo") {
+            let adresse = ServerAddress(eingabe: "demo.lilith.invalid")!
+            phase = .angemeldet(Account(
+                server: ServerInfo(address: adresse, version: ServerVersion(major: 3, minor: 3, patch: 5),
+                                   capabilities: ServerCapabilities(smartSearch: true, trash: true)),
+                user: ImmichUser(id: "demo", email: "demo@lilith.invalid", name: "Demo", isAdmin: false),
+                usesAPIKey: true))
+            return
+        }
+        #endif
         guard let (account, credential) = store.activeAccount() else {
             letzteAdresse = store.accounts().first?.server.address.description
             phase = .abgemeldet
