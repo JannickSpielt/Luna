@@ -151,6 +151,13 @@ struct OnboardingView: View {
             .disabled(!kannAnmelden(server) || anmeldend)
             .padding(.top, 6)
 
+            if let fehler {
+                Label(fehler, systemImage: "exclamationmark.triangle.fill")
+                    .font(.footnote)
+                    .foregroundStyle(LilithColor.nachtrose)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             if server.capabilities.passwordLogin {
                 Button(mitAPIKey ? "Mit E-Mail und Passwort anmelden" : "Mit API-Key anmelden") {
                     mitAPIKey.toggle()

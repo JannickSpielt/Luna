@@ -17,6 +17,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.0"),
         .package(url: "https://github.com/apple/swift-openapi-urlsession", from: "1.1.0"),
         .package(url: "https://github.com/apple/swift-http-types", from: "1.3.0"),
+        .package(url: "https://github.com/kean/Nuke", from: "12.8.0"),
     ],
     targets: [
         .target(name: "DesignSystem"),
@@ -35,7 +36,13 @@ let package = Package(
                 .product(name: "HTTPTypes", package: "swift-http-types"),
             ]
         ),
-        .target(name: "TimelineGrid", dependencies: ["DesignSystem"]),
+        .target(
+            name: "TimelineGrid",
+            dependencies: [
+                "DesignSystem",
+                .product(name: "Nuke", package: "Nuke"),
+            ]
+        ),
         .target(name: "AppFeature", dependencies: ["DesignSystem", "Networking", "TimelineGrid"]),
         .testTarget(name: "TimelineGridTests", dependencies: ["TimelineGrid"]),
         .testTarget(name: "DesignSystemTests", dependencies: ["DesignSystem"]),

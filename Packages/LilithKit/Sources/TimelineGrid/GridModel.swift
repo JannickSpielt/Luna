@@ -7,102 +7,135 @@ public enum GridItemKind: UInt8, Sendable {
     case livePhoto
 }
 
-/// Ein Eintrag im Grid. Bewusst klein gehalten (wenige Bytes),
-/// damit auch 100.000+ Einträge kaum Speicher kosten.
+/// Ein Eintrag im Grid.
 public struct GridItem: Hashable, Sendable {
-    public let id: Int32
-    /// Index in die Platzhalter-Palette (später: Thumbhash-Durchschnittsfarbe).
-    public let farbe: UInt8
+    /// Immich-Asset-ID (bei Testdaten „demo-…“).
+    public let id: String
+    /// Platzhalterfarbe als 0xRRGGBB, z. B. die Durchschnittsfarbe aus dem Thumbhash.
+    public let farbe: UInt32
     public let art: GridItemKind
     public let favorit: Bool
     /// Videodauer in Sekunden, sonst 0.
-    public let dauer: UInt16
+    public let dauer: Int
 
-    public init(id: Int32, farbe: UInt8, art: GridItemKind, favorit: Bool, dauer: UInt16) {
+    public init(id: String, farbe: UInt32, art: GridItemKind, favorit: Bool, dauer: Int) {
         self.id = id
         self.farbe = farbe
         self.art = art
         self.favorit = favorit
         self.dauer = dauer
     }
+
+    public var rgb: (r: Double, g: Double, b: Double) {
+        (Double((farbe >> 16) & 0xFF) / 255, Double((farbe >> 8) & 0xFF) / 255, Double(farbe & 0xFF) / 255)
+    }
+
+    public var dauerText: String { String(format: "%d:%02d", dauer / 60, dauer % 60) }
 }
 
-/// Ein Monat in der Timeline. Entspricht einem Immich-Timeline-Bucket.
+/// Ein Monat in der Timeline. Die Anzahl ist vorab bekannt, die Einträge kommen später.
 public struct GridSection: Hashable, Sendable, Identifiable {
-    public let id: Int
+    public let id: String
     public let titel: String
-    public let untertitel: String
-    /// Bereich der Einträge dieses Monats in `GridModel.items`.
-    public let bereich: Range<Int>
+    public var untertitel: String
+    public var anzahl: Int
 
-    public var anzahl: Int { bereich.count }
+    public init(id: String, titel: String, untertitel: String, anzahl: Int) {
+        self.id = id
+        self.titel = titel
+        self.untertitel = untertitel
+        self.anzahl = anzahl
+    }
 }
 
-/// Daten für das Grid: Monate (neueste zuerst) und alle Einträge am Stück.
-/// Die Aufteilung nach Anzahl pro Monat passt zu Immichs Timeline-Buckets,
-/// bei denen die Anzahl vorab bekannt ist und Inhalte später nachgeladen werden.
-public struct GridModel: Sendable {
-    public let sections: [GridSection]
-    public let items: [GridItem]
+/// Liefert dem Grid seine Daten. Monate werden erst geladen, wenn sie gebraucht werden.
+@MainActor
+public protocol TimelineQuelle: AnyObject {
+    var sections: [GridSection] { get }
+    /// Eintrag oder `nil`, solange der Monat noch nicht geladen ist.
+    func item(section: Int, index: Int) -> GridItem?
+    /// Bittet darum, einen Monat zu laden. Mehrfache Aufrufe sind unschädlich.
+    func ladeMonat(_ section: Int)
+    /// Anfragen für das Vorschaubild, von klein und schnell bis scharf. `pixel` ist die Kantenlänge der Kachel in Pixeln.
+    func bildAnfragen(fuer item: GridItem, pixel: CGFloat) -> [URLRequest]
+    /// Wird aufgerufen, wenn ein Monat geladen ist. `anzahlGeaendert`: Die Anzahl stimmte nicht mit der Vorschau überein.
+    var onMonatGeladen: ((_ section: Int, _ anzahlGeaendert: Bool) -> Void)? { get set }
+}
 
-    public init(sections: [GridSection], items: [GridItem]) {
-        self.sections = sections
-        self.items = items
+extension TimelineQuelle {
+    /// Zuordnung von Scroll-Anteil (0…1) zu Monat, gewichtet nach Anzahl. Für den Scrubber.
+    public func section(beiAnteil anteil: Double) -> Int? {
+        let gesamt = sections.reduce(0) { $0 + $1.anzahl }
+        guard gesamt > 0 else { return nil }
+        let ziel = Int(min(max(anteil, 0), 1) * Double(gesamt))
+        var summe = 0
+        for (i, s) in sections.enumerated() {
+            summe += s.anzahl
+            if summe > ziel { return i }
+        }
+        return sections.count - 1
+    }
+}
+
+/// Monatsnamen auf Deutsch.
+public enum Monatsname {
+    public static let namen = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
+                               "August", "September", "Oktober", "November", "Dezember"]
+    public static let kurz = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+}
+
+/// Erfundene Bibliothek zum Testen ohne Server. Gleicher `seed` ergibt immer dieselben Daten.
+@MainActor
+public final class BeispielQuelle: TimelineQuelle {
+    public private(set) var sections: [GridSection] = []
+    private var items: [[GridItem]] = []
+    public var onMonatGeladen: ((Int, Bool) -> Void)?
+
+    public init(anzahl: Int = 100_000, seed: UInt64 = 42, bisJahr: Int = 2026, bisMonat: Int = 11) {
+        (sections, items) = Self.erzeuge(anzahl: anzahl, seed: seed, bisJahr: bisJahr, bisMonat: bisMonat)
     }
 
-    public subscript(section: Int, item: Int) -> GridItem {
-        items[sections[section].bereich.lowerBound + item]
-    }
+    public var gesamt: Int { items.reduce(0) { $0 + $1.count } }
+    public func item(section: Int, index: Int) -> GridItem? { items[section][index] }
+    public func ladeMonat(_ section: Int) {}
+    public func bildAnfragen(fuer item: GridItem, pixel: CGFloat) -> [URLRequest] { [] }
 
-    /// Erfundene Bibliothek zum Testen. Gleicher `seed` ergibt immer dieselben Daten.
-    public static func beispiel(anzahl: Int = 100_000, seed: UInt64 = 42, bisJahr: Int = 2026, bisMonat: Int = 11) -> GridModel {
+    nonisolated static func erzeuge(anzahl: Int, seed: UInt64, bisJahr: Int, bisMonat: Int) -> ([GridSection], [[GridItem]]) {
         var zufall = SplitMix64(seed: seed)
-        let monatsnamen = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli",
-                           "August", "September", "Oktober", "November", "Dezember"]
         let orte = ["Hamburg", "Lissabon", "Ostsee", "Berlin", "Zuhause", "Porto", "Alpen",
                     "Kopenhagen", "Garten", "Amsterdam", "Wien", "Sylt"]
-
-        // Monatsgrößen schwanken stark wie im echten Leben (Urlaub, Feiern, ruhige Monate).
-        var groessen: [Int] = []
+        var sections: [GridSection] = []
+        var items: [[GridItem]] = []
         var rest = anzahl
+        var jahr = bisJahr
+        var monat = bisMonat
+        var laufend = 0
         while rest > 0 {
             let basis = Int(zufall.next() % 600) + 80
             let spitze = zufall.next() % 7 == 0 ? Int(zufall.next() % 1800) : 0
             let n = min(rest, basis + spitze)
-            groessen.append(n)
-            rest -= n
-        }
-
-        var sections: [GridSection] = []
-        var items: [GridItem] = []
-        items.reserveCapacity(anzahl)
-        var jahr = bisJahr
-        var monat = bisMonat
-        var start = 0
-        for (index, n) in groessen.enumerated() {
+            var monatItems: [GridItem] = []
+            monatItems.reserveCapacity(n)
             for _ in 0..<n {
                 let r = zufall.next()
                 let art: GridItemKind = r % 23 == 0 ? .video : (r % 17 == 0 ? .livePhoto : .foto)
-                items.append(GridItem(
-                    id: Int32(items.count),
-                    farbe: UInt8((r >> 8) % UInt64(GridPalette.anzahl)),
+                monatItems.append(GridItem(
+                    id: "demo-\(laufend)",
+                    farbe: GridPalette.farben[Int((r >> 8) % UInt64(GridPalette.farben.count))],
                     art: art,
                     favorit: (r >> 16) % 29 == 0,
-                    dauer: art == .video ? UInt16(5 + (r >> 24) % 300) : 0
-                ))
+                    dauer: art == .video ? Int(5 + (r >> 24) % 300) : 0))
+                laufend += 1
             }
             let ort = orte[Int(zufall.next() % UInt64(orte.count))]
-            sections.append(GridSection(
-                id: index,
-                titel: "\(monatsnamen[monat - 1]) \(jahr)",
-                untertitel: "\(ort) · \(n.formatted()) Objekte",
-                bereich: start..<(start + n)
-            ))
-            start += n
+            sections.append(GridSection(id: "\(jahr)-\(monat)", titel: "\(Monatsname.namen[monat - 1]) \(jahr)",
+                                        untertitel: "\(ort) · \(n.formatted()) Objekte", anzahl: n))
+            items.append(monatItems)
+            rest -= n
             monat -= 1
             if monat == 0 { monat = 12; jahr -= 1 }
         }
-        return GridModel(sections: sections, items: items)
+        return (sections, items)
     }
 }
 
@@ -119,17 +152,29 @@ struct SplitMix64: RandomNumberGenerator {
     }
 }
 
-/// Gedämpfte Platzhalterfarben, wie Durchschnittsfarben echter Fotos.
+/// Gedämpfte Platzhalterfarben für Testdaten und Fotos ohne Thumbhash.
 public enum GridPalette {
     public static let farben: [UInt32] = [
         0x5B4A3F, 0x8A6B52, 0x3E4A52, 0xA7826A, 0x2F3B35, 0x6E5A6B,
         0xC29A74, 0x4C3A44, 0x7D8C8A, 0x9B5F4E, 0x35424F, 0xB79A7E,
     ]
-    public static var anzahl: Int { farben.count }
+}
 
-    public static func rgb(_ index: UInt8) -> (r: Double, g: Double, b: Double) {
-        let hex = farben[Int(index) % farben.count]
-        return (Double((hex >> 16) & 0xFF) / 255, Double((hex >> 8) & 0xFF) / 255, Double(hex & 0xFF) / 255)
+/// Liest die Durchschnittsfarbe aus einem Thumbhash (Base64), ohne das ganze Bild zu dekodieren.
+/// Verfahren nach der Thumbhash-Referenz von Evan Wallace.
+public enum Thumbhash {
+    public static func durchschnittsfarbe(_ base64: String) -> UInt32? {
+        guard let daten = Data(base64Encoded: base64), daten.count >= 5 else { return nil }
+        let b = [UInt8](daten)
+        let kopf = UInt32(b[0]) | UInt32(b[1]) << 8 | UInt32(b[2]) << 16
+        let l = Double(kopf & 63) / 63
+        let p = Double((kopf >> 6) & 63) / 31.5 - 1
+        let q = Double((kopf >> 12) & 63) / 31.5 - 1
+        let blau = l - 2.0 / 3.0 * p
+        let rot = (3 * l - blau + q) / 2
+        let gruen = rot - q
+        func kanal(_ x: Double) -> UInt32 { UInt32((min(max(x, 0), 1) * 255).rounded()) }
+        return kanal(rot) << 16 | kanal(gruen) << 8 | kanal(blau)
     }
 }
 

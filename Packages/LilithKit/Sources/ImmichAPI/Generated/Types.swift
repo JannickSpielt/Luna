@@ -54,6 +54,20 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /server/version`.
     /// - Remark: Generated from `#/paths//server/version/get(getServerVersion)`.
     func getServerVersion(_ input: Operations.GetServerVersion.Input) async throws -> Operations.GetServerVersion.Output
+    /// Get time bucket
+    ///
+    /// Retrieve a string of all asset ids in a given time bucket.
+    ///
+    /// - Remark: HTTP `GET /timeline/bucket`.
+    /// - Remark: Generated from `#/paths//timeline/bucket/get(getTimeBucket)`.
+    func getTimeBucket(_ input: Operations.GetTimeBucket.Input) async throws -> Operations.GetTimeBucket.Output
+    /// Get time buckets
+    ///
+    /// Retrieve a list of all minimal time buckets.
+    ///
+    /// - Remark: HTTP `GET /timeline/buckets`.
+    /// - Remark: Generated from `#/paths//timeline/buckets/get(getTimeBuckets)`.
+    func getTimeBuckets(_ input: Operations.GetTimeBuckets.Input) async throws -> Operations.GetTimeBuckets.Output
     /// Get current user
     ///
     /// Retrieve information about the user making the API request.
@@ -126,6 +140,36 @@ extension APIProtocol {
     public func getServerVersion(headers: Operations.GetServerVersion.Input.Headers = .init()) async throws -> Operations.GetServerVersion.Output {
         try await getServerVersion(Operations.GetServerVersion.Input(headers: headers))
     }
+    /// Get time bucket
+    ///
+    /// Retrieve a string of all asset ids in a given time bucket.
+    ///
+    /// - Remark: HTTP `GET /timeline/bucket`.
+    /// - Remark: Generated from `#/paths//timeline/bucket/get(getTimeBucket)`.
+    public func getTimeBucket(
+        query: Operations.GetTimeBucket.Input.Query,
+        headers: Operations.GetTimeBucket.Input.Headers = .init()
+    ) async throws -> Operations.GetTimeBucket.Output {
+        try await getTimeBucket(Operations.GetTimeBucket.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Get time buckets
+    ///
+    /// Retrieve a list of all minimal time buckets.
+    ///
+    /// - Remark: HTTP `GET /timeline/buckets`.
+    /// - Remark: Generated from `#/paths//timeline/buckets/get(getTimeBuckets)`.
+    public func getTimeBuckets(
+        query: Operations.GetTimeBuckets.Input.Query = .init(),
+        headers: Operations.GetTimeBuckets.Input.Headers = .init()
+    ) async throws -> Operations.GetTimeBuckets.Output {
+        try await getTimeBuckets(Operations.GetTimeBuckets.Input(
+            query: query,
+            headers: headers
+        ))
+    }
     /// Get current user
     ///
     /// Retrieve information about the user making the API request.
@@ -160,6 +204,29 @@ public enum Servers {
 public enum Components {
     /// Types generated from the `#/components/schemas` section of the OpenAPI document.
     public enum Schemas {
+        /// Asset sort order
+        ///
+        /// - Remark: Generated from `#/components/schemas/AssetOrder`.
+        @frozen public enum AssetOrder: String, Codable, Hashable, Sendable, CaseIterable {
+            case asc = "asc"
+            case desc = "desc"
+        }
+        /// Asset sorting property
+        ///
+        /// - Remark: Generated from `#/components/schemas/AssetOrderBy`.
+        @frozen public enum AssetOrderBy: String, Codable, Hashable, Sendable, CaseIterable {
+            case takenAt = "takenAt"
+            case createdAt = "createdAt"
+        }
+        /// Asset visibility
+        ///
+        /// - Remark: Generated from `#/components/schemas/AssetVisibility`.
+        @frozen public enum AssetVisibility: String, Codable, Hashable, Sendable, CaseIterable {
+            case archive = "archive"
+            case timeline = "timeline"
+            case hidden = "hidden"
+            case locked = "locked"
+        }
         /// - Remark: Generated from `#/components/schemas/LoginCredentialDto`.
         public struct LoginCredentialDto: Codable, Hashable, Sendable {
             /// User email
@@ -484,6 +551,196 @@ public enum Components {
                 case minor
                 case patch
                 case prerelease
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto`.
+        public struct TimeBucketAssetResponseDto: Codable, Hashable, Sendable {
+            /// Array of city names extracted from EXIF GPS data
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/city`.
+            public var city: [Swift.String?]?
+            /// Array of country names extracted from EXIF GPS data
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/country`.
+            public var country: [Swift.String?]?
+            /// Array of UTC timestamps when each asset was originally uploaded to Immich
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/createdAt`.
+            public var createdAt: [Swift.String]
+            /// Array of video/gif durations in milliseconds (null for static images)
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/duration`.
+            public var duration: [Swift.Int?]
+            /// Array of file creation timestamps in UTC
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/fileCreatedAt`.
+            public var fileCreatedAt: [Swift.String]
+            /// Array of asset IDs in the time bucket
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/id`.
+            public var id: [Swift.String]
+            /// Array indicating whether each asset is favorited
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/isFavorite`.
+            public var isFavorite: [Swift.Bool]
+            /// Array indicating whether each asset is an image (false for videos)
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/isImage`.
+            public var isImage: [Swift.Bool]
+            /// Array indicating whether each asset is in the trash
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/isTrashed`.
+            public var isTrashed: [Swift.Bool]
+            /// Array of latitude coordinates extracted from EXIF GPS data
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/latitude`.
+            public var latitude: [Swift.Double?]?
+            /// Array of live photo video asset IDs (null for non-live photos)
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/livePhotoVideoId`.
+            public var livePhotoVideoId: [Swift.String?]
+            /// Array of UTC offset hours at the time each photo was taken. Positive values are east of UTC, negative values are west of UTC. Values may be fractional (e.g., 5.5 for +05:30, -9.75 for -09:45). Applying this offset to 'fileCreatedAt' will give you the time the photo was taken from the photographer's perspective.
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/localOffsetHours`.
+            public var localOffsetHours: [Swift.Double]
+            /// Array of longitude coordinates extracted from EXIF GPS data
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/longitude`.
+            public var longitude: [Swift.Double?]?
+            /// Array of owner IDs for each asset
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/ownerId`.
+            public var ownerId: [Swift.String]
+            /// Array of projection types for 360° content (e.g., "EQUIRECTANGULAR", "CUBEFACE", "CYLINDRICAL")
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/projectionType`.
+            public var projectionType: [Swift.String?]
+            /// Array of aspect ratios (width/height) for each asset
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/ratio`.
+            public var ratio: [Swift.Double]
+            /// Array of stack information as [stackId, assetCount] tuples (null for non-stacked assets)
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/stack`.
+            public var stack: [[Swift.String]?]?
+            /// Array of BlurHash strings for generating asset previews (base64 encoded)
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/thumbhash`.
+            public var thumbhash: [Swift.String?]
+            /// Array of visibility statuses for each asset (e.g., ARCHIVE, TIMELINE, HIDDEN, LOCKED)
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketAssetResponseDto/visibility`.
+            public var visibility: [Components.Schemas.AssetVisibility]
+            /// Creates a new `TimeBucketAssetResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - city: Array of city names extracted from EXIF GPS data
+            ///   - country: Array of country names extracted from EXIF GPS data
+            ///   - createdAt: Array of UTC timestamps when each asset was originally uploaded to Immich
+            ///   - duration: Array of video/gif durations in milliseconds (null for static images)
+            ///   - fileCreatedAt: Array of file creation timestamps in UTC
+            ///   - id: Array of asset IDs in the time bucket
+            ///   - isFavorite: Array indicating whether each asset is favorited
+            ///   - isImage: Array indicating whether each asset is an image (false for videos)
+            ///   - isTrashed: Array indicating whether each asset is in the trash
+            ///   - latitude: Array of latitude coordinates extracted from EXIF GPS data
+            ///   - livePhotoVideoId: Array of live photo video asset IDs (null for non-live photos)
+            ///   - localOffsetHours: Array of UTC offset hours at the time each photo was taken. Positive values are east of UTC, negative values are west of UTC. Values may be fractional (e.g., 5.5 for +05:30, -9.75 for -09:45). Applying this offset to 'fileCreatedAt' will give you the time the photo was taken from the photographer's perspective.
+            ///   - longitude: Array of longitude coordinates extracted from EXIF GPS data
+            ///   - ownerId: Array of owner IDs for each asset
+            ///   - projectionType: Array of projection types for 360° content (e.g., "EQUIRECTANGULAR", "CUBEFACE", "CYLINDRICAL")
+            ///   - ratio: Array of aspect ratios (width/height) for each asset
+            ///   - stack: Array of stack information as [stackId, assetCount] tuples (null for non-stacked assets)
+            ///   - thumbhash: Array of BlurHash strings for generating asset previews (base64 encoded)
+            ///   - visibility: Array of visibility statuses for each asset (e.g., ARCHIVE, TIMELINE, HIDDEN, LOCKED)
+            public init(
+                city: [Swift.String?]? = nil,
+                country: [Swift.String?]? = nil,
+                createdAt: [Swift.String],
+                duration: [Swift.Int?],
+                fileCreatedAt: [Swift.String],
+                id: [Swift.String],
+                isFavorite: [Swift.Bool],
+                isImage: [Swift.Bool],
+                isTrashed: [Swift.Bool],
+                latitude: [Swift.Double?]? = nil,
+                livePhotoVideoId: [Swift.String?],
+                localOffsetHours: [Swift.Double],
+                longitude: [Swift.Double?]? = nil,
+                ownerId: [Swift.String],
+                projectionType: [Swift.String?],
+                ratio: [Swift.Double],
+                stack: [[Swift.String]?]? = nil,
+                thumbhash: [Swift.String?],
+                visibility: [Components.Schemas.AssetVisibility]
+            ) {
+                self.city = city
+                self.country = country
+                self.createdAt = createdAt
+                self.duration = duration
+                self.fileCreatedAt = fileCreatedAt
+                self.id = id
+                self.isFavorite = isFavorite
+                self.isImage = isImage
+                self.isTrashed = isTrashed
+                self.latitude = latitude
+                self.livePhotoVideoId = livePhotoVideoId
+                self.localOffsetHours = localOffsetHours
+                self.longitude = longitude
+                self.ownerId = ownerId
+                self.projectionType = projectionType
+                self.ratio = ratio
+                self.stack = stack
+                self.thumbhash = thumbhash
+                self.visibility = visibility
+            }
+            public enum CodingKeys: String, CodingKey {
+                case city
+                case country
+                case createdAt
+                case duration
+                case fileCreatedAt
+                case id
+                case isFavorite
+                case isImage
+                case isTrashed
+                case latitude
+                case livePhotoVideoId
+                case localOffsetHours
+                case longitude
+                case ownerId
+                case projectionType
+                case ratio
+                case stack
+                case thumbhash
+                case visibility
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/TimeBucketsResponseDto`.
+        public struct TimeBucketsResponseDto: Codable, Hashable, Sendable {
+            /// Number of assets in this time bucket
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketsResponseDto/count`.
+            public var count: Swift.Int
+            /// Time bucket identifier in YYYY-MM-DD format representing the start of the time period
+            ///
+            /// - Remark: Generated from `#/components/schemas/TimeBucketsResponseDto/timeBucket`.
+            public var timeBucket: Swift.String
+            /// Creates a new `TimeBucketsResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - count: Number of assets in this time bucket
+            ///   - timeBucket: Time bucket identifier in YYYY-MM-DD format representing the start of the time period
+            public init(
+                count: Swift.Int,
+                timeBucket: Swift.String
+            ) {
+                self.count = count
+                self.timeBucket = timeBucket
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case timeBucket
             }
         }
         /// - Remark: Generated from `#/components/schemas/UserAdminResponseDto`.
@@ -1381,6 +1638,469 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
             public var ok: Operations.GetServerVersion.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Get time bucket
+    ///
+    /// Retrieve a string of all asset ids in a given time bucket.
+    ///
+    /// - Remark: HTTP `GET /timeline/bucket`.
+    /// - Remark: Generated from `#/paths//timeline/bucket/get(getTimeBucket)`.
+    public enum GetTimeBucket {
+        public static let id: Swift.String = "getTimeBucket"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/timeline/bucket/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Filter assets belonging to a specific album
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/albumId`.
+                public var albumId: Swift.String?
+                /// Bounding box coordinates as west,south,east,north (WGS84)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/bbox`.
+                public var bbox: Swift.String?
+                /// Filter by favorite status (true for favorites only, false for non-favorites only)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/isFavorite`.
+                public var isFavorite: Swift.Bool?
+                /// Filter by trash status (true for trashed assets only, false for non-trashed only)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/isTrashed`.
+                public var isTrashed: Swift.Bool?
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/key`.
+                public var key: Swift.String?
+                /// Sort order for assets within time buckets (ASC for oldest first, DESC for newest first)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/order`.
+                public var order: Components.Schemas.AssetOrder?
+                /// Date to group and order assets by (takenAt for date taken, createdAt for date added to Immich)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/orderBy`.
+                public var orderBy: Components.Schemas.AssetOrderBy?
+                /// Filter assets containing a specific person (face recognition)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/personId`.
+                public var personId: Swift.String?
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/slug`.
+                public var slug: Swift.String?
+                /// Filter assets with a specific tag
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/tagId`.
+                public var tagId: Swift.String?
+                /// Time bucket identifier in YYYY-MM-DDT00:00:00.000Z format
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/timeBucket`.
+                public var timeBucket: Swift.String
+                /// Filter assets by specific user ID
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/userId`.
+                public var userId: Swift.String?
+                /// Filter by asset visibility status (ARCHIVE, TIMELINE, HIDDEN, LOCKED)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/visibility`.
+                public var visibility: Components.Schemas.AssetVisibility?
+                /// Include location data in the response
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/withCoordinates`.
+                public var withCoordinates: Swift.Bool?
+                /// Include assets shared by partners
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/withPartners`.
+                public var withPartners: Swift.Bool?
+                /// Include stacked assets in the response. When true, only primary assets from stacks are returned.
+                ///
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/query/withStacked`.
+                public var withStacked: Swift.Bool?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - albumId: Filter assets belonging to a specific album
+                ///   - bbox: Bounding box coordinates as west,south,east,north (WGS84)
+                ///   - isFavorite: Filter by favorite status (true for favorites only, false for non-favorites only)
+                ///   - isTrashed: Filter by trash status (true for trashed assets only, false for non-trashed only)
+                ///   - key:
+                ///   - order: Sort order for assets within time buckets (ASC for oldest first, DESC for newest first)
+                ///   - orderBy: Date to group and order assets by (takenAt for date taken, createdAt for date added to Immich)
+                ///   - personId: Filter assets containing a specific person (face recognition)
+                ///   - slug:
+                ///   - tagId: Filter assets with a specific tag
+                ///   - timeBucket: Time bucket identifier in YYYY-MM-DDT00:00:00.000Z format
+                ///   - userId: Filter assets by specific user ID
+                ///   - visibility: Filter by asset visibility status (ARCHIVE, TIMELINE, HIDDEN, LOCKED)
+                ///   - withCoordinates: Include location data in the response
+                ///   - withPartners: Include assets shared by partners
+                ///   - withStacked: Include stacked assets in the response. When true, only primary assets from stacks are returned.
+                public init(
+                    albumId: Swift.String? = nil,
+                    bbox: Swift.String? = nil,
+                    isFavorite: Swift.Bool? = nil,
+                    isTrashed: Swift.Bool? = nil,
+                    key: Swift.String? = nil,
+                    order: Components.Schemas.AssetOrder? = nil,
+                    orderBy: Components.Schemas.AssetOrderBy? = nil,
+                    personId: Swift.String? = nil,
+                    slug: Swift.String? = nil,
+                    tagId: Swift.String? = nil,
+                    timeBucket: Swift.String,
+                    userId: Swift.String? = nil,
+                    visibility: Components.Schemas.AssetVisibility? = nil,
+                    withCoordinates: Swift.Bool? = nil,
+                    withPartners: Swift.Bool? = nil,
+                    withStacked: Swift.Bool? = nil
+                ) {
+                    self.albumId = albumId
+                    self.bbox = bbox
+                    self.isFavorite = isFavorite
+                    self.isTrashed = isTrashed
+                    self.key = key
+                    self.order = order
+                    self.orderBy = orderBy
+                    self.personId = personId
+                    self.slug = slug
+                    self.tagId = tagId
+                    self.timeBucket = timeBucket
+                    self.userId = userId
+                    self.visibility = visibility
+                    self.withCoordinates = withCoordinates
+                    self.withPartners = withPartners
+                    self.withStacked = withStacked
+                }
+            }
+            public var query: Operations.GetTimeBucket.Input.Query
+            /// - Remark: Generated from `#/paths/timeline/bucket/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTimeBucket.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTimeBucket.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTimeBucket.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetTimeBucket.Input.Query,
+                headers: Operations.GetTimeBucket.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/timeline/bucket/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/timeline/bucket/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.TimeBucketAssetResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.TimeBucketAssetResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTimeBucket.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTimeBucket.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//timeline/bucket/get(getTimeBucket)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTimeBucket.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTimeBucket.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Get time buckets
+    ///
+    /// Retrieve a list of all minimal time buckets.
+    ///
+    /// - Remark: HTTP `GET /timeline/buckets`.
+    /// - Remark: Generated from `#/paths//timeline/buckets/get(getTimeBuckets)`.
+    public enum GetTimeBuckets {
+        public static let id: Swift.String = "getTimeBuckets"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/timeline/buckets/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Filter assets belonging to a specific album
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/albumId`.
+                public var albumId: Swift.String?
+                /// Bounding box coordinates as west,south,east,north (WGS84)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/bbox`.
+                public var bbox: Swift.String?
+                /// Filter by favorite status (true for favorites only, false for non-favorites only)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/isFavorite`.
+                public var isFavorite: Swift.Bool?
+                /// Filter by trash status (true for trashed assets only, false for non-trashed only)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/isTrashed`.
+                public var isTrashed: Swift.Bool?
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/key`.
+                public var key: Swift.String?
+                /// Sort order for assets within time buckets (ASC for oldest first, DESC for newest first)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/order`.
+                public var order: Components.Schemas.AssetOrder?
+                /// Date to group and order assets by (takenAt for date taken, createdAt for date added to Immich)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/orderBy`.
+                public var orderBy: Components.Schemas.AssetOrderBy?
+                /// Filter assets containing a specific person (face recognition)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/personId`.
+                public var personId: Swift.String?
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/slug`.
+                public var slug: Swift.String?
+                /// Filter assets with a specific tag
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/tagId`.
+                public var tagId: Swift.String?
+                /// Filter assets by specific user ID
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/userId`.
+                public var userId: Swift.String?
+                /// Filter by asset visibility status (ARCHIVE, TIMELINE, HIDDEN, LOCKED)
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/visibility`.
+                public var visibility: Components.Schemas.AssetVisibility?
+                /// Include location data in the response
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/withCoordinates`.
+                public var withCoordinates: Swift.Bool?
+                /// Include assets shared by partners
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/withPartners`.
+                public var withPartners: Swift.Bool?
+                /// Include stacked assets in the response. When true, only primary assets from stacks are returned.
+                ///
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/query/withStacked`.
+                public var withStacked: Swift.Bool?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - albumId: Filter assets belonging to a specific album
+                ///   - bbox: Bounding box coordinates as west,south,east,north (WGS84)
+                ///   - isFavorite: Filter by favorite status (true for favorites only, false for non-favorites only)
+                ///   - isTrashed: Filter by trash status (true for trashed assets only, false for non-trashed only)
+                ///   - key:
+                ///   - order: Sort order for assets within time buckets (ASC for oldest first, DESC for newest first)
+                ///   - orderBy: Date to group and order assets by (takenAt for date taken, createdAt for date added to Immich)
+                ///   - personId: Filter assets containing a specific person (face recognition)
+                ///   - slug:
+                ///   - tagId: Filter assets with a specific tag
+                ///   - userId: Filter assets by specific user ID
+                ///   - visibility: Filter by asset visibility status (ARCHIVE, TIMELINE, HIDDEN, LOCKED)
+                ///   - withCoordinates: Include location data in the response
+                ///   - withPartners: Include assets shared by partners
+                ///   - withStacked: Include stacked assets in the response. When true, only primary assets from stacks are returned.
+                public init(
+                    albumId: Swift.String? = nil,
+                    bbox: Swift.String? = nil,
+                    isFavorite: Swift.Bool? = nil,
+                    isTrashed: Swift.Bool? = nil,
+                    key: Swift.String? = nil,
+                    order: Components.Schemas.AssetOrder? = nil,
+                    orderBy: Components.Schemas.AssetOrderBy? = nil,
+                    personId: Swift.String? = nil,
+                    slug: Swift.String? = nil,
+                    tagId: Swift.String? = nil,
+                    userId: Swift.String? = nil,
+                    visibility: Components.Schemas.AssetVisibility? = nil,
+                    withCoordinates: Swift.Bool? = nil,
+                    withPartners: Swift.Bool? = nil,
+                    withStacked: Swift.Bool? = nil
+                ) {
+                    self.albumId = albumId
+                    self.bbox = bbox
+                    self.isFavorite = isFavorite
+                    self.isTrashed = isTrashed
+                    self.key = key
+                    self.order = order
+                    self.orderBy = orderBy
+                    self.personId = personId
+                    self.slug = slug
+                    self.tagId = tagId
+                    self.userId = userId
+                    self.visibility = visibility
+                    self.withCoordinates = withCoordinates
+                    self.withPartners = withPartners
+                    self.withStacked = withStacked
+                }
+            }
+            public var query: Operations.GetTimeBuckets.Input.Query
+            /// - Remark: Generated from `#/paths/timeline/buckets/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTimeBuckets.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetTimeBuckets.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetTimeBuckets.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetTimeBuckets.Input.Query = .init(),
+                headers: Operations.GetTimeBuckets.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/timeline/buckets/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/timeline/buckets/GET/responses/200/content/application\/json`.
+                    case json([Components.Schemas.TimeBucketsResponseDto])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Components.Schemas.TimeBucketsResponseDto] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetTimeBuckets.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetTimeBuckets.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//timeline/buckets/get(getTimeBuckets)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetTimeBuckets.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetTimeBuckets.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):

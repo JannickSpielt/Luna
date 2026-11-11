@@ -3,6 +3,10 @@ import AppFeature
 
 @main
 struct LilithApp: App {
+    init() {
+        RootView.einrichten()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()

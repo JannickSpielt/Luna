@@ -52,6 +52,11 @@ public struct KeychainStore: Sendable {
     }
 }
 
-public struct KeychainError: Error, Equatable, Sendable {
+public struct KeychainError: Error, Equatable, Sendable, LocalizedError {
     public let status: OSStatus
+
+    public var errorDescription: String? {
+        let grund = SecCopyErrorMessageString(status, nil) as String? ?? "unbekannt"
+        return "Die Anmeldedaten konnten nicht sicher im Schlüsselbund gespeichert werden (\(status): \(grund))."
+    }
 }

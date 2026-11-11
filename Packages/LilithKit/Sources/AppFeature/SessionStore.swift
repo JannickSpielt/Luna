@@ -30,6 +30,19 @@ public final class SessionStore {
     public func start() async {
         guard phase == .startet else { return }
         #if DEBUG
+        // Zum Testen: „-LilithKeychainTest YES“ prüft, ob der Schlüsselbund nutzbar ist.
+        if UserDefaults.standard.bool(forKey: "LilithKeychainTest") {
+            let kc = KeychainStore(service: "app.lilith.test")
+            do {
+                try kc.save(.apiKey("test-wert"), account: "test")
+                let ok = kc.load(account: "test") == .apiKey("test-wert")
+                kc.delete(account: "test")
+                print("LILITH-KEYCHAIN \(ok ? "OK" : "LESEN FEHLGESCHLAGEN")")
+            } catch {
+                print("LILITH-KEYCHAIN FEHLER \(error.localizedDescription)")
+            }
+            fflush(stdout)
+        }
         // Zum Testen ohne Server: Start mit „-LilithDemo YES“ überspringt die Anmeldung.
         if UserDefaults.standard.bool(forKey: "LilithDemo") {
             let adresse = ServerAddress(eingabe: "demo.lilith.invalid")!
@@ -89,6 +102,12 @@ public final class SessionStore {
             throw ImmichError.falscheZugangsdaten
         }
         try speichere(Account(server: server, user: user, usesAPIKey: true), credential: credential)
+    }
+
+    /// Der Server hat die Anmeldung abgelehnt: zurück zur Anmeldung, mit Hinweis.
+    public func sitzungAbgelaufen() {
+        guard case .angemeldet(let account) = phase else { return }
+        beende(account, hinweis: ImmichError.sitzungAbgelaufen.errorDescription)
     }
 
     public func abmelden() async {

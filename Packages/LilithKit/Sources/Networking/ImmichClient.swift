@@ -22,11 +22,13 @@ public struct ImmichUser: Hashable, Codable, Sendable {
 /// damit Änderungen an der API an genau einer Stelle aufgefangen werden.
 public struct ImmichClient: Sendable {
     public let address: ServerAddress
-    private let client: ImmichAPI.Client
+    let credential: Credential?
+    let client: ImmichAPI.Client
 
     /// - Parameter transport: Für Tests austauschbar, sonst `URLSession`.
     public init(address: ServerAddress, credential: Credential? = nil, transport: (any ClientTransport)? = nil) {
         self.address = address
+        self.credential = credential
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 15
         self.client = ImmichAPI.Client(
@@ -120,7 +122,7 @@ public struct ImmichClient: Sendable {
     // MARK: - Hilfen
 
     /// Führt einen Aufruf aus und übersetzt Fehler in `ImmichError`.
-    private func rufe<T>(_ block: () async throws -> T) async throws -> T {
+    func rufe<T>(_ block: () async throws -> T) async throws -> T {
         do {
             return try await block()
         } catch let error as ImmichError {

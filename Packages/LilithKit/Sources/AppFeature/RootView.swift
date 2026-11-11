@@ -1,6 +1,7 @@
 import SwiftUI
 import DesignSystem
 import Networking
+import TimelineGrid
 
 /// Die Hauptbereiche der App.
 public enum Bereich: Hashable, Sendable {
@@ -15,6 +16,12 @@ public struct RootView: View {
     @State private var session = SessionStore()
 
     public init() {}
+
+    /// Einmal beim App-Start aufrufen (Bilder-Cache usw.).
+    @MainActor
+    public static func einrichten() {
+        BilderCache.einrichten()
+    }
 
     public var body: some View {
         Group {
@@ -40,8 +47,14 @@ public struct RootView: View {
 /// Tab Bar auf dem iPhone, Sidebar auf iPad und Mac.
 struct HauptView: View {
     let account: Account
+    @Environment(SessionStore.self) private var session
     @State private var auswahl: Bereich = .bibliothek
     @State private var zeigeKonto = false
+    /// Einmal pro Anmeldung, damit Daten nicht doppelt geladen werden.
+    @State private var timeline: TimelineStore?
+    @State private var demo: BeispielQuelle?
+
+    private var quelle: TimelineQuelle? { timeline ?? demo }
 
     /// „Erinnerungen“ kommt erst in Version 1.x.
     private let zeigeErinnerungen = false
@@ -49,8 +62,10 @@ struct HauptView: View {
     var body: some View {
         TabView(selection: $auswahl) {
             Tab("Bibliothek", systemImage: "square.grid.2x2", value: Bereich.bibliothek) {
-                GridPrototypView(zeigeKonto: $zeigeKonto,
-                                 kontoBuchstabe: String(account.user.name.prefix(1)).uppercased())
+                if let quelle {
+                    BibliothekView(quelle: quelle, store: timeline, zeigeKonto: $zeigeKonto,
+                                   kontoBuchstabe: String(account.user.name.prefix(1)).uppercased())
+                }
             }
             if zeigeErinnerungen {
                 Tab("Erinnerungen", systemImage: "moon", value: Bereich.erinnerungen) {
@@ -73,6 +88,17 @@ struct HauptView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        .onAppear {
+            guard quelle == nil else { return }
+            if let client = session.client {
+                let store = TimelineStore(client: client)
+                let sitzung = session
+                store.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
+                timeline = store
+            } else {
+                demo = BeispielQuelle()
+            }
+        }
         .sheet(isPresented: $zeigeKonto) {
             KontoView(account: account)
         }

@@ -1,21 +1,29 @@
 #if canImport(UIKit)
 import UIKit
+import Nuke
 
 /// Timeline-Grid für iPhone und iPad auf Basis von `UICollectionView`.
 /// Bewusst ohne Diffable Data Source: Die Anzahl pro Monat ist vorab bekannt
 /// (Immich-Buckets), die Zellen fragen ihre Daten erst beim Anzeigen ab.
 @MainActor
-public final class TimelineGridController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate {
-    public var model: GridModel { didSet { collectionView?.reloadData() } }
+public final class TimelineGridController: UIViewController, UICollectionViewDataSource,
+    UICollectionViewDataSourcePrefetching, UICollectionViewDelegate {
+    public var quelle: TimelineQuelle {
+        didSet { verbindeQuelle(); collectionView?.reloadData() }
+    }
     public private(set) var zoom: GridZoom
     /// Meldet geänderte Spaltenzahl (z. B. nach Pinch) an SwiftUI zurück.
     public var onZoomChange: ((GridZoom) -> Void)?
+    /// Scroll-Position von 0 (neuester Monat) bis 1 (ältester Monat).
+    public var onScroll: ((Double) -> Void)?
+    var letzterSprung: UUID?
 
     private var collectionView: UICollectionView!
     private var pinchSchonGestuft = false
+    private let vorlader = ImagePrefetcher(pipeline: .shared, destination: .memoryCache, maxConcurrentRequestCount: 4)
 
-    public init(model: GridModel, zoom: GridZoom) {
-        self.model = model
+    public init(quelle: TimelineQuelle, zoom: GridZoom) {
+        self.quelle = quelle
         self.zoom = zoom
         super.init(nibName: nil, bundle: nil)
     }
@@ -31,45 +39,68 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: layout)
         collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.backgroundColor = .clear
+        // Der Scrubber ersetzt die Scroll-Leiste.
+        collectionView.showsVerticalScrollIndicator = false
         collectionView.dataSource = self
+        collectionView.prefetchDataSource = self
         collectionView.delegate = self
-        collectionView.showsVerticalScrollIndicator = true
         collectionView.register(GridZelle.self, forCellWithReuseIdentifier: GridZelle.id)
         collectionView.register(MonatsKopf.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
                                 withReuseIdentifier: MonatsKopf.id)
         view.addSubview(collectionView)
-
-        let pinch = UIPinchGestureRecognizer(target: self, action: #selector(pinch(_:)))
-        collectionView.addGestureRecognizer(pinch)
+        collectionView.addGestureRecognizer(UIPinchGestureRecognizer(target: self, action: #selector(pinch(_:))))
+        verbindeQuelle()
     }
 
-    var letzterSprung: UUID?
-    /// Scroll-Position von 0 (neuester Monat) bis 1 (ältester Monat).
-    public var onScroll: ((Double) -> Void)?
+    private func verbindeQuelle() {
+        quelle.onMonatGeladen = { [weak self] section, anzahlGeaendert in
+            self?.monatGeladen(section, anzahlGeaendert: anzahlGeaendert)
+        }
+    }
 
-    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        let max = scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom
-        onScroll?(max > 0 ? Double((scrollView.contentOffset.y + scrollView.adjustedContentInset.top) / max) : 0)
+    private func monatGeladen(_ section: Int, anzahlGeaendert: Bool) {
+        guard let collectionView, section < collectionView.numberOfSections else { return }
+        if anzahlGeaendert {
+            UIView.performWithoutAnimation { collectionView.reloadSections([section]) }
+        } else {
+            let sichtbar = collectionView.indexPathsForVisibleItems.filter { $0.section == section }
+            if !sichtbar.isEmpty { collectionView.reconfigureItems(at: sichtbar) }
+            if let kopf = collectionView.supplementaryView(forElementKind: UICollectionView.elementKindSectionHeader,
+                                                          at: IndexPath(item: 0, section: section)) as? MonatsKopf {
+                kopf.zeige(quelle.sections[section])
+            }
+        }
     }
 
     /// Springt ohne Animation an den Anfang eines Monats.
     public func springe(zuSection section: Int) {
-        guard section < model.sections.count, model.sections[section].anzahl > 0 else { return }
+        guard section < quelle.sections.count, quelle.sections[section].anzahl > 0 else { return }
         collectionView.layoutIfNeeded()
         if let kopf = collectionView.layoutAttributesForSupplementaryElement(
             ofKind: UICollectionView.elementKindSectionHeader, at: IndexPath(item: 0, section: section)) {
-            let maxY = max(0, collectionView.contentSize.height - collectionView.bounds.height + collectionView.adjustedContentInset.bottom)
+            let maxY = max(-collectionView.adjustedContentInset.top,
+                           collectionView.contentSize.height - collectionView.bounds.height + collectionView.adjustedContentInset.bottom)
             collectionView.contentOffset.y = min(kopf.frame.minY - collectionView.adjustedContentInset.top, maxY)
         }
     }
 
-    /// Spaltenzahl von außen setzen (z. B. Buttons).
     public func setZoom(_ neu: GridZoom, animiert: Bool = true) {
         guard neu != zoom else { return }
         wechsleZoom(zu: neu, anker: nil, animiert: animiert)
     }
 
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        let max = scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom
+            + scrollView.adjustedContentInset.top
+        onScroll?(max > 0 ? Double((scrollView.contentOffset.y + scrollView.adjustedContentInset.top) / max) : 0)
+    }
+
     // MARK: - Layout
+
+    private var kantePixel: CGFloat {
+        let breite = collectionView?.bounds.width ?? view.bounds.width
+        return (breite / CGFloat(zoom.spalten)) * (view.window?.screen.scale ?? 3)
+    }
 
     private func section(breite: CGFloat) -> NSCollectionLayoutSection {
         let spalten = CGFloat(zoom.spalten)
@@ -93,15 +124,21 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     // MARK: - Daten
 
-    public func numberOfSections(in collectionView: UICollectionView) -> Int { model.sections.count }
+    public func numberOfSections(in collectionView: UICollectionView) -> Int { quelle.sections.count }
 
     public func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        model.sections[section].anzahl
+        quelle.sections[section].anzahl
     }
 
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let zelle = collectionView.dequeueReusableCell(withReuseIdentifier: GridZelle.id, for: indexPath) as! GridZelle
-        zelle.zeige(model[indexPath.section, indexPath.item])
+        if let item = quelle.item(section: indexPath.section, index: indexPath.item) {
+            let pixel = kantePixel
+            zelle.zeige(item, anfragen: quelle.bildAnfragen(fuer: item, pixel: pixel).map { BilderCache.anfrage($0, pixel: pixel) })
+        } else {
+            zelle.zeigePlatzhalter()
+            quelle.ladeMonat(indexPath.section)
+        }
         return zelle
     }
 
@@ -109,8 +146,29 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
                                at indexPath: IndexPath) -> UICollectionReusableView {
         let kopf = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: MonatsKopf.id,
                                                                    for: indexPath) as! MonatsKopf
-        kopf.zeige(model.sections[indexPath.section])
+        kopf.zeige(quelle.sections[indexPath.section])
         return kopf
+    }
+
+    public func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
+        vorlader.startPrefetching(with: anfragen(fuer: indexPaths))
+    }
+
+    public func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
+        vorlader.stopPrefetching(with: anfragen(fuer: indexPaths))
+    }
+
+    /// Vorgeladen wird nur die kleine Stufe, um Datenvolumen zu sparen.
+    private func anfragen(fuer indexPaths: [IndexPath]) -> [ImageRequest] {
+        let pixel = kantePixel
+        var angefragt = Set<Int>()
+        return indexPaths.compactMap { pfad in
+            guard let item = quelle.item(section: pfad.section, index: pfad.item) else {
+                if angefragt.insert(pfad.section).inserted { quelle.ladeMonat(pfad.section) }
+                return nil
+            }
+            return quelle.bildAnfragen(fuer: item, pixel: pixel).first.map { BilderCache.anfrage($0, pixel: pixel) }
+        }
     }
 
     // MARK: - Pinch-Zoom
@@ -134,9 +192,11 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     /// Ändert die Spaltenzahl und hält das Foto unter den Fingern an seinem Platz.
     private func wechsleZoom(zu neu: GridZoom, anker: IndexPath?, animiert: Bool) {
-        let anker = anker ?? collectionView.indexPathsForVisibleItems.sorted().dropFirst(collectionView.indexPathsForVisibleItems.count / 2).first
+        let sichtbar = collectionView.indexPathsForVisibleItems.sorted()
+        let anker = anker ?? sichtbar.dropFirst(sichtbar.count / 2).first
         let ankerY = anker.flatMap { collectionView.layoutAttributesForItem(at: $0)?.frame.midY }
             .map { $0 - collectionView.contentOffset.y }
+        let alteSpalten = zoom.spalten
         zoom = neu
         onZoomChange?(neu)
         let aenderung = {
@@ -145,14 +205,18 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
             if let anker, let ankerY, let rahmen = self.collectionView.layoutAttributesForItem(at: anker)?.frame {
                 let maxY = max(0, self.collectionView.contentSize.height - self.collectionView.bounds.height
                                + self.collectionView.adjustedContentInset.bottom)
-                let y = min(max(rahmen.midY - ankerY, -self.collectionView.adjustedContentInset.top), maxY)
-                self.collectionView.contentOffset.y = y
+                self.collectionView.contentOffset.y = min(max(rahmen.midY - ankerY, -self.collectionView.adjustedContentInset.top), maxY)
             }
         }
         if animiert {
-            UIView.animate(withDuration: 0.32, delay: 0, usingSpringWithDamping: 0.9, initialSpringVelocity: 0, options: [.allowUserInteraction], animations: aenderung)
+            UIView.animate(withDuration: 0.32, delay: 0, usingSpringWithDamping: 0.9, initialSpringVelocity: 0,
+                           options: [.allowUserInteraction], animations: aenderung)
         } else {
             aenderung()
+        }
+        // Größere Kacheln brauchen schärfere Bilder.
+        if neu.spalten < alteSpalten {
+            collectionView.reconfigureItems(at: collectionView.indexPathsForVisibleItems)
         }
     }
 }
@@ -161,19 +225,26 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
 final class GridZelle: UICollectionViewCell {
     static let id = "GridZelle"
+    private let bild = UIImageView()
     private let badge = UILabel()
     private let herz = UIImageView(image: UIImage(systemName: "heart.fill"))
     private let live = UIImageView(image: UIImage(systemName: "livephoto"))
+    private let lader = StufenLader()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.layer.masksToBounds = true
+        contentView.clipsToBounds = true
+        bild.contentMode = .scaleAspectFill
+        bild.clipsToBounds = true
+        bild.frame = contentView.bounds
+        bild.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        contentView.addSubview(bild)
         badge.font = .systemFont(ofSize: 11, weight: .semibold)
         badge.textColor = .white
         for v in [badge, herz, live] as [UIView] {
             v.translatesAutoresizingMaskIntoConstraints = false
             v.layer.shadowColor = UIColor.black.cgColor
-            v.layer.shadowOpacity = 0.5
+            v.layer.shadowOpacity = 0.6
             v.layer.shadowRadius = 2
             v.layer.shadowOffset = .zero
             contentView.addSubview(v)
@@ -196,15 +267,40 @@ final class GridZelle: UICollectionViewCell {
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
-    func zeige(_ item: GridItem) {
-        let c = GridPalette.rgb(item.farbe)
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        lader.abbrechen()
+        bild.image = nil
+    }
+
+    func zeigePlatzhalter() {
+        lader.abbrechen()
+        bild.image = nil
+        contentView.backgroundColor = UIColor.secondarySystemFill
+        badge.isHidden = true
+        herz.isHidden = true
+        live.isHidden = true
+        accessibilityLabel = "Wird geladen"
+    }
+
+    func zeige(_ item: GridItem, anfragen: [ImageRequest]) {
+        let c = item.rgb
         contentView.backgroundColor = UIColor(red: c.r, green: c.g, blue: c.b, alpha: 1)
+        bild.image = nil
+        let ansicht = bild
+        lader.lade(anfragen) { neu, sofort in
+            if sofort || ansicht.image != nil {
+                ansicht.image = neu
+            } else {
+                UIView.transition(with: ansicht, duration: 0.15, options: .transitionCrossDissolve) { ansicht.image = neu }
+            }
+        }
         let klein = bounds.width < 50
         badge.isHidden = item.art != .video || klein
-        if item.art == .video { badge.text = String(format: "%d:%02d", item.dauer / 60, item.dauer % 60) }
+        if item.art == .video { badge.text = item.dauerText }
         herz.isHidden = !item.favorit || klein
         live.isHidden = item.art != .livePhoto || klein
-        accessibilityLabel = [item.art == .video ? "Video" : (item.art == .livePhoto ? "Live Photo" : "Foto"),
+        accessibilityLabel = [item.art == .video ? "Video, \(item.dauerText)" : (item.art == .livePhoto ? "Live Photo" : "Foto"),
                               item.favorit ? "Favorit" : nil].compactMap { $0 }.joined(separator: ", ")
     }
 }
@@ -220,11 +316,12 @@ final class MonatsKopf: UICollectionReusableView {
         hintergrund.frame = bounds
         hintergrund.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         addSubview(hintergrund)
-        let serif = UIFont.preferredFont(forTextStyle: .title3).fontDescriptor
-            .withDesign(.serif)?.withSymbolicTraits(.traitBold) ?? UIFont.preferredFont(forTextStyle: .title3).fontDescriptor
+        let basis = UIFont.preferredFont(forTextStyle: .title3).fontDescriptor
+        let serif = basis.withDesign(.serif)?.withSymbolicTraits(.traitBold) ?? basis
         titel.font = UIFont(descriptor: serif, size: 0)
         titel.adjustsFontForContentSizeCategory = true
         untertitel.font = .preferredFont(forTextStyle: .footnote)
+        untertitel.adjustsFontForContentSizeCategory = true
         untertitel.textColor = .secondaryLabel
         let stapel = UIStackView(arrangedSubviews: [titel, UIView(), untertitel])
         stapel.alignment = .firstBaseline
@@ -235,6 +332,7 @@ final class MonatsKopf: UICollectionReusableView {
             stapel.trailingAnchor.constraint(equalTo: layoutMarginsGuide.trailingAnchor),
             stapel.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
+        isAccessibilityElement = true
         accessibilityTraits = .header
     }
 
@@ -244,7 +342,6 @@ final class MonatsKopf: UICollectionReusableView {
     func zeige(_ section: GridSection) {
         titel.text = section.titel
         untertitel.text = section.untertitel
-        isAccessibilityElement = true
         accessibilityLabel = "\(section.titel), \(section.untertitel)"
     }
 }

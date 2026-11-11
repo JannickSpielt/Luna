@@ -17,3 +17,6 @@ filter:
     - validateAccessToken
     # Konto
     - getMyUser
+    # Timeline
+    - getTimeBuckets
+    - getTimeBucket

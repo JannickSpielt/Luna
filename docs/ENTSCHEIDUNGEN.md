@@ -21,7 +21,14 @@ Der Sprung ist entscheidend, weil Scrubber, „Heute vor X Jahren“ und Sucherg
 - **Pinch-Zoom in Stufen**: iPhone 1/3/5/7/11, iPad 3/5/7/10/14, Mac 4/6/8/12/18 Spalten. Das Foto unter den Fingern bleibt an seinem Platz. Auf dem Mac geht das auch mit ⌘+ und ⌘−.
 - **Zellen bleiben schlank** (UIKit/AppKit-Views statt SwiftUI in jeder Zelle), damit auch bei 18 Spalten nichts ruckelt.
 
-**Offen für Schritt 4:**
-- Auf dem Mac meldet das Grid seine Scroll-Position noch nicht zuverlässig an SwiftUI zurück. Das wird für den Scrubber gebraucht.
-- Auf dem Mac wird der Bibliothek-Inhalt im Tab-/Sidebar-Aufbau offenbar zweimal angelegt. Das muss geprüft werden.
+**Nachtrag Schritt 4:**
+- Die doppelte Bibliothek auf dem Mac kam vom Prototyp-Aufbau. Seit die Timeline-Daten einmal pro Anmeldung angelegt werden, erscheint sie nur noch einmal.
+- Die SwiftUI-Vergleichsvariante und die Messanzeige wurden nach der Entscheidung entfernt.
 - Echte Messung auf einem iPhone und mit echten Vorschaubildern steht noch aus. Der Simulator ist nur ein Anhaltspunkt.
+
+## 2. Laden der Timeline (Schritt 4, 11.11.2026)
+
+- **Monate zuerst, Inhalt später:** Beim Öffnen lädt Lilith nur die Liste der Monate mit Anzahl (`/timeline/buckets`). Den Inhalt eines Monats (`/timeline/bucket`) holt sie erst, wenn das Grid ihn anzeigen will oder bald braucht.
+- **Platzhalter:** Bis das Vorschaubild da ist, zeigt jede Kachel die Durchschnittsfarbe aus dem Thumbhash.
+- **Vorschaubilder:** Nuke mit bis zu 1 GB Festplatten-Cache. Kleine Kacheln laden Immichs „thumbnail“ (ca. 250 px), große Kacheln (ab 320 px) die schärfere „preview“.
+- **Noch kein Offline-Spiegel:** Die Monatsdaten liegen nur im Arbeitsspeicher. Die Datenbank (GRDB) für einen Offline-Spiegel und schnelleren Start folgt als eigener Schritt.
