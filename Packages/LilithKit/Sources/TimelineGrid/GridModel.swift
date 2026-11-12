@@ -71,6 +71,8 @@ public protocol TimelineQuelle: AnyObject {
     var onMonatGeladen: ((_ section: Int, _ anzahlGeaendert: Bool) -> Void)? { get set }
     /// Wird aufgerufen, wenn die ganze Timeline neu geladen wurde (Monate und Anzahlen können anders sein).
     var onAllesNeu: (() -> Void)? { get set }
+    /// Lädt die Originaldatei in einen temporären Ordner (mit echtem Dateinamen), z. B. zum Herausziehen per Drag & Drop.
+    func ladeOriginal(_ item: GridItem) async throws -> URL
 }
 
 extension TimelineQuelle {
@@ -112,6 +114,7 @@ public final class BeispielQuelle: TimelineQuelle {
     public func ladeMonat(_ section: Int) {}
     public func sichtbar(_ sections: Set<Int>) {}
     public func bildAnfragen(fuer item: GridItem, pixel: CGFloat) -> [URLRequest] { [] }
+    public func ladeOriginal(_ item: GridItem) async throws -> URL { throw CocoaError(.featureUnsupported) }
 
     nonisolated static func erzeuge(anzahl: Int, seed: UInt64, bisJahr: Int, bisMonat: Int) -> ([GridSection], [[GridItem]]) {
         var zufall = SplitMix64(seed: seed)

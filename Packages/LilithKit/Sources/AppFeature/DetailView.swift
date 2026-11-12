@@ -220,6 +220,7 @@ struct DetailView: View {
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .accessibilityLabel(item?.favorit == true ? "Favorit entfernen" : "Als Favorit markieren")
+                .keyboardShortcut("f", modifiers: [])
                 .disabled(item == nil || store == nil)
                 Button {
                     zeigeInfo = true
@@ -235,6 +236,7 @@ struct DetailView: View {
                         Image(systemName: "trash").frame(width: 52, height: 44)
                     }
                     .accessibilityLabel("Löschen")
+                    .keyboardShortcut(.delete, modifiers: [])
                     .disabled(item == nil || loescht)
                     .confirmationDialog("Dieses Objekt löschen?", isPresented: $frageLoeschen, titleVisibility: .visible) {
                         Button("Löschen", role: .destructive) { loesche() }

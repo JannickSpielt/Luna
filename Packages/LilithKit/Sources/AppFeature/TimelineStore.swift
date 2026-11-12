@@ -160,6 +160,11 @@ final class TimelineStore: TimelineQuelle {
         onMonatGeladen?(section, false)
     }
 
+    func ladeOriginal(_ item: GridItem) async throws -> URL {
+        let name = (try? await client.assetInfo(id: item.id).dateiname) ?? item.id
+        return try await client.ladeOriginal(assetId: item.id, dateiname: name)
+    }
+
     func bildAnfragen(fuer item: GridItem, pixel: CGFloat) -> [URLRequest] {
         // Immichs „thumbnail“ hat ca. 250 px und kommt schnell. Für große Kacheln danach die schärfere Vorschau.
         let klein = client.vorschauAnfrage(assetId: item.id, groesse: .thumbnail)

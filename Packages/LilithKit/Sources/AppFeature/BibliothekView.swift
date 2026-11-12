@@ -227,12 +227,12 @@ struct TimelineInhalt: View {
         HStack(spacing: 2) {
             if filter == .papierkorb {
                 aktion("Wiederherstellen", "arrow.uturn.backward") { fuehreAus { try await $0.stelleWiederHer(assetIds: $1) } }
-                aktion("Endgültig löschen", "trash.slash", rot: true) { frageLoeschen = true }
+                aktion("Endgültig löschen", "trash.slash", rot: true, taste: KeyboardShortcut(.delete, modifiers: [])) { frageLoeschen = true }
             } else {
                 if filter == .favoriten {
-                    aktion("Favorit entfernen", "heart.slash") { fuehreAus { try await $0.aendere(assetIds: $1, favorit: false) } }
+                    aktion("Favorit entfernen", "heart.slash", taste: KeyboardShortcut("f", modifiers: [])) { fuehreAus { try await $0.aendere(assetIds: $1, favorit: false) } }
                 } else {
-                    aktion("Favorit", "heart") { fuehreAus { try await $0.aendere(assetIds: $1, favorit: true) } }
+                    aktion("Favorit", "heart", taste: KeyboardShortcut("f", modifiers: [])) { fuehreAus { try await $0.aendere(assetIds: $1, favorit: true) } }
                 }
                 if filter == .archiv {
                     aktion("Aus Archiv holen", "arrow.uturn.backward") { fuehreAus { try await $0.aendere(assetIds: $1, archiviert: false) } }
@@ -240,7 +240,7 @@ struct TimelineInhalt: View {
                     aktion("Archivieren", "archivebox") { fuehreAus { try await $0.aendere(assetIds: $1, archiviert: true) } }
                 }
                 aktion("Zu Album", "rectangle.stack.badge.plus") { zeigeAlbumWahl = true }
-                aktion("Löschen", "trash", rot: true) { frageLoeschen = true }
+                aktion("Löschen", "trash", rot: true, taste: KeyboardShortcut(.delete, modifiers: [])) { frageLoeschen = true }
             }
             if arbeitet { ProgressView().padding(.horizontal, 10) }
         }
@@ -252,7 +252,8 @@ struct TimelineInhalt: View {
         .disabled(arbeitet)
     }
 
-    private func aktion(_ titel: String, _ symbol: String, rot: Bool = false, _ tun: @escaping () -> Void) -> some View {
+    private func aktion(_ titel: String, _ symbol: String, rot: Bool = false, taste: KeyboardShortcut? = nil,
+                        _ tun: @escaping () -> Void) -> some View {
         Button(action: tun) {
             VStack(spacing: 3) {
                 Image(systemName: symbol).font(.body)
@@ -263,6 +264,18 @@ struct TimelineInhalt: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .keyboardShortcut(taste)
+        .help(taste.map { "\(titel) (\(Self.tastenText($0)))" } ?? titel)
+    }
+
+    static func tastenText(_ taste: KeyboardShortcut) -> String {
+        let zeichen: String
+        switch taste.key {
+        case .delete: zeichen = "⌫"
+        case .return: zeichen = "↩"
+        default: zeichen = String(taste.key.character).uppercased()
+        }
+        return (taste.modifiers.contains(.command) ? "⌘" : "") + zeichen
     }
 
     // MARK: - Aktionen

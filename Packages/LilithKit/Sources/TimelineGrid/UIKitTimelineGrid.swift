@@ -1,5 +1,6 @@
 #if canImport(UIKit)
 import UIKit
+import UniformTypeIdentifiers
 import Nuke
 
 /// Timeline-Grid für iPhone und iPad auf Basis von `UICollectionView`.
@@ -7,7 +8,7 @@ import Nuke
 /// (Immich-Buckets), die Zellen fragen ihre Daten erst beim Anzeigen ab.
 @MainActor
 public final class TimelineGridController: UIViewController, UICollectionViewDataSource,
-    UICollectionViewDataSourcePrefetching, UICollectionViewDelegate {
+    UICollectionViewDataSourcePrefetching, UICollectionViewDelegate, UICollectionViewDragDelegate {
     public var quelle: TimelineQuelle {
         didSet { verbindeQuelle(); collectionView?.reloadData() }
     }
@@ -41,6 +42,28 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
     private func meldeAuswahl() {
         let ids = (collectionView.indexPathsForSelectedItems ?? []).compactMap { quelle.item(section: $0.section, index: $0.item)?.id }
         onAuswahl?(ids)
+    }
+
+    // MARK: Fotos herausziehen (iPad: in andere Apps, Dateien, Mail)
+
+    public func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession,
+                               at indexPath: IndexPath) -> [UIDragItem] {
+        guard let item = quelle.item(section: indexPath.section, index: indexPath.item) else { return [] }
+        let anbieter = NSItemProvider()
+        anbieter.suggestedName = "Lilith-\(item.id.prefix(8))"
+        let typ = item.art == .video ? UTType.movie : UTType.image
+        let quelle = UnsicherGesendet(quelle)
+        anbieter.registerFileRepresentation(for: typ, visibility: .all, openInPlace: false) { fertig in
+            // Der Aufruf kommt von einem beliebigen Thread. Die Quelle lebt auf dem Main Actor.
+            let antwort = UnsicherGesendet(fertig)
+            Task { @MainActor in
+                do { antwort.wert(try await quelle.wert.ladeOriginal(item), false, nil) } catch { antwort.wert(nil, false, error) }
+            }
+            return nil
+        }
+        let ziehen = UIDragItem(itemProvider: anbieter)
+        ziehen.localObject = item.id
+        return [ziehen]
     }
 
     public func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
@@ -89,6 +112,7 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         collectionView.dataSource = self
         collectionView.prefetchDataSource = self
         collectionView.delegate = self
+        collectionView.dragDelegate = self
         collectionView.register(GridZelle.self, forCellWithReuseIdentifier: GridZelle.id)
         collectionView.register(MonatsKopf.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
                                 withReuseIdentifier: MonatsKopf.id)
@@ -474,5 +498,10 @@ final class MonatsKopf: UICollectionReusableView {
         untertitel.text = section.untertitel
         accessibilityLabel = "\(section.titel), \(section.untertitel)"
     }
+}
+/// Reicht einen Wert über Thread-Grenzen weiter, wenn klar ist, dass er nur auf einer Seite benutzt wird.
+struct UnsicherGesendet<Wert>: @unchecked Sendable {
+    let wert: Wert
+    init(_ wert: Wert) { self.wert = wert }
 }
 #endif

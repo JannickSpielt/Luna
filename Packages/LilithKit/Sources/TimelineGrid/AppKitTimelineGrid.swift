@@ -1,5 +1,6 @@
 #if os(macOS)
 import AppKit
+import UniformTypeIdentifiers
 import Nuke
 
 /// Timeline-Grid für den Mac auf Basis von `NSCollectionView`.
@@ -36,6 +37,74 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
     public func collectionView(_ collectionView: NSCollectionView, didSelectItemsAt indexPaths: Set<IndexPath>) { meldeAuswahl() }
     public func collectionView(_ collectionView: NSCollectionView, didDeselectItemsAt indexPaths: Set<IndexPath>) { meldeAuswahl() }
 
+    /// Pfeiltasten: Auswahl um `schritt` Fotos verschieben (links/rechts ±1, hoch/runter ± eine Zeile).
+    /// Mit ⇧ wird die Auswahl erweitert statt verschoben.
+    private func bewegeAuswahl(_ schritt: Richtung, erweitern: Bool) {
+        let alle = collectionView.selectionIndexPaths.sorted()
+        let start = (schritt == .links || schritt == .hoch ? alle.first : alle.last) ?? IndexPath(item: 0, section: 0)
+        guard var ziel = alle.isEmpty ? start : naechster(von: start, schritt) else { return }
+        // Nicht auf noch nicht geladene Fotos springen.
+        if quelle.item(section: ziel.section, index: ziel.item) == nil { ziel = start }
+        if !erweitern { collectionView.deselectAll(nil) }
+        collectionView.selectItems(at: [ziel], scrollPosition: [])
+        collectionView.scrollToItems(at: [ziel], scrollPosition: .nearestHorizontalEdge)
+        if let rahmen = collectionView.layoutAttributesForItem(at: ziel)?.frame {
+            collectionView.scrollToVisible(rahmen.insetBy(dx: 0, dy: -60))
+        }
+        meldeAuswahl()
+    }
+
+    enum Richtung { case links, rechts, hoch, runter }
+
+    private func naechster(von pfad: IndexPath, _ richtung: Richtung) -> IndexPath? {
+        let spalten = zoom.spalten
+        switch richtung {
+        case .rechts:
+            if pfad.item + 1 < quelle.sections[pfad.section].anzahl { return IndexPath(item: pfad.item + 1, section: pfad.section) }
+            return pfad.section + 1 < quelle.sections.count ? IndexPath(item: 0, section: pfad.section + 1) : nil
+        case .links:
+            if pfad.item > 0 { return IndexPath(item: pfad.item - 1, section: pfad.section) }
+            return pfad.section > 0 ? IndexPath(item: quelle.sections[pfad.section - 1].anzahl - 1, section: pfad.section - 1) : nil
+        case .runter:
+            let anzahl = quelle.sections[pfad.section].anzahl
+            if pfad.item + spalten < anzahl { return IndexPath(item: pfad.item + spalten, section: pfad.section) }
+            // In der letzten Zeile des Monats: gleiche Spalte im nächsten Monat.
+            let zeileLetzte = (anzahl - 1) / spalten
+            if pfad.item / spalten < zeileLetzte { return IndexPath(item: anzahl - 1, section: pfad.section) }
+            guard pfad.section + 1 < quelle.sections.count else { return nil }
+            return IndexPath(item: min(pfad.item % spalten, quelle.sections[pfad.section + 1].anzahl - 1), section: pfad.section + 1)
+        case .hoch:
+            if pfad.item - spalten >= 0 { return IndexPath(item: pfad.item - spalten, section: pfad.section) }
+            guard pfad.section > 0 else { return nil }
+            let vorher = quelle.sections[pfad.section - 1].anzahl
+            let letzteZeile = (vorher - 1) / spalten
+            return IndexPath(item: min(letzteZeile * spalten + pfad.item % spalten, vorher - 1), section: pfad.section - 1)
+        }
+    }
+
+    /// Leertaste oder Return: das erste ausgewählte Foto öffnen.
+    private func oeffneAuswahl() {
+        guard let pfad = collectionView.selectionIndexPaths.sorted().first,
+              let ansicht = collectionView.item(at: pfad)?.view else { return }
+        var rahmen = ansicht.convert(ansicht.bounds, to: nil)
+        if let hoehe = view.window?.contentView?.bounds.height { rahmen.origin.y = hoehe - rahmen.maxY }
+        onTap?(pfad.section, pfad.item, rahmen)
+    }
+
+    // MARK: Fotos herausziehen (Finder, Mail, …)
+
+    public func collectionView(_ collectionView: NSCollectionView, canDragItemsAt indexPaths: Set<IndexPath>, with event: NSEvent) -> Bool {
+        indexPaths.allSatisfy { quelle.item(section: $0.section, index: $0.item) != nil }
+    }
+
+    public func collectionView(_ collectionView: NSCollectionView, pasteboardWriterForItemAt indexPath: IndexPath) -> (any NSPasteboardWriting)? {
+        guard let item = quelle.item(section: indexPath.section, index: indexPath.item) else { return nil }
+        let quelle = self.quelle
+        // Das Original wird schon beim Ziehen geladen, damit es beim Loslassen meist bereit ist.
+        let laden = Task { @MainActor in try await quelle.ladeOriginal(item) }
+        return OriginalVersprechen(item: item, laden: laden)
+    }
+
     @objc private func doppelklick(_ geste: NSClickGestureRecognizer) {
         guard let pfad = collectionView.indexPathForItem(at: geste.location(in: collectionView)),
               quelle.item(section: pfad.section, index: pfad.item) != nil,
@@ -60,7 +129,11 @@ public final class TimelineGridController: NSViewController, NSCollectionViewDat
     required init?(coder: NSCoder) { fatalError("init(coder:) wird nicht unterstützt") }
 
     public override func loadView() {
-        collectionView = NSCollectionView()
+        let ansicht = TastenCollectionView()
+        ansicht.oeffnen = { [weak self] in self?.oeffneAuswahl() }
+        ansicht.bewegen = { [weak self] schritt, erweitern in self?.bewegeAuswahl(schritt, erweitern: erweitern) }
+        collectionView = ansicht
+        collectionView.setDraggingSourceOperationMask(.copy, forLocal: false)
         collectionView.collectionViewLayout = NSCollectionViewCompositionalLayout { [weak self] _, umgebung in
             self?.section(breite: umgebung.container.effectiveContentSize.width)
         }
@@ -370,6 +443,101 @@ final class MonatsKopfView: NSVisualEffectView, NSCollectionViewElement {
     func zeige(_ section: GridSection) {
         titel.stringValue = section.titel
         untertitel.stringValue = section.untertitel
+    }
+}
+#endif
+
+#if os(macOS)
+/// Collection View, die Leertaste und Return zum Öffnen nutzt (wie Quick Look im Finder).
+final class TastenCollectionView: NSCollectionView {
+    var oeffnen: (() -> Void)?
+    var bewegen: ((TimelineGridController.Richtung, Bool) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        let ohneTasten = event.modifierFlags.intersection([.command, .option, .control]).isEmpty
+        let erweitern = event.modifierFlags.contains(.shift)
+        guard ohneTasten else { return super.keyDown(with: event) }
+        switch event.keyCode {
+        case 49, 36, 76 where !selectionIndexPaths.isEmpty: oeffnen?()   // Leertaste, Return, Enter
+        case 123: bewegen?(.links, erweitern)
+        case 124: bewegen?(.rechts, erweitern)
+        case 125: bewegen?(.runter, erweitern)
+        case 126: bewegen?(.hoch, erweitern)
+        default: super.keyDown(with: event)
+        }
+    }
+}
+
+/// Ergebnis des Ladens, threadsicher abrufbar (auch blockierend aus der Warteschlange des Finders).
+final class LadeErgebnis: @unchecked Sendable {
+    private let sperre = NSLock()
+    private var url: URL?
+    private var fehler: (any Error)?
+    private let fertig = DispatchSemaphore(value: 0)
+
+    func setze(_ url: URL?, _ fehler: (any Error)?) {
+        sperre.withLock { self.url = url; self.fehler = fehler }
+        fertig.signal()
+    }
+
+    /// Sofort, ohne zu warten: der Name, falls schon geladen.
+    var sofort: URL? { sperre.withLock { url } }
+
+    /// Wartet höchstens `sekunden` auf das Ergebnis.
+    func warte(_ sekunden: Double) -> Result<URL, any Error> {
+        if fertig.wait(timeout: .now() + sekunden) == .success { fertig.signal() }
+        return sperre.withLock {
+            if let url { return .success(url) }
+            return .failure(fehler ?? CocoaError(.fileReadUnknown))
+        }
+    }
+}
+
+/// Verspricht dem Finder eine Datei, die erst beim Loslassen geschrieben wird.
+final class OriginalVersprechen: NSFilePromiseProvider, NSFilePromiseProviderDelegate, @unchecked Sendable {
+    private let item: GridItem
+    private let ergebnis = LadeErgebnis()
+    private static let warteschlange: OperationQueue = {
+        let q = OperationQueue()
+        q.qualityOfService = .userInitiated
+        return q
+    }()
+
+    init(item: GridItem, laden: Task<URL, any Error>) {
+        self.item = item
+        super.init()
+        fileType = (item.art == .video ? UTType.movie : UTType.image).identifier
+        delegate = self
+        let ergebnis = self.ergebnis
+        Task.detached {
+            do { ergebnis.setze(try await laden.value, nil) } catch { ergebnis.setze(nil, error) }
+        }
+    }
+
+    func filePromiseProvider(_ provider: NSFilePromiseProvider, fileNameForType fileType: String) -> String {
+        // Der echte Name steht erst nach dem Laden fest. Ist er schon da, wird er genommen.
+        ergebnis.sofort?.lastPathComponent ?? "Lilith-\(item.id.prefix(8)).\(item.art == .video ? "mov" : "jpg")"
+    }
+
+    /// Läuft auf der eigenen Warteschlange, darf also warten.
+    func filePromiseProvider(_ provider: NSFilePromiseProvider, writePromiseTo url: URL,
+                             completionHandler: @escaping ((any Error)?) -> Void) {
+        switch ergebnis.warte(120) {
+        case .success(let quelle):
+            do {
+                try? FileManager.default.removeItem(at: url)
+                try FileManager.default.copyItem(at: quelle, to: url)
+                completionHandler(nil)
+            } catch {
+                completionHandler(error)
+            }
+        case .failure(let fehler):
+            completionHandler(fehler)
+        }
+    }
+
+    func operationQueue(for filePromiseProvider: NSFilePromiseProvider) -> OperationQueue {
+        Self.warteschlange
     }
 }
 #endif

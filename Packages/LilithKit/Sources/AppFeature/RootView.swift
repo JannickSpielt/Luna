@@ -91,6 +91,17 @@ struct HauptView: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        .background {
+            // Unsichtbare Knöpfe nur für Tastenkürzel (Mac, iPad mit Tastatur).
+            Group {
+                Button("Bibliothek") { auswahl = .bibliothek }.keyboardShortcut("1", modifiers: .command)
+                Button("Alben") { auswahl = .alben }.keyboardShortcut("2", modifiers: .command)
+                Button("Suche") { auswahl = .suche }.keyboardShortcut("3", modifiers: .command)
+                Button("Suchen") { auswahl = .suche }.keyboardShortcut("f", modifiers: .command)
+            }
+            .opacity(0)
+            .accessibilityHidden(true)
+        }
         .sheet(isPresented: $zeigeKonto) {
             KontoView(account: account)
         }

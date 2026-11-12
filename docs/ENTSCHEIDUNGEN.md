@@ -74,3 +74,12 @@ Der Sprung ist entscheidend, weil Scrubber, „Heute vor X Jahren“ und Sucherg
 - **Feste Obergrenze von 500 Fotos:** Smart Search liefert immer die ähnlichsten Fotos, keine exakte Trefferzahl. Die Schnittstelle hat in v3.3.5 kein Weiterblättern mehr (die Seitenzahl ist veraltet), deshalb holt Lilith einmal 500 Stück.
 
 **Offen:** Filter (Zeitraum, Ort, Person, nur Videos), Suche nach Dateiname oder Text im Bild (OCR), letzte Suchen merken.
+
+## 6. Mac und iPad (Schritt 8, 12.11.2026)
+
+- **Anmeldung auf dem Mac:** Der moderne Schlüsselbund braucht auf dem Mac eine Signatur mit Apple-Entwicklerkonto (sonst Fehler -34018). Lilith nimmt dann den klassischen Mac-Schlüsselbund. Auf iPhone und iPad bleibt es beim modernen.
+- **Tastatur auf dem Mac:** Pfeiltasten bewegen die Auswahl im Grid (⇧ erweitert sie), Leertaste oder Return öffnet das Foto, Esc schließt. F markiert als Favorit, ⌫ löscht (mit Rückfrage). ⌘1/⌘2/⌘3 wechseln zwischen Bibliothek, Alben und Suche, ⌘F öffnet die Suche. Die Pfeiltasten sind selbst gebaut, weil `NSCollectionView` mit dem verwendeten Layout die Richtung nicht berechnen kann.
+- **Fotos herausziehen:** Auf dem Mac in Finder, Mail und andere Apps (als „Datei-Versprechen“: das Original wird beim Ziehen geladen und beim Loslassen geschrieben). Auf dem iPad als Datei in andere Apps.
+- **Quick Look:** Statt Apples Quick-Look-Fenster öffnet die Leertaste die eigene Detailansicht, weil die Fotos auf dem Server liegen und nicht als Datei auf dem Mac.
+
+**Offen:** Die Detailansicht deckt auf dem Mac die Seitenleiste nicht ab, und rechts erscheint ein schwarzer Rand. Fotos in Lilith hineinziehen (Upload) kommt mit dem Backup-Schritt. Pfeiltasten auf dem iPad mit Tastatur.

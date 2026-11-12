@@ -2,6 +2,10 @@ import Foundation
 import Security
 
 /// Speichert Zugangsdaten sicher im Schlüsselbund, getrennt pro Server und Nutzer.
+///
+/// Bevorzugt wird der moderne Schlüsselbund („Data Protection Keychain“). Er braucht auf dem Mac
+/// eine Signatur mit Apple-Entwicklerkonto. Fehlt die (Fehler -34018), nimmt Lilith auf dem Mac
+/// den klassischen Schlüsselbund, der ebenfalls verschlüsselt ist.
 public struct KeychainStore: Sendable {
     private let service: String
 
@@ -9,46 +13,58 @@ public struct KeychainStore: Sendable {
         self.service = service
     }
 
+    private func basis(_ account: String, modern: Bool) -> [String: Any] {
+        var q: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+        ]
+        if modern { q[kSecUseDataProtectionKeychain as String] = true }
+        return q
+    }
+
+    /// Reihenfolge der Versuche: auf iOS nur modern, auf dem Mac modern und dann klassisch.
+    private var varianten: [Bool] {
+        #if os(macOS)
+        [true, false]
+        #else
+        [true]
+        #endif
+    }
+
     public func save(_ credential: Credential, account: String) throws {
         let data = try JSONEncoder().encode(credential)
         delete(account: account)
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecValueData as String: data,
+        var letzterStatus = errSecSuccess
+        for modern in varianten {
+            var query = basis(account, modern: modern)
+            query[kSecValueData as String] = data
             // Nach dem ersten Entsperren lesbar, damit später auch Uploads im Hintergrund klappen.
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
-            kSecUseDataProtectionKeychain as String: true,
-        ]
-        let status = SecItemAdd(query as CFDictionary, nil)
-        guard status == errSecSuccess else { throw KeychainError(status: status) }
+            query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            letzterStatus = SecItemAdd(query as CFDictionary, nil)
+            if letzterStatus == errSecSuccess { return }
+            if letzterStatus != errSecMissingEntitlement { break }
+        }
+        throw KeychainError(status: letzterStatus)
     }
 
     public func load(account: String) -> Credential? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-            kSecUseDataProtectionKeychain as String: true,
-        ]
-        var result: AnyObject?
-        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
-              let data = result as? Data
-        else { return nil }
-        return try? JSONDecoder().decode(Credential.self, from: data)
+        for modern in varianten {
+            var query = basis(account, modern: modern)
+            query[kSecReturnData as String] = true
+            query[kSecMatchLimit as String] = kSecMatchLimitOne
+            var result: AnyObject?
+            if SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess, let data = result as? Data {
+                return try? JSONDecoder().decode(Credential.self, from: data)
+            }
+        }
+        return nil
     }
 
     public func delete(account: String) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecUseDataProtectionKeychain as String: true,
-        ]
-        SecItemDelete(query as CFDictionary)
+        for modern in varianten {
+            SecItemDelete(basis(account, modern: modern) as CFDictionary)
+        }
     }
 }
 
