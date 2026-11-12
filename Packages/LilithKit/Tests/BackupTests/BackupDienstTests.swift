@@ -25,12 +25,12 @@ final class TestMediathek: Mediathek, @unchecked Sendable {
     func frageZugriff() async -> MediathekZugriff { .voll }
     func alleMedien() async throws -> [MediumKopf] { medien }
 
-    func pruefsumme(_ id: String) async throws -> String {
-        if nurICloud.contains(id) { throw MediathekFehler.nurInICloud }
+    func pruefsumme(_ id: String, iCloud: Bool) async throws -> String {
+        if nurICloud.contains(id), !iCloud { throw MediathekFehler.nurInICloud }
         return "summe-\(id)"
     }
 
-    func exportiere(_ id: String, nach ordner: URL) async throws -> ExportiertesMedium {
+    func exportiere(_ id: String, nach ordner: URL, iCloud: Bool) async throws -> ExportiertesMedium {
         exportiert.append(id)
         let datei = ordner.appending(path: "\(id).heic")
         try Data("foto \(id)".utf8).write(to: datei)
@@ -64,14 +64,20 @@ extension WarteschlangeTests {
         }
     }
 
-    func dienst(_ mediathek: TestMediathek, db: Datenbank, transport: FunktionsTransport, aktiv: Bool = true) -> (BackupDienst, URL) {
+    func dienst(_ mediathek: TestMediathek, db: Datenbank, transport: FunktionsTransport, aktiv: Bool = true,
+                umgebung: TestUmgebung? = nil, einstellungen: BackupEinstellungen? = nil) -> (BackupDienst, URL) {
         let client = ImmichClient(address: ServerAddress(eingabe: "foto.example.de")!, credential: .apiKey("k"),
                                   transport: transport, uploadSession: UploadAttrappe.session())
         let ordner = tempOrdner()
-        let schlange = UploadWarteschlange(client: client, db: db, konto: "k", ordner: ordner)
+        let schlange = UploadWarteschlange(client: client, db: db, konto: "k", ordner: ordner, uploader: UploadAttrappe.uploader())
         let speicher = UserDefaults(suiteName: "lilith-test-\(UUID().uuidString)")!
         speicher.set(aktiv, forKey: "lilith.backup.aktiv.k")
-        return (BackupDienst(client: client, db: db, konto: "k", mediathek: mediathek, uploads: schlange, speicher: speicher), ordner)
+        // In den Tests ohne iCloud, sofern nicht anders angegeben.
+        var e = einstellungen ?? BackupEinstellungen()
+        if einstellungen == nil { e.iCloud = false }
+        speicher.set(try! JSONEncoder().encode(e), forKey: "lilith.backup.einstellungen.k")
+        return (BackupDienst(client: client, db: db, konto: "k", mediathek: mediathek, uploads: schlange, speicher: speicher,
+                             umgebung: umgebung), ordner)
     }
 
     @Test("Backup lädt nur Fehlendes hoch, Live Photos mit Video, iCloud-Fotos werden übersprungen")
@@ -127,6 +133,47 @@ extension WarteschlangeTests {
         #expect(await dienst.filtere(alle).map(\.id) == ["b"])
     }
 
+    @Test("Ohne WLAN wird verglichen, aber nicht hochgeladen")
+    func ohneWLAN() async throws {
+        UploadAttrappe.sperre.withLock {
+            UploadAttrappe.antwort = (201, #"{"id":"neu-1","status":"created"}"#)
+            UploadAttrappe.anfragen = []
+        }
+        let umgebung = TestUmgebung()
+        umgebung.imWLAN = false
+        let db = try Datenbank.imSpeicher()
+        let mediathek = TestMediathek(["a", "b"])
+        var e = BackupEinstellungen()
+        e.iCloud = false
+        let (dienst, _) = dienst(mediathek, db: db, transport: Self.backupServer(), umgebung: umgebung, einstellungen: e)
+        await dienst.lauf()
+        #expect(dienst.phase == .halt("Wartet auf WLAN"))
+        #expect(dienst.uebersicht.gesichert == 1)   // „a“ war schon auf dem Server
+        #expect(mediathek.exportiert.isEmpty)
+        #expect(UploadAttrappe.sperre.withLock { UploadAttrappe.anfragen.count } == 0)
+
+        // Mit WLAN geht es weiter.
+        umgebung.imWLAN = true
+        await dienst.lauf()
+        #expect(dienst.phase == .bereit)
+        #expect(dienst.uebersicht.gesichert == 2)
+    }
+
+    @Test("Videos ausgeschaltet, iCloud-Originale erlaubt")
+    func videosUndICloud() async throws {
+        let mediathek = TestMediathek(["a", "b"])
+        mediathek.medien.append(MediumKopf(id: "v", erstellt: .now, geaendert: .now, istVideo: true))
+        mediathek.nurICloud = ["b"]
+        let db = try Datenbank.imSpeicher()
+        var e = BackupEinstellungen()
+        e.videos = false
+        e.iCloud = true
+        let (dienst, _) = dienst(mediathek, db: db, transport: Self.backupServer(), aktiv: false, einstellungen: e)
+        #expect(await dienst.filtere(mediathek.medien).map(\.id) == ["a", "b"])
+        // Mit iCloud klappt die Prüfsumme auch für „b“.
+        #expect(try await mediathek.pruefsumme("b", iCloud: dienst.einstellungen.iCloud) == "summe-b")
+    }
+
     @Test("Antippen wechselt neutral → gewählt → ausgeschlossen → neutral")
     func antippen() {
         var a = AlbenAuswahl(gewaehlt: [])
@@ -161,4 +208,11 @@ extension WarteschlangeTests {
         try db.raeumeLokalAuf(konto: "k")
         #expect(try db.lokaleFotos(konto: "k", zustand: .bereit).count == 1)
     }
+}
+
+@MainActor
+final class TestUmgebung: Umgebung {
+    var imWLAN = true
+    var amStrom = true
+    var freierSpeicher: Int64 = 100_000_000_000
 }

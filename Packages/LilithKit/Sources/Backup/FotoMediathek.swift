@@ -43,12 +43,12 @@ public struct FotoMediathek: Mediathek {
         return medien
     }
 
-    public func pruefsumme(_ id: String) async throws -> String {
+    public func pruefsumme(_ id: String, iCloud: Bool) async throws -> String {
         let (_, quelle, _) = try Self.ressourcen(id)
         let rechner = Rechner()
         let optionen = PHAssetResourceRequestOptions()
-        // Originale nur in iCloud werden in dieser Etappe nicht geladen.
-        optionen.isNetworkAccessAllowed = false
+        // Liegt das Original nur in iCloud, wird es (falls erlaubt) dafür geladen.
+        optionen.isNetworkAccessAllowed = iCloud
         try await withCheckedThrowingContinuation { (fortsetzen: CheckedContinuation<Void, any Error>) in
             PHAssetResourceManager.default().requestData(for: quelle, options: optionen) { daten in
                 rechner.fuege(daten)
@@ -59,10 +59,10 @@ public struct FotoMediathek: Mediathek {
         return rechner.ergebnis()
     }
 
-    public func exportiere(_ id: String, nach ordner: URL) async throws -> ExportiertesMedium {
+    public func exportiere(_ id: String, nach ordner: URL, iCloud: Bool) async throws -> ExportiertesMedium {
         let (asset, quelle, live) = try Self.ressourcen(id)
         let optionen = PHAssetResourceRequestOptions()
-        optionen.isNetworkAccessAllowed = false
+        optionen.isNetworkAccessAllowed = iCloud
         let name = Self.dateiname(asset: asset, quelle: quelle)
         let datei = ordner.appending(path: name)
         do {

@@ -44,6 +44,8 @@ public final class BackupDienst {
     public private(set) var auswahl: AlbenAuswahl
     /// Gewählte iPhone-Alben auch auf dem Server anlegen und füllen.
     public private(set) var serverAlben: Bool
+    /// WLAN, Laden, Videos, iCloud.
+    public private(set) var einstellungen: BackupEinstellungen
 
     @ObservationIgnored public var onSitzungAbgelaufen: (() -> Void)?
     /// Der Stand einzelner Fotos hat sich geändert (z. B. für die Anzeige in der Bibliothek).
@@ -55,6 +57,9 @@ public final class BackupDienst {
     @ObservationIgnored private let mediathek: any Mediathek
     @ObservationIgnored private let uploads: UploadWarteschlange?
     @ObservationIgnored private let speicher: UserDefaults
+    @ObservationIgnored private let umgebung: (any Umgebung)?
+    /// Unter diesem freien Speicher wird nichts mehr exportiert.
+    @ObservationIgnored var mindestSpeicher: Int64 = 1_000_000_000
     @ObservationIgnored private var laufAufgabe: Task<Void, Never>?
     /// Wie viele Fotos auf einmal exportiert werden (begrenzt den Platz für Upload-Dateien).
     @ObservationIgnored var exportBlock = 20
@@ -65,9 +70,11 @@ public final class BackupDienst {
     private var schluesselAbschluss: String { "lilith.backup.abschluss.\(konto)" }
     private var schluesselAuswahl: String { "lilith.backup.alben.\(konto)" }
     private var schluesselServerAlben: String { "lilith.backup.serveralben.\(konto)" }
+    private var schluesselEinstellungen: String { "lilith.backup.einstellungen.\(konto)" }
 
     public init(client: ImmichClient?, db: Datenbank?, konto: String, mediathek: any Mediathek,
-                uploads: UploadWarteschlange?, speicher: UserDefaults = .standard) {
+                uploads: UploadWarteschlange?, speicher: UserDefaults = .standard, umgebung: (any Umgebung)? = nil) {
+        self.umgebung = umgebung
         self.client = client
         self.db = db
         self.konto = konto
@@ -82,6 +89,9 @@ public final class BackupDienst {
         self.auswahl = speicher.data(forKey: "lilith.backup.alben.\(konto)")
             .flatMap { try? JSONDecoder().decode(AlbenAuswahl.self, from: $0) } ?? AlbenAuswahl()
         self.serverAlben = speicher.bool(forKey: "lilith.backup.serveralben.\(konto)")
+        self.einstellungen = speicher.data(forKey: "lilith.backup.einstellungen.\(konto)")
+            .flatMap { try? JSONDecoder().decode(BackupEinstellungen.self, from: $0) } ?? BackupEinstellungen()
+        uploads?.nurWLANFuerMediathek = einstellungen.nurWLAN
         zaehle()
     }
 
@@ -154,6 +164,30 @@ public final class BackupDienst {
         starte()
     }
 
+    public func setze(einstellungen neu: BackupEinstellungen) {
+        einstellungen = neu
+        speicher.set(try? JSONEncoder().encode(neu), forKey: schluesselEinstellungen)
+        uploads?.nurWLANFuerMediathek = neu.nurWLAN
+        if laufAufgabe != nil { halteAn() }
+        starteNachLauf = true
+        starte()
+    }
+
+    /// Ein ganzer Durchgang, auf den gewartet wird (für Läufe im Hintergrund).
+    public func durchgang() async {
+        if laufAufgabe == nil { starte() }
+        await laufAufgabe?.value
+    }
+
+    /// Warum gerade nicht hochgeladen werden darf (`nil`: alles in Ordnung).
+    func hindernis() -> String? {
+        guard let umgebung else { return nil }
+        if einstellungen.nurWLAN && !umgebung.imWLAN { return "Wartet auf WLAN" }
+        if einstellungen.nurBeimLaden && !umgebung.amStrom { return "Wartet auf Strom" }
+        if umgebung.freierSpeicher < mindestSpeicher { return "Zu wenig Speicher frei auf diesem Gerät" }
+        return nil
+    }
+
     public func setze(serverAlben an: Bool) {
         serverAlben = an
         speicher.set(an, forKey: schluesselServerAlben)
@@ -212,19 +246,30 @@ public final class BackupDienst {
             starteNachLauf = false
             let medien = await filtere(try await mediathek.alleMedien())
             let konto = self.konto
+            let iCloud = einstellungen.iCloud
             try await Task.detached(priority: .utility) {
                 try db.gleicheAb(konto: konto, medien: medien)
                 try db.raeumeLokalAuf(konto: konto)
+                // iCloud-Originale sind (wieder) erlaubt: Übersprungene neu versuchen.
+                if iCloud, let grund = MediathekFehler.nurInICloud.errorDescription {
+                    try db.pruefeErneut(konto: konto, grund: grund)
+                }
             }.value
             zaehle()
 
             try await pruefeNeue(client: client, db: db)
             onAenderung?()
+            if let grund = hindernis() {
+                // Vergleichen geht immer (wenig Daten), hochladen erst, wenn WLAN/Strom/Platz passen.
+                phase = .halt(grund)
+                zaehle()
+                return
+            }
             try await sichereFehlende(db: db, uploads: uploads)
             if serverAlben { await gleicheServerAlbenAb(client: client, db: db) }
             onAenderung?()
 
-            if let grund = uploads.halt {
+            if let grund = uploads.halt ?? hindernis() {
                 phase = .halt(grund)
             } else {
                 phase = .bereit
@@ -255,7 +300,7 @@ public final class BackupDienst {
             for i in block.indices where block[i].pruefsumme == nil {
                 try Task.checkCancellation()
                 do {
-                    block[i].pruefsumme = try await mediathek.pruefsumme(block[i].lokaleId)
+                    block[i].pruefsumme = try await mediathek.pruefsumme(block[i].lokaleId, iCloud: einstellungen.iCloud)
                 } catch is CancellationError {
                     throw CancellationError()
                 } catch {
@@ -285,7 +330,7 @@ public final class BackupDienst {
     /// Fehlendes blockweise exportieren und hochladen. Pro Block wird gewartet, damit nicht
     /// die ganze Mediathek auf einmal als Kopie auf dem Gerät liegt.
     private func sichereFehlende(db: Datenbank, uploads: UploadWarteschlange) async throws {
-        while uploads.halt == nil {
+        while uploads.halt == nil, hindernis() == nil {
             try Task.checkCancellation()
             var block = try db.lokaleFotos(konto: konto, zustand: .bereit, hoechstens: exportBlock)
             if block.isEmpty { break }
@@ -298,7 +343,7 @@ public final class BackupDienst {
                 let ordner = uploads.arbeitsordner.appending(path: UUID().uuidString, directoryHint: .isDirectory)
                 do {
                     try FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
-                    let e = try await mediathek.exportiere(f.lokaleId, nach: ordner)
+                    let e = try await mediathek.exportiere(f.lokaleId, nach: ordner, iCloud: einstellungen.iCloud)
                     var a = UploadAuftrag(konto: konto, quelle: "mediathek", datei: e.datei.path, dateiname: e.dateiname,
                                           erstellt: f.erstellt, geaendert: f.geaendert, dauerMs: e.dauerMs,
                                           istVideo: f.istVideo, lokaleId: f.lokaleId, liveVideoDatei: e.liveVideo?.path)
@@ -323,7 +368,8 @@ public final class BackupDienst {
     }
 
     /// Nur Fotos, die laut Albenauswahl gesichert werden sollen.
-    func filtere(_ medien: [MediumKopf]) async -> [MediumKopf] {
+    func filtere(_ alle: [MediumKopf]) async -> [MediumKopf] {
+        let medien = einstellungen.videos ? alle : alle.filter { !$0.istVideo }
         guard !auswahl.gewaehlt.contains(AlbenAuswahl.alle) || !auswahl.ausgeschlossen.isEmpty else { return medien }
         var erlaubt: Set<String>?
         if !auswahl.gewaehlt.contains(AlbenAuswahl.alle) {

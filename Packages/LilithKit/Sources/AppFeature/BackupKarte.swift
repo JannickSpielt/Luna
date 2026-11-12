@@ -107,7 +107,7 @@ struct BackupKarte: View {
             Text("Backup")
         } footer: {
             Text(backup.aktiv
-                 ? "Lilith sichert, solange die App geöffnet ist. Sichern im Hintergrund kommt in einer späteren Version."
+                 ? "Lilith sichert beim Öffnen der App und im Hintergrund, meist nachts am Ladekabel im WLAN. Wann genau, entscheidet iOS."
                  : "Deine Fotos gehen nur an deinen eigenen Server. Fotos, die schon dort sind (auch von der Immich-App), erkennt Lilith und lädt sie nicht noch einmal hoch.")
         }
     }
@@ -174,6 +174,11 @@ struct BackupKarte: View {
             AlbenAuswahlView(backup: backup)
         } label: {
             LabeledContent("Alben", value: albenText)
+        }
+        NavigationLink {
+            BackupEinstellungenView(backup: backup)
+        } label: {
+            LabeledContent("Einstellungen", value: backup.einstellungen.nurWLAN ? "Nur WLAN" : "WLAN und Mobilfunk")
         }
         Button("Jetzt prüfen") { backup.starte() }
             .disabled(backup.laeuft)
@@ -292,6 +297,54 @@ struct AlbenAuswahlView: View {
         }
         .buttonStyle(.plain)
         .accessibilityValue(zustand == .gewaehlt ? "wird gesichert" : zustand == .ausgeschlossen ? "ausgeschlossen" : "nicht gewählt")
+    }
+}
+
+/// Einstellungen des Backups: wann und was gesichert wird.
+struct BackupEinstellungenView: View {
+    let backup: BackupDienst
+    @State private var e: BackupEinstellungen
+
+    init(backup: BackupDienst) {
+        self.backup = backup
+        _e = State(initialValue: backup.einstellungen)
+    }
+
+    private static let erklaerung = [
+        "Beim Öffnen der App holt Lilith immer nach, was fehlt. Das ist der zuverlässigste Weg.",
+        "Verlässt du die App, übergibt Lilith die nächsten Uploads an iOS. Sie laufen weiter, auch wenn die App geschlossen ist.",
+        "Nachts am Ladekabel im WLAN darf Lilith länger arbeiten, auch für große Videos und iCloud-Originale.",
+        "Einen festen Takt gibt es nicht: iOS entscheidet. Stromsparmodus und Beenden der App im App-Umschalter pausieren das Backup.",
+        "Das erste Backup einer großen Mediathek kann mehrere Nächte dauern.",
+    ]
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Nur über WLAN", isOn: $e.nurWLAN)
+                Toggle("Nur beim Laden", isOn: $e.nurBeimLaden)
+            } footer: {
+                Text("Ohne WLAN vergleicht Lilith nur mit dem Server (wenige Daten) und lädt erst im WLAN hoch.")
+            }
+            Section {
+                Toggle("Videos sichern", isOn: $e.videos)
+                Toggle("Originale aus iCloud laden", isOn: $e.iCloud)
+            } footer: {
+                Text("Bei „iPhone-Speicher optimieren“ liegen manche Originale nur in iCloud. Lilith lädt sie dann einzeln und sichert sie. Ist weniger als 1 GB frei, hält das Backup an.")
+            }
+            Section("So funktioniert das Backup") {
+                ForEach(Self.erklaerung, id: \.self) { satz in
+                    Label(satz, systemImage: "moon.stars")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .navigationTitle("Backup-Einstellungen")
+        .navigationBarTitleDisplayMode(.inline)
+        .onDisappear {
+            if e != backup.einstellungen { backup.setze(einstellungen: e) }
+        }
     }
 }
 

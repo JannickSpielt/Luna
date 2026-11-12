@@ -139,3 +139,15 @@ Plan: `docs/BACKUP-PLAN.md`.
 - **4 Fotos pro Reihe** sind auf dem iPhone jetzt Standard (Stufen 1, 3, 4, 5, 7, 11).
 - **Kürzlich hinzugefügt** (im Alben-Tab, ganz oben): Was in den letzten 30 Tagen hochgeladen wurde, neueste zuerst, bis 1.000 Objekte. Immich kann nur nach Hochladezeit filtern (`createdAfter`), nicht sortieren. Lilith sortiert deshalb selbst.
 - **Heller Modus in Weiß:** Statt des warmen Papiertons (#FAF5EE) ist der Hintergrund jetzt reines Weiß, Flächen wie Karten sind das iOS-übliche Hellgrau (#F2F2F7), die Schrift ist neutral statt bräunlich. Der Dunkelmodus bleibt unverändert.
+
+## 11. Backup im Hintergrund (Backup-Etappe 3, 12.11.2026)
+
+- **Uploads über eine Hintergrund-Session:** Jeder Upload läuft über `URLSession` mit Hintergrund-Konfiguration (`app.lilith.upload`). Geht die App in den Hintergrund, läuft der aktuelle Upload weiter. Zusätzlich übergibt Lilith bis zu 30 vorbereitete Aufträge an iOS, die ohne die App hochgeladen werden. Ausgenommen sind Live Photos, weil Video und Foto nacheinander gehen müssen.
+- **Ergebnisse nach einem Neustart:** iOS weckt Lilith, wenn Hintergrund-Uploads fertig sind. Ergebnisse, die ankommen, bevor die Warteschlange bereit ist, werden gesammelt und nachgereicht. Beim Start bleiben Aufträge, die iOS noch hochlädt, auf „läuft“ und werden nicht doppelt gesendet.
+- **BackupZentrale:** Warteschlange und Backup gibt es pro App-Start genau einmal, für die Oberfläche und für Läufe ohne Bildschirm. Ohne Oberfläche lädt sie die Anmeldung selbst aus dem Schlüsselbund (lesbar ab dem ersten Entsperren nach dem Neustart).
+- **Läufe im Hintergrund:** nachts als `BGProcessingTask` (nur am Strom, mit Netz) und zwischendurch als `BGAppRefreshTask` (frühestens alle 2 Stunden). Jeder Lauf vergleicht, sichert und übergibt danach Uploads an iOS. Ist die Zeit um, hält er an und übergibt, was fertig vorbereitet ist.
+- **Einstellungen:** Nur über WLAN (Voreinstellung), Nur beim Laden, Videos sichern, Originale aus iCloud laden. Ohne WLAN wird nur verglichen (wenige Daten), hochgeladen wird erst im WLAN. Die Uploads selbst verbieten Mobilfunk und Datensparmodus, damit das auch im Hintergrund gilt. Uploads per Hand gehen immer.
+- **iCloud-Originale:** Werden einzeln geladen (eins nach dem anderen). Sind sie erlaubt, werden vorher übersprungene Fotos neu geprüft. Unter 1 GB freiem Speicher hält das Backup an.
+- **Statuszeile:** „Wartet auf WLAN“, „Wartet auf Strom“ oder „Zu wenig Speicher frei“, der Mond-Ring zeigt dann die Wolke.
+
+**Nicht geprüft:** Ob iOS die Läufe wirklich auslöst, lässt sich im Simulator nicht zuverlässig testen. Das zeigt erst ein echtes iPhone über ein paar Nächte. **Offen (Etappe 4):** „Jetzt sichern“ ab iOS 26, Live Activity, Fehlerliste, Vollmond-Moment.

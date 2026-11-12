@@ -33,9 +33,18 @@ final class UploadAttrappe: URLProtocol, @unchecked Sendable {
     static let sperre = NSLock()
 
     static func session() -> URLSession {
+        URLSession(configuration: konfiguration())
+    }
+
+    static func konfiguration() -> URLSessionConfiguration {
         let k = URLSessionConfiguration.ephemeral
         k.protocolClasses = [UploadAttrappe.self]
-        return URLSession(configuration: k)
+        return k
+    }
+
+    /// Uploader wie in der App, aber über die Attrappe statt einer echten Hintergrund-Session.
+    static func uploader() -> HintergrundUpload {
+        HintergrundUpload(konfiguration: konfiguration(), koerperOrdner: tempOrdner())
     }
 
     override class func canInit(with request: URLRequest) -> Bool { true }
@@ -143,7 +152,7 @@ struct WarteschlangeTests {
                                   transport: transport, uploadSession: UploadAttrappe.session())
         let db = try Datenbank.imSpeicher()
         let arbeitsordner = tempOrdner()
-        let schlange = UploadWarteschlange(client: client, db: db, konto: "test", ordner: arbeitsordner)
+        let schlange = UploadWarteschlange(client: client, db: db, konto: "test", ordner: arbeitsordner, uploader: UploadAttrappe.uploader())
         var fertig = false
         schlange.onDurchgangFertig = { fertig = true }
 
@@ -179,7 +188,7 @@ struct WarteschlangeTests {
         let client = ImmichClient(address: ServerAddress(eingabe: "foto.example.de")!, transport: transport,
                                   uploadSession: UploadAttrappe.session())
         let db = try Datenbank.imSpeicher()
-        let schlange = UploadWarteschlange(client: client, db: db, konto: "test", ordner: tempOrdner())
+        let schlange = UploadWarteschlange(client: client, db: db, konto: "test", ordner: tempOrdner(), uploader: UploadAttrappe.uploader())
         var fertig = false
         schlange.onDurchgangFertig = { fertig = true }
         try await schlange.fuegeHinzu([video], quelle: "test")

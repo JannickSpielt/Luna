@@ -121,6 +121,14 @@ extension Datenbank {
         }
     }
 
+    /// Übersprungene Fotos mit diesem Grund neu prüfen (z. B. wenn iCloud-Originale jetzt erlaubt sind).
+    public func pruefeErneut(konto: String, grund: String) throws {
+        try pool.write { db in
+            try db.execute(sql: "UPDATE lokales_foto SET zustand = 'neu', grund = NULL WHERE konto = ? AND zustand = 'uebersprungen' AND grund = ?",
+                           arguments: [konto, grund])
+        }
+    }
+
     /// Anzahl der Fotos je Zustand.
     public func zaehleLokal(konto: String) throws -> [LokalesFoto.Zustand: Int] {
         try pool.read { db in

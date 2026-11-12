@@ -64,7 +64,7 @@ Ziel: Fotos und Videos von iPhone, iPad und Mac auf deinen Immich-Server bringen
 |---|---|---|
 | 1 | Datenbank, Upload-Dienst mit Duplikat-Prüfung, Foto-Auswahl (iOS), Drag & Drop und Import (Mac), Upload ins Album | Fotos per Hand hochladen, mit Fortschritt, ohne Duplikate – auf allen Geräten |
 | 2 | Zugriff auf die Fotomediathek, Erkennen neuer Fotos, Statuskarte mit Mond-Ring, Backup bei geöffneter App | „12.340 von 50.000 gesichert“ und alles nachholen, solange die App offen ist |
-| 3 | Hintergrund-Uploads, nächtliche Läufe, Einstellungen (WLAN, Laden, Videos, Alben), iCloud-Originale | Backup läuft nachts von selbst |
+| 3 ✔ | Hintergrund-Uploads, nächtliche Läufe, Einstellungen (WLAN, Laden, Videos, Alben), iCloud-Originale | Backup läuft nachts von selbst |
 | 4 | „Jetzt sichern“ (iOS 26), Live Activity, Fehlerliste, Hilfeseite, Vollmond-Moment | Fortschritt auch außerhalb der App sichtbar, Fehler einzeln lösbar |
 
 Jede Etappe wird einzeln gebaut, geprüft und dir vor dem Commit gezeigt.

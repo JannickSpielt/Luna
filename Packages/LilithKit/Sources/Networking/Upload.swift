@@ -33,9 +33,12 @@ public struct UploadDatei: Sendable, Hashable {
     /// Versteckt hochladen (das Video eines Live Photos).
     public var versteckt: Bool
     public var pruefsumme: String?
+    /// Nur über WLAN senden (automatisches Backup mit dieser Einstellung).
+    public var nurWLAN: Bool
 
     public init(datei: URL, dateiname: String, erstellt: Date, geaendert: Date, dauerMs: Int? = nil,
-                livePhotoVideoId: String? = nil, versteckt: Bool = false, pruefsumme: String? = nil) {
+                livePhotoVideoId: String? = nil, versteckt: Bool = false, pruefsumme: String? = nil, nurWLAN: Bool = false) {
+        self.nurWLAN = nurWLAN
         self.datei = datei; self.dateiname = dateiname; self.erstellt = erstellt; self.geaendert = geaendert
         self.dauerMs = dauerMs; self.livePhotoVideoId = livePhotoVideoId; self.versteckt = versteckt; self.pruefsumme = pruefsumme
     }
@@ -143,13 +146,7 @@ extension ImmichClient {
         let body = arbeitsordner.appending(path: "upload-\(UUID().uuidString).multipart")
         defer { try? FileManager.default.removeItem(at: body) }
         let grenze = try Multipart.schreibe(d, nach: body)
-
-        var anfrage = anfrage(["assets"])
-        anfrage.httpMethod = "POST"
-        anfrage.timeoutInterval = 600
-        anfrage.setValue("multipart/form-data; boundary=\(grenze)", forHTTPHeaderField: "Content-Type")
-        anfrage.setValue("application/json", forHTTPHeaderField: "Accept")
-        if let summe = d.pruefsumme { anfrage.setValue(summe, forHTTPHeaderField: "x-immich-checksum") }
+        let anfrage = uploadAnfrage(grenze: grenze, datei: d)
 
         let (daten, antwort): (Data, URLResponse)
         do {
@@ -157,7 +154,28 @@ extension ImmichClient {
         } catch {
             throw ImmichError.nichtErreichbar(Self.kurzerGrund(error))
         }
-        let status = (antwort as? HTTPURLResponse)?.statusCode ?? 0
+        return try Self.werteUploadAus(status: (antwort as? HTTPURLResponse)?.statusCode ?? 0, daten: daten)
+    }
+
+    /// Die Anfrage für `POST /assets` (ohne Body).
+    func uploadAnfrage(grenze: String, datei d: UploadDatei) -> URLRequest {
+        var anfrage = anfrage(["assets"])
+        anfrage.httpMethod = "POST"
+        anfrage.timeoutInterval = 600
+        anfrage.setValue("multipart/form-data; boundary=\(grenze)", forHTTPHeaderField: "Content-Type")
+        anfrage.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let summe = d.pruefsumme { anfrage.setValue(summe, forHTTPHeaderField: "x-immich-checksum") }
+        if d.nurWLAN {
+            // Auch wenn iOS den Upload im Hintergrund weiterführt: nie über Mobilfunk oder im Datensparmodus.
+            anfrage.allowsCellularAccess = false
+            anfrage.allowsExpensiveNetworkAccess = false
+            anfrage.allowsConstrainedNetworkAccess = false
+        }
+        return anfrage
+    }
+
+    /// Wertet die Antwort des Servers auf einen Upload aus.
+    static func werteUploadAus(status: Int, daten: Data) throws -> UploadErgebnis {
         switch status {
         case 200, 201:
             struct Antwort: Decodable { let id: String; let status: String }

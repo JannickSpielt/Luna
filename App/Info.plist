@@ -5,5 +5,16 @@
 	<!-- Wird mit den automatisch erzeugten Einträgen aus project.yml zusammengeführt. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- Backup im Hintergrund: nachts am Ladekabel (processing) und kurz zwischendurch (fetch). -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>app.lilith.backup.nacht</string>
+		<string>app.lilith.backup.kurz</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>processing</string>
+	</array>
 </dict>
 </plist>

@@ -66,9 +66,10 @@ public protocol Mediathek: Sendable {
     /// Alle Fotos und Videos (nur Kopfdaten, ohne Inhalt).
     func alleMedien() async throws -> [MediumKopf]
     /// SHA1 (Base64) der aktuellen Version, stückweise berechnet.
-    func pruefsumme(_ id: String) async throws -> String
+    /// - Parameter iCloud: Original bei Bedarf aus iCloud laden.
+    func pruefsumme(_ id: String, iCloud: Bool) async throws -> String
     /// Schreibt das Foto (und bei Live Photos das Video) in den Ordner.
-    func exportiere(_ id: String, nach ordner: URL) async throws -> ExportiertesMedium
+    func exportiere(_ id: String, nach ordner: URL, iCloud: Bool) async throws -> ExportiertesMedium
     /// Alle Alben (eigene und von iOS), ohne leere.
     func alben() async -> [MediathekAlbum]
     /// Kennungen der Fotos in einem Album.

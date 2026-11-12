@@ -100,11 +100,20 @@ extension Datenbank {
     }
 
     /// Nach einem Absturz: Was als „läuft“ markiert ist, läuft nicht mehr – zurück auf „wartet“.
-    public func setzeLaufendeZurueck(konto: String) throws {
+    /// Ausgenommen sind Aufträge, die iOS noch im Hintergrund hochlädt.
+    public func setzeLaufendeZurueck(konto: String, ausser: Set<Int64> = []) throws {
         try pool.write { db in
-            try db.execute(sql: "UPDATE upload_auftrag SET zustand = 'wartet' WHERE konto = ? AND zustand = 'laeuft'",
-                           arguments: [konto])
+            let laufend = try UploadAuftrag.filter(Column("konto") == konto && Column("zustand") == UploadAuftrag.Zustand.laeuft.rawValue)
+                .fetchAll(db)
+            for var a in laufend where !ausser.contains(a.id ?? -1) {
+                a.zustand = .wartet
+                try a.update(db)
+            }
         }
+    }
+
+    public func auftrag(id: Int64) throws -> UploadAuftrag? {
+        try pool.read { db in try UploadAuftrag.fetchOne(db, key: id) }
     }
 
     /// Erledigte Aufträge aufräumen (fertig, Duplikat), damit die Datenbank klein bleibt.

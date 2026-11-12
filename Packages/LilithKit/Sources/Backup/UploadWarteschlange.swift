@@ -36,15 +36,26 @@ public final class UploadWarteschlange {
     @ObservationIgnored private var arbeit: Task<Void, Never>?
     @ObservationIgnored private let maxVersuche = 5
     @ObservationIgnored private var warter: [CheckedContinuation<Void, Never>] = []
+    @ObservationIgnored private let uploader: HintergrundUpload
+    /// Aufträge, die iOS gerade im Hintergrund hochlädt. Die Schleife fasst sie nicht an.
+    @ObservationIgnored private var imHintergrund: Set<Int64> = []
+    /// Automatisches Backup nur über WLAN (gilt nicht für Uploads per Hand).
+    @ObservationIgnored public var nurWLANFuerMediathek = true
 
     /// Ordner für Upload-Dateien. Das Backup legt seine Exporte auch hier ab.
     public var arbeitsordner: URL { ordner }
 
-    public init(client: ImmichClient, db: Datenbank, konto: String, ordner: URL? = nil) {
+    public init(client: ImmichClient, db: Datenbank, konto: String, ordner: URL? = nil,
+                uploader: HintergrundUpload = .geteilt) {
         self.client = client
         self.db = db
         self.konto = konto
         self.ordner = ordner ?? Self.standardOrdner(konto: konto)
+        self.uploader = uploader
+        // Ergebnisse von Uploads, die im Hintergrund fertig wurden (auch nach einem Neustart).
+        uploader.setzeAbschluss { [weak self] kennung, ergebnis in
+            Task { @MainActor in self?.abschliessen(kennung, ergebnis) }
+        }
     }
 
     /// Kopien der Dateien liegen hier, bis sie hochgeladen sind (übersteht einen Neustart).
@@ -57,13 +68,79 @@ public final class UploadWarteschlange {
 
     /// Beim App-Start: unterbrochene Aufträge fortsetzen.
     public func start() {
-        try? db.setzeLaufendeZurueck(konto: konto)
-        let offen = (try? db.offeneAuftraege(konto: konto)) ?? []
-        if !offen.isEmpty, arbeit == nil {
-            halt = nil
-            stand = Stand(gesamt: offen.count)
-            arbeite()
+        Task {
+            // Was iOS noch im Hintergrund hochlädt, bleibt „läuft“. Der Rest geht zurück in die Warteschlange.
+            let laufend = await uploader.laufendeKennungen()
+            imHintergrund = Set(laufend.compactMap { Int64($0) })
+            try? db.setzeLaufendeZurueck(konto: konto, ausser: imHintergrund)
+            let offen = ((try? db.offeneAuftraege(konto: konto)) ?? []).filter { !imHintergrund.contains($0.id ?? -1) }
+            if !offen.isEmpty, arbeit == nil {
+                halt = nil
+                stand = Stand(gesamt: offen.count)
+                arbeite()
+            }
         }
+    }
+
+    /// Beim Verlassen der App: die nächsten Aufträge an iOS übergeben, damit sie ohne Lilith weiterlaufen.
+    /// Nur Aufträge mit Prüfsumme und ohne Live-Video (die brauchen zwei Schritte nacheinander).
+    public func uebergibAnHintergrund(hoechstens: Int = 30) {
+        guard halt == nil else { return }
+        let kandidaten = ((try? db.offeneAuftraege(konto: konto)) ?? []).filter {
+            $0.zustand == .wartet && $0.pruefsumme != nil && $0.liveVideoDatei == nil && !imHintergrund.contains($0.id ?? -1)
+        }.prefix(hoechstens)
+        for var a in kandidaten {
+            guard let id = a.id else { continue }
+            do {
+                try uploader.starte(uploadDatei(a), client: client, kennung: String(id))
+                a.zustand = .laeuft
+                try? db.aktualisiere(a)
+                imHintergrund.insert(id)
+            } catch {
+                continue
+            }
+        }
+    }
+
+    /// Ein Hintergrund-Upload ist fertig.
+    func abschliessen(_ kennung: String, _ ergebnis: Result<UploadErgebnis, ImmichError>) {
+        guard let id = Int64(kennung), var a = try? db.auftrag(id: id) else { return }
+        imHintergrund.remove(id)
+        switch ergebnis {
+        case .success(let e):
+            a.remoteId = e.id
+            a.zustand = e.duplikat ? .duplikat : .fertig
+            if e.duplikat { stand.duplikate += 1 } else { stand.hochgeladen += 1 }
+            erfolg(a)
+        case .failure(let fehler):
+            _ = behandle(fehler, &a)
+        }
+        if arbeit == nil, imHintergrund.isEmpty {
+            try? db.entferneErledigte(konto: konto)
+            onDurchgangFertig?()
+        }
+    }
+
+    private func uploadDatei(_ a: UploadAuftrag, livePhotoVideoId: String? = nil) -> UploadDatei {
+        UploadDatei(datei: URL(fileURLWithPath: a.datei), dateiname: a.dateiname, erstellt: a.erstellt, geaendert: a.geaendert,
+                    dauerMs: a.dauerMs, livePhotoVideoId: livePhotoVideoId, pruefsumme: a.pruefsumme,
+                    nurWLAN: a.quelle == "mediathek" && nurWLANFuerMediathek)
+    }
+
+    /// Nach erfolgreichem Upload (oder Duplikat): Album, Stand der Mediathek, Kopie löschen.
+    private func erfolg(_ auftrag: UploadAuftrag) {
+        var a = auftrag
+        a.fehler = nil
+        try? db.aktualisiere(a)
+        if let lokal = a.lokaleId {
+            try? db.setzeLokal(konto: konto, lokaleId: lokal, zustand: .gesichert, remoteId: a.remoteId)
+        }
+        if let album = a.albumId, let id = a.remoteId {
+            // Scheitert nur das Album, ist das Foto trotzdem sicher auf dem Server.
+            let client = self.client
+            Task { try? await client.nachUpload(albumId: album, assetIds: [id]) }
+        }
+        entferneKopie(a)
     }
 
     /// Nimmt Dateien auf. Sie werden kopiert, damit der Upload auch nach einem Neustart weitergehen kann.
@@ -154,7 +231,7 @@ public final class UploadWarteschlange {
         guard arbeit == nil else { return }
         stand.laeuft = true
         arbeit = Task {
-            while let naechster = (try? db.offeneAuftraege(konto: konto))?.first {
+            while let naechster = (try? db.offeneAuftraege(konto: konto))?.first(where: { !imHintergrund.contains($0.id ?? -1) }) {
                 let weiter = await bearbeite(naechster)
                 if !weiter { break }
             }
@@ -198,9 +275,8 @@ public final class UploadWarteschlange {
                 if let live = a.liveVideoDatei {
                     videoId = try await ladeLiveVideoHoch(URL(fileURLWithPath: live), fuer: a)
                 }
-                let upload = UploadDatei(datei: datei, dateiname: a.dateiname, erstellt: a.erstellt, geaendert: a.geaendert,
-                                         dauerMs: a.dauerMs, livePhotoVideoId: videoId, pruefsumme: a.pruefsumme)
-                let ergebnis = try await client.ladeHoch(upload, arbeitsordner: ordner) { anteil in
+                let ergebnis = try await uploader.ladeHoch(uploadDatei(a, livePhotoVideoId: videoId), client: client,
+                                                           kennung: String(a.id ?? 0)) { anteil in
                     Task { @MainActor [weak self] in self?.stand.anteil = anteil }
                 }
                 a.remoteId = ergebnis.id
@@ -210,13 +286,9 @@ public final class UploadWarteschlange {
             if let album = a.albumId, let id = a.remoteId {
                 // Scheitert nur das Album, ist das Foto trotzdem sicher auf dem Server.
                 try? await client.nachUpload(albumId: album, assetIds: [id])
+                a.albumId = nil
             }
-            a.fehler = nil
-            try? db.aktualisiere(a)
-            if let lokal = a.lokaleId {
-                try? db.setzeLokal(konto: konto, lokaleId: lokal, zustand: .gesichert, remoteId: a.remoteId)
-            }
-            entferneKopie(a)
+            erfolg(a)
             return true
         } catch {
             return behandle(error, &a)
@@ -265,8 +337,8 @@ public final class UploadWarteschlange {
         let vorab = try await client.pruefeVorab([("live", summe)])["live"] ?? .hochladen
         if case .vorhanden(let id, _) = vorab { return id }
         let upload = UploadDatei(datei: video, dateiname: video.lastPathComponent, erstellt: a.erstellt, geaendert: a.geaendert,
-                                 versteckt: true, pruefsumme: summe)
-        return try await client.ladeHoch(upload, arbeitsordner: ordner) { _ in }.id
+                                 versteckt: true, pruefsumme: summe, nurWLAN: a.quelle == "mediathek" && nurWLANFuerMediathek)
+        return try await uploader.ladeHoch(upload, client: client, kennung: "\(a.id ?? 0)-live").id
     }
 
     private func entferneKopie(_ a: UploadAuftrag) {

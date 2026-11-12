@@ -23,6 +23,8 @@ public struct RootView: View {
     @MainActor
     public static func einrichten() {
         BilderCache.einrichten()
+        GeraeteUmgebung.starte()
+        BackupZentrale.registriereHintergrund()
     }
 
     public var body: some View {
@@ -70,13 +72,13 @@ struct HauptView: View {
                 .environment(kontext)
                 .overlay { DetailEbene(kontext: kontext) }
                 .onChange(of: szene) { _, neu in
-                    // Backup nur bei geöffneter App (Hintergrund kommt in Etappe 3).
                     switch neu {
                     case .active:
                         kontext.backup?.aktualisiereZugriff()
                         kontext.backup?.starte()
                     case .background:
-                        kontext.backup?.halteAn()
+                        // Uploads an iOS übergeben (laufen ohne Lilith weiter) und die nächsten Läufe anmelden.
+                        BackupZentrale.shared.inDenHintergrund()
                     default:
                         break
                     }
@@ -131,13 +133,9 @@ struct HauptView: View {
         // Upload-Warteschlange mit eigener Datenbank. Schlägt das Öffnen fehl, gibt es eben keinen Upload.
         var uploads: UploadWarteschlange?
         var backup: BackupDienst?
-        if let client = session.client, let db = try? Datenbank.standard() {
-            let schlange = UploadWarteschlange(client: client, db: db, konto: account.id)
-            uploads = schlange
-            #if os(iOS)
-            // Auf dem Mac nur per Hand (Entscheidung im Backup-Plan).
-            backup = BackupDienst(client: client, db: db, konto: account.id, mediathek: FotoMediathek(), uploads: schlange)
-            #endif
+        if let client = session.client {
+            // Dieselben wie für Läufe im Hintergrund.
+            (uploads, backup) = BackupZentrale.shared.einrichten(account: account, client: client)
         }
         #if DEBUG && os(iOS)
         if UserDefaults.standard.bool(forKey: "LilithBackupVorschau") {
@@ -152,7 +150,6 @@ struct HauptView: View {
         uploads?.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
         // Nach dem Hochladen alle Ansichten neu laden, damit die neuen Fotos erscheinen.
         uploads?.onDurchgangFertig = { [weak neu] in neu?.melde(von: nil) }
-        uploads?.start()
         backup?.starte()
         if let client = session.client {
             let store = TimelineStore(client: client)
