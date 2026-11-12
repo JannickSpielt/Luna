@@ -18,6 +18,25 @@ extension ImmichClient {
         }
     }
 
+    /// Was in den letzten Tagen auf den Server kam, nach Hochladezeit sortiert (neueste zuerst).
+    /// Immich kann nicht nach Hochladezeit sortieren, nur danach filtern: Lilith sortiert selbst.
+    public func kuerzlichHinzugefuegt(tage: Int = 30, anzahl: Int = 1000) async throws -> [TimelineAsset] {
+        let ab = Date.now.addingTimeInterval(-Double(tage) * 86_400)
+        let output: Operations.SearchAssets.Output
+        do {
+            output = try await client.searchAssets(body: .json(.init(
+                createdAfter: ab, size: min(max(anzahl, 1), 1000), visibility: .timeline)))
+        } catch { throw Self.uebersetze(error) }
+        switch output {
+        case .ok(let ok):
+            return try await rufe { try ok.body.json }.assets.items
+                .filter { !$0.isTrashed }
+                .sorted { $0.createdAt > $1.createdAt }
+                .map(Self.timelineAsset)
+        case .undocumented(let code, _): throw Self.fehler(code)
+        }
+    }
+
     static func timelineAsset(_ d: Components.Schemas.AssetResponseDto) -> TimelineAsset {
         let verhaeltnis: Double = {
             guard let b = d.width, let h = d.height, b > 0, h > 0 else { return 1 }

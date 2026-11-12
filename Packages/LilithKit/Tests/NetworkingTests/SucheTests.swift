@@ -30,4 +30,20 @@ struct SucheTests {
             try await ImmichClient(address: adresse, transport: transport).sucheSmart("Katze")
         }
     }
+
+    @Test("Kürzlich hinzugefügt: nach Hochladezeit sortiert, neueste zuerst")
+    func kuerzlich() async throws {
+        let alt = AssetTests.asset.replacingOccurrences(of: #""id":"a1""#, with: #""id":"alt""#)
+            .replacingOccurrences(of: #""createdAt":"2026-10-18T18:00:00.000Z""#, with: #""createdAt":"2026-11-01T08:00:00.000Z""#)
+        let neu = AssetTests.asset.replacingOccurrences(of: #""id":"a1""#, with: #""id":"neu""#)
+            .replacingOccurrences(of: #""createdAt":"2026-10-18T18:00:00.000Z""#, with: #""createdAt":"2026-11-12T09:00:00.000Z""#)
+        let json = """
+        {"albums":{"count":0,"facets":[],"items":[],"total":0},
+         "assets":{"count":2,"facets":[],"items":[\(alt),\(neu)],"nextCursor":null,"nextPage":null,"total":2}}
+        """
+        let transport = MockTransport(["searchAssets": (200, json)])
+        let liste = try await ImmichClient(address: adresse, credential: .apiKey("k"), transport: transport).kuerzlichHinzugefuegt()
+        #expect(liste.map(\.id) == ["neu", "alt"])
+        #expect(transport.anfragen.first?.path == "/search/metadata")
+    }
 }

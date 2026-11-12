@@ -85,3 +85,38 @@ Jede Etappe wird einzeln gebaut, geprüft und dir vor dem Commit gezeigt.
 - [ ] **Mac auch automatisch aus der Fotos-Mediathek sichern?** Vorschlag: nein, auf dem Mac nur per Hand (Drag & Drop, Import). Automatisch sichert das iPhone.
 - [ ] **„Gesicherte Fotos vom iPhone entfernen“** (Speicher freigeben, als einmalige Aktion mit Prüfung und Vorschau) – Vorschlag: nicht in diesem Plan, sondern später.
 - [ ] **Reihenfolge der Etappen** so okay? Vorschlag: mit Etappe 1 starten und nach jeder Etappe kurz anhalten.
+
+---
+
+## 9. Erweiterung vom 12.11.2026 (freigegeben am 12.11.2026: Server-Alben als Schalter, zuerst B)
+
+### A) Nicht gesicherte Fotos in der Bibliothek zeigen (iPhone/iPad)
+
+- Fotos vom iPhone, die noch **nicht auf dem Server** sind, erscheinen in der Bibliothek an ihrem Datum zwischen den Server-Fotos – wie in der offiziellen Immich-App.
+- **Symbol unten rechts auf der Kachel:**
+  - Wolke durchgestrichen = nur auf diesem iPhone
+  - Pfeil nach oben = wird gerade hochgeladen
+  - Ausrufezeichen = Hochladen gescheitert
+- Das Vorschaubild kommt direkt vom iPhone (schnell, ohne Internet).
+- **Antippen** öffnet das Foto wie gewohnt. Favorit, Album und Löschen gehen erst, wenn es gesichert ist. Dafür gibt es dort den Knopf „Jetzt sichern“.
+- Im Ansicht-Menü: „Nicht gesicherte zeigen“ an/aus (an, sobald das Backup eingeschaltet ist).
+- Gezeigt werden nur Fotos, die laut Albenauswahl (B) gesichert werden sollen – ausgeschlossene (z. B. Screenshots) nicht.
+
+### B) Alben fürs Backup auswählen (aus Etappe 3 vorgezogen)
+
+- In der Backup-Karte: **„Alben auswählen“** mit allen Alben der Mediathek (auch „Screenshots“, „Selfies“, „Videos“), jeweils mit Vorschaubild und Anzahl.
+- **Wie in der Immich-App:** Antippen = sichern (Haken), noch mal antippen = ausschließen (rot), noch mal = neutral.
+- Voreinstellung: „Alle Fotos“ (Zuletzt) wird gesichert.
+- Ein Foto wird gesichert, wenn es in **mindestens einem gewählten** und **keinem ausgeschlossenen** Album liegt.
+- Die Auswahl wird gespeichert, Änderungen wirken beim nächsten Durchgang.
+
+### Technik in Kürze
+
+- Die Timeline bekommt eine zweite Quelle: Lilith mischt die lokalen Fotos (aus der Datenbank von Etappe 2) monatsweise in die Server-Monate. Jede Kachel weiß, ob sie vom Server oder vom iPhone kommt.
+- Die Albenauswahl wird in der Datenbank gespeichert. Beim Abgleich zählt nur noch, was laut Auswahl gesichert werden soll.
+- Tests mit nachgebauter Mediathek wie in Etappe 2.
+
+### Offene Entscheidungen
+
+- [ ] **Alben auch auf dem Server anlegen?** Wird ein Foto aus dem iPhone-Album „Urlaub“ gesichert, landet es auf dem Server auch im Album „Urlaub“. Vorschlag: ja, als Schalter, aus als Voreinstellung.
+- [ ] **Reihenfolge:** Vorschlag: zuerst B (Albenauswahl), dann A (Anzeige), weil A die Auswahl braucht.

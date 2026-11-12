@@ -14,6 +14,7 @@ public struct Scrubber: View {
     @State private var zielSection: Int?
     @State private var sichtbar = false
     @State private var ausblenden: Task<Void, Never>?
+    @State private var letzteBewegung = Date.distantPast
 
     public init(quelle: TimelineQuelle, anteil: Double, springe: @escaping (Int) -> Void) {
         self.quelle = quelle
@@ -84,12 +85,19 @@ public struct Scrubber: View {
     }
 
     /// Griff beim Scrollen einblenden und nach kurzer Ruhe wieder ausblenden.
+    /// Beim Scrollen kommt das bis zu 120-mal pro Sekunde: nur die Zeit merken, eine einzige Aufgabe wartet.
     private func zeigeKurz() {
+        letzteBewegung = .now
         if !sichtbar { withAnimation(.easeOut(duration: 0.2)) { sichtbar = true } }
-        ausblenden?.cancel()
+        guard ausblenden == nil else { return }
         ausblenden = Task {
-            try? await Task.sleep(for: .seconds(1.5))
-            guard !Task.isCancelled else { return }
+            while !Task.isCancelled {
+                let rest = 1.5 - Date.now.timeIntervalSince(letzteBewegung)
+                if rest <= 0 { break }
+                try? await Task.sleep(for: .seconds(rest))
+            }
+            ausblenden = nil
+            guard !ziehend else { return }
             withAnimation(.easeIn(duration: 0.3)) { sichtbar = false }
         }
     }

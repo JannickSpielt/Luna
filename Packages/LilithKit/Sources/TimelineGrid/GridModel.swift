@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// Art eines Mediums im Grid.
@@ -5,6 +6,16 @@ public enum GridItemKind: UInt8, Sendable {
     case foto
     case video
     case livePhoto
+}
+
+/// Fotos, die nur auf dem Gerät liegen (noch nicht auf dem Server).
+public enum GridLokal: UInt8, Sendable {
+    /// Nur auf diesem Gerät.
+    case nurHier
+    /// Wird gerade hochgeladen.
+    case laedtHoch
+    /// Hochladen ist gescheitert.
+    case fehler
 }
 
 /// Ein Eintrag im Grid.
@@ -19,8 +30,12 @@ public struct GridItem: Hashable, Sendable {
     public let dauer: Int
     /// Bei Live Photos: ID des zugehörigen kurzen Videos.
     public let liveVideoId: String?
+    /// `nil` für Fotos vom Server. Sonst liegt das Foto nur auf dem Gerät, `id` ist dann „lokal:<Kennung>“.
+    public let lokal: GridLokal?
 
-    public init(id: String, farbe: UInt32, art: GridItemKind, favorit: Bool, dauer: Int, liveVideoId: String? = nil) {
+    public init(id: String, farbe: UInt32, art: GridItemKind, favorit: Bool, dauer: Int, liveVideoId: String? = nil,
+                lokal: GridLokal? = nil) {
+        self.lokal = lokal
         self.id = id
         self.farbe = farbe
         self.art = art
@@ -30,12 +45,17 @@ public struct GridItem: Hashable, Sendable {
     }
 
     public func mit(favorit: Bool) -> GridItem {
-        GridItem(id: id, farbe: farbe, art: art, favorit: favorit, dauer: dauer, liveVideoId: liveVideoId)
+        GridItem(id: id, farbe: farbe, art: art, favorit: favorit, dauer: dauer, liveVideoId: liveVideoId, lokal: lokal)
     }
 
     public var rgb: (r: Double, g: Double, b: Double) {
         (Double((farbe >> 16) & 0xFF) / 255, Double((farbe >> 8) & 0xFF) / 255, Double(farbe & 0xFF) / 255)
     }
+
+    /// Präfix der IDs von Fotos, die nur auf dem Gerät liegen.
+    public static let lokalPraefix = "lokal:"
+    /// Kennung in der Mediathek bei lokalen Fotos.
+    public var lokaleId: String? { lokal == nil ? nil : String(id.dropFirst(Self.lokalPraefix.count)) }
 
     public var dauerText: String { String(format: "%d:%02d", dauer / 60, dauer % 60) }
 }
@@ -73,6 +93,12 @@ public protocol TimelineQuelle: AnyObject {
     var onAllesNeu: (() -> Void)? { get set }
     /// Lädt die Originaldatei in einen temporären Ordner (mit echtem Dateinamen), z. B. zum Herausziehen per Drag & Drop.
     func ladeOriginal(_ item: GridItem) async throws -> URL
+    /// Vorschaubild für Fotos, die nur auf dem Gerät liegen.
+    func lokalesBild(fuer item: GridItem, pixel: CGFloat) async -> CGImage?
+}
+
+extension TimelineQuelle {
+    public func lokalesBild(fuer item: GridItem, pixel: CGFloat) async -> CGImage? { nil }
 }
 
 extension TimelineQuelle {
@@ -223,7 +249,7 @@ public struct GridZoom: Sendable, Equatable {
         return true
     }
 
-    public static let iPhone = GridZoom(stufen: [1, 3, 5, 7, 11], start: 3)
+    public static let iPhone = GridZoom(stufen: [1, 3, 4, 5, 7, 11], start: 4)
     public static let iPad = GridZoom(stufen: [3, 5, 7, 10, 14], start: 7)
     public static let mac = GridZoom(stufen: [4, 6, 8, 12, 18], start: 8)
 }

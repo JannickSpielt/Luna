@@ -26,6 +26,9 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         didSet {
             guard auswahlModus != oldValue, let collectionView else { return }
             collectionView.allowsMultipleSelection = auswahlModus
+            collectionView.allowsMultipleSelectionDuringEditing = auswahlModus
+            // Im Bearbeiten-Modus erlaubt UIKit das Auswählen per Wischen (wie in Fotos).
+            collectionView.isEditing = auswahlModus
             if !auswahlModus { leereAuswahl() }
         }
     }
@@ -48,7 +51,7 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     public func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession,
                                at indexPath: IndexPath) -> [UIDragItem] {
-        guard let item = quelle.item(section: indexPath.section, index: indexPath.item) else { return [] }
+        guard let item = quelle.item(section: indexPath.section, index: indexPath.item), item.lokal == nil else { return [] }
         let anbieter = NSItemProvider()
         anbieter.suggestedName = "Lilith-\(item.id.prefix(8))"
         let typ = item.art == .video ? UTType.movie : UTType.image
@@ -67,8 +70,21 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
     }
 
     public func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
-        quelle.item(section: indexPath.section, index: indexPath.item) != nil
+        guard let item = quelle.item(section: indexPath.section, index: indexPath.item) else { return false }
+        // Fotos nur auf dem Gerät können noch nicht favorisiert, archiviert oder gelöscht werden.
+        return !(auswahlModus && item.lokal != nil)
     }
+
+    // MARK: Auswählen per Wischen
+
+    /// Im Auswahl-Modus: Foto antippen, nach rechts und dann nach unten wischen – alles dazwischen wird markiert.
+    public func collectionView(_ collectionView: UICollectionView,
+                               shouldBeginMultipleSelectionInteractionAt indexPath: IndexPath) -> Bool {
+        auswahlModus
+    }
+
+    public func collectionView(_ collectionView: UICollectionView,
+                               didBeginMultipleSelectionInteractionAt indexPath: IndexPath) {}
 
     public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
         if auswahlModus { meldeAuswahl() }
@@ -262,6 +278,11 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         if let item = quelle.item(section: indexPath.section, index: indexPath.item) {
             let pixel = kantePixel
             zelle.zeige(item, anfragen: quelle.bildAnfragen(fuer: item, pixel: pixel).map { BilderCache.anfrage($0, pixel: pixel) })
+            if item.lokal != nil {
+                // Foto nur auf dem Gerät: Vorschau kommt aus der Mediathek, nicht vom Server.
+                let quelle = self.quelle
+                zelle.ladeLokal { await quelle.lokalesBild(fuer: item, pixel: pixel) }
+            }
         } else {
             zelle.zeigePlatzhalter()
             quelle.ladeMonat(indexPath.section)
@@ -366,6 +387,9 @@ final class GridZelle: UICollectionViewCell {
         }
     }
     private let live = UIImageView(image: UIImage(systemName: "livephoto"))
+    /// Symbol für Fotos, die nur auf dem Gerät liegen.
+    private let lokalSymbol = UIImageView()
+    private var lokalAufgabe: Task<Void, Never>?
     private let lader = StufenLader()
     private(set) var hatBild = false
 
@@ -379,7 +403,7 @@ final class GridZelle: UICollectionViewCell {
         contentView.addSubview(bild)
         badge.font = .systemFont(ofSize: 11, weight: .semibold)
         badge.textColor = .white
-        for v in [badge, herz, live] as [UIView] {
+        for v in [badge, herz, live, lokalSymbol] as [UIView] {
             v.translatesAutoresizingMaskIntoConstraints = false
             v.layer.shadowColor = UIColor.black.cgColor
             v.layer.shadowOpacity = 0.6
@@ -389,6 +413,9 @@ final class GridZelle: UICollectionViewCell {
         }
         herz.tintColor = .white
         live.tintColor = .white
+        lokalSymbol.tintColor = .white
+        lokalSymbol.contentMode = .scaleAspectFit
+        lokalSymbol.isHidden = true
         schleier.backgroundColor = UIColor.black.withAlphaComponent(0.3)
         schleier.frame = contentView.bounds
         schleier.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -411,6 +438,9 @@ final class GridZelle: UICollectionViewCell {
             live.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 5),
             live.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 5),
             live.widthAnchor.constraint(equalToConstant: 14), live.heightAnchor.constraint(equalToConstant: 14),
+            lokalSymbol.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -5),
+            lokalSymbol.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 5),
+            lokalSymbol.widthAnchor.constraint(equalToConstant: 16), lokalSymbol.heightAnchor.constraint(equalToConstant: 16),
         ])
         isAccessibilityElement = true
     }
@@ -421,13 +451,27 @@ final class GridZelle: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         lader.abbrechen()
+        lokalAufgabe?.cancel()
+        lokalAufgabe = nil
         bild.image = nil
         hatBild = false
     }
 
+    /// Vorschau vom Gerät laden (für Fotos, die noch nicht auf dem Server sind).
+    func ladeLokal(_ laden: @escaping @MainActor () async -> CGImage?) {
+        lokalAufgabe?.cancel()
+        lokalAufgabe = Task { [weak self] in
+            guard let cg = await laden(), !Task.isCancelled, let self else { return }
+            self.bild.image = UIImage(cgImage: cg)
+            self.hatBild = true
+        }
+    }
+
     func zeigePlatzhalter() {
         lader.abbrechen()
+        lokalAufgabe?.cancel()
         bild.image = nil
+        lokalSymbol.isHidden = true
         contentView.backgroundColor = UIColor.secondarySystemFill
         badge.isHidden = true
         herz.isHidden = true
@@ -450,12 +494,25 @@ final class GridZelle: UICollectionViewCell {
             }
         }
         let klein = bounds.width < 50
-        badge.isHidden = item.art != .video || klein
+        badge.isHidden = item.art != .video || klein || (item.lokal != nil && item.dauer == 0)
         if item.art == .video { badge.text = item.dauerText }
+        switch item.lokal {
+        case .nurHier: lokalSymbol.image = UIImage(systemName: "icloud.slash")
+        case .laedtHoch: lokalSymbol.image = UIImage(systemName: "arrow.up.circle")
+        case .fehler: lokalSymbol.image = UIImage(systemName: "exclamationmark.circle")
+        case nil: lokalSymbol.image = nil
+        }
+        lokalSymbol.isHidden = item.lokal == nil || klein
         herz.isHidden = !item.favorit || klein
         live.isHidden = item.art != .livePhoto || klein
+        let lokalText: String? = switch item.lokal {
+        case .nurHier: "nur auf diesem Gerät"
+        case .laedtHoch: "wird hochgeladen"
+        case .fehler: "Hochladen gescheitert"
+        case nil: nil
+        }
         accessibilityLabel = [item.art == .video ? "Video, \(item.dauerText)" : (item.art == .livePhoto ? "Live Photo" : "Foto"),
-                              item.favorit ? "Favorit" : nil].compactMap { $0 }.joined(separator: ", ")
+                              item.favorit ? "Favorit" : nil, lokalText].compactMap { $0 }.joined(separator: ", ")
     }
 }
 

@@ -90,6 +90,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /auth/validateToken`.
     /// - Remark: Generated from `#/paths//auth/validateToken/post(validateAccessToken)`.
     func validateAccessToken(_ input: Operations.ValidateAccessToken.Input) async throws -> Operations.ValidateAccessToken.Output
+    /// Search assets by metadata
+    ///
+    /// Search for assets based on various metadata criteria.
+    ///
+    /// - Remark: HTTP `POST /search/metadata`.
+    /// - Remark: Generated from `#/paths//search/metadata/post(searchAssets)`.
+    func searchAssets(_ input: Operations.SearchAssets.Input) async throws -> Operations.SearchAssets.Output
     /// Smart asset search
     ///
     /// Perform a smart search for assets by using machine learning vectors to determine relevance.
@@ -299,6 +306,23 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//auth/validateToken/post(validateAccessToken)`.
     public func validateAccessToken(headers: Operations.ValidateAccessToken.Input.Headers = .init()) async throws -> Operations.ValidateAccessToken.Output {
         try await validateAccessToken(Operations.ValidateAccessToken.Input(headers: headers))
+    }
+    /// Search assets by metadata
+    ///
+    /// Search for assets based on various metadata criteria.
+    ///
+    /// - Remark: HTTP `POST /search/metadata`.
+    /// - Remark: Generated from `#/paths//search/metadata/post(searchAssets)`.
+    public func searchAssets(
+        query: Operations.SearchAssets.Input.Query = .init(),
+        headers: Operations.SearchAssets.Input.Headers = .init(),
+        body: Operations.SearchAssets.Input.Body
+    ) async throws -> Operations.SearchAssets.Output {
+        try await searchAssets(Operations.SearchAssets.Input(
+            query: query,
+            headers: headers,
+            body: body
+        ))
     }
     /// Smart asset search
     ///
@@ -1905,6 +1929,402 @@ public enum Components {
                 case successful
             }
         }
+        /// - Remark: Generated from `#/components/schemas/MetadataSearchDto`.
+        public struct MetadataSearchDto: Codable, Hashable, Sendable {
+            /// Filter by album IDs
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/albumIds`.
+            @available(*, deprecated)
+            public var albumIds: [Swift.String]?
+            /// Filter by file checksum
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/checksum`.
+            @available(*, deprecated)
+            public var checksum: Swift.String?
+            /// Filter by city name
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/city`.
+            @available(*, deprecated)
+            public var city: Swift.String?
+            /// Filter by country name
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/country`.
+            @available(*, deprecated)
+            public var country: Swift.String?
+            /// Filter by creation date (after)
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/createdAfter`.
+            @available(*, deprecated)
+            public var createdAfter: Foundation.Date?
+            /// Filter by creation date (before)
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/createdBefore`.
+            @available(*, deprecated)
+            public var createdBefore: Foundation.Date?
+            /// Cursor for the next page of results
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/cursor`.
+            public var cursor: Swift.String?
+            /// Filter by description text
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/description`.
+            @available(*, deprecated)
+            public var description: Swift.String?
+            /// Filter by encoded video file path
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/encodedVideoPath`.
+            @available(*, deprecated)
+            public var encodedVideoPath: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/filter`.
+            public var filter: Components.Schemas.SearchFilter?
+            /// Filter by asset ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/id`.
+            @available(*, deprecated)
+            public var id: Swift.String?
+            /// Filter by encoded status
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/isEncoded`.
+            @available(*, deprecated)
+            public var isEncoded: Swift.Bool?
+            /// Filter by favorite status
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/isFavorite`.
+            @available(*, deprecated)
+            public var isFavorite: Swift.Bool?
+            /// Filter by motion photo status
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/isMotion`.
+            @available(*, deprecated)
+            public var isMotion: Swift.Bool?
+            /// Filter assets not in any album
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/isNotInAlbum`.
+            @available(*, deprecated)
+            public var isNotInAlbum: Swift.Bool?
+            /// Filter by offline status
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/isOffline`.
+            @available(*, deprecated)
+            public var isOffline: Swift.Bool?
+            /// Filter by lens model
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/lensModel`.
+            @available(*, deprecated)
+            public var lensModel: Swift.String?
+            /// Library ID to filter by
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/libraryId`.
+            @available(*, deprecated)
+            public var libraryId: Swift.String?
+            /// Filter by camera make
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/make`.
+            @available(*, deprecated)
+            public var make: Swift.String?
+            /// Filter by camera model
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/model`.
+            @available(*, deprecated)
+            public var model: Swift.String?
+            /// Filter by OCR text content
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/ocr`.
+            @available(*, deprecated)
+            public var ocr: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/order`.
+            public var order: Components.Schemas.AssetOrder?
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/orderBy`.
+            public var orderBy: Components.Schemas.SearchOrder?
+            /// Filter by original file name
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/originalFileName`.
+            @available(*, deprecated)
+            public var originalFileName: Swift.String?
+            /// Filter by original file path
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/originalPath`.
+            @available(*, deprecated)
+            public var originalPath: Swift.String?
+            /// Page number
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/page`.
+            @available(*, deprecated)
+            public var page: Swift.Int?
+            /// Filter by person IDs
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/personIds`.
+            @available(*, deprecated)
+            public var personIds: [Swift.String]?
+            /// Filter by preview file path
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/previewPath`.
+            @available(*, deprecated)
+            public var previewPath: Swift.String?
+            /// Filter by rating [1-5], or null for unrated
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/rating`.
+            @available(*, deprecated)
+            public var rating: Swift.Int?
+            /// Number of results to return
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/size`.
+            public var size: Swift.Int?
+            /// Filter by state/province name
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/state`.
+            @available(*, deprecated)
+            public var state: Swift.String?
+            /// Filter by tag IDs
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/tagIds`.
+            @available(*, deprecated)
+            public var tagIds: [Swift.String]?
+            /// Filter by taken date (after)
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/takenAfter`.
+            @available(*, deprecated)
+            public var takenAfter: Foundation.Date?
+            /// Filter by taken date (before)
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/takenBefore`.
+            @available(*, deprecated)
+            public var takenBefore: Foundation.Date?
+            /// Filter by thumbnail file path
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/thumbnailPath`.
+            @available(*, deprecated)
+            public var thumbnailPath: Swift.String?
+            /// Filter by trash date (after)
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/trashedAfter`.
+            @available(*, deprecated)
+            public var trashedAfter: Foundation.Date?
+            /// Filter by trash date (before)
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/trashedBefore`.
+            @available(*, deprecated)
+            public var trashedBefore: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/type`.
+            public var _type: Components.Schemas.AssetTypeEnum?
+            /// Filter by update date (after)
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/updatedAfter`.
+            @available(*, deprecated)
+            public var updatedAfter: Foundation.Date?
+            /// Filter by update date (before)
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/updatedBefore`.
+            @available(*, deprecated)
+            public var updatedBefore: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/visibility`.
+            public var visibility: Components.Schemas.AssetVisibility?
+            /// Include deleted assets
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/withDeleted`.
+            @available(*, deprecated)
+            public var withDeleted: Swift.Bool?
+            /// Include EXIF data in response
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/withExif`.
+            public var withExif: Swift.Bool?
+            /// Include people data in response
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/withPeople`.
+            public var withPeople: Swift.Bool?
+            /// Include stacked assets
+            ///
+            /// - Remark: Generated from `#/components/schemas/MetadataSearchDto/withStacked`.
+            public var withStacked: Swift.Bool?
+            /// Creates a new `MetadataSearchDto`.
+            ///
+            /// - Parameters:
+            ///   - albumIds: Filter by album IDs
+            ///   - checksum: Filter by file checksum
+            ///   - city: Filter by city name
+            ///   - country: Filter by country name
+            ///   - createdAfter: Filter by creation date (after)
+            ///   - createdBefore: Filter by creation date (before)
+            ///   - cursor: Cursor for the next page of results
+            ///   - description: Filter by description text
+            ///   - encodedVideoPath: Filter by encoded video file path
+            ///   - filter:
+            ///   - id: Filter by asset ID
+            ///   - isEncoded: Filter by encoded status
+            ///   - isFavorite: Filter by favorite status
+            ///   - isMotion: Filter by motion photo status
+            ///   - isNotInAlbum: Filter assets not in any album
+            ///   - isOffline: Filter by offline status
+            ///   - lensModel: Filter by lens model
+            ///   - libraryId: Library ID to filter by
+            ///   - make: Filter by camera make
+            ///   - model: Filter by camera model
+            ///   - ocr: Filter by OCR text content
+            ///   - order:
+            ///   - orderBy:
+            ///   - originalFileName: Filter by original file name
+            ///   - originalPath: Filter by original file path
+            ///   - page: Page number
+            ///   - personIds: Filter by person IDs
+            ///   - previewPath: Filter by preview file path
+            ///   - rating: Filter by rating [1-5], or null for unrated
+            ///   - size: Number of results to return
+            ///   - state: Filter by state/province name
+            ///   - tagIds: Filter by tag IDs
+            ///   - takenAfter: Filter by taken date (after)
+            ///   - takenBefore: Filter by taken date (before)
+            ///   - thumbnailPath: Filter by thumbnail file path
+            ///   - trashedAfter: Filter by trash date (after)
+            ///   - trashedBefore: Filter by trash date (before)
+            ///   - _type:
+            ///   - updatedAfter: Filter by update date (after)
+            ///   - updatedBefore: Filter by update date (before)
+            ///   - visibility:
+            ///   - withDeleted: Include deleted assets
+            ///   - withExif: Include EXIF data in response
+            ///   - withPeople: Include people data in response
+            ///   - withStacked: Include stacked assets
+            public init(
+                albumIds: [Swift.String]? = nil,
+                checksum: Swift.String? = nil,
+                city: Swift.String? = nil,
+                country: Swift.String? = nil,
+                createdAfter: Foundation.Date? = nil,
+                createdBefore: Foundation.Date? = nil,
+                cursor: Swift.String? = nil,
+                description: Swift.String? = nil,
+                encodedVideoPath: Swift.String? = nil,
+                filter: Components.Schemas.SearchFilter? = nil,
+                id: Swift.String? = nil,
+                isEncoded: Swift.Bool? = nil,
+                isFavorite: Swift.Bool? = nil,
+                isMotion: Swift.Bool? = nil,
+                isNotInAlbum: Swift.Bool? = nil,
+                isOffline: Swift.Bool? = nil,
+                lensModel: Swift.String? = nil,
+                libraryId: Swift.String? = nil,
+                make: Swift.String? = nil,
+                model: Swift.String? = nil,
+                ocr: Swift.String? = nil,
+                order: Components.Schemas.AssetOrder? = nil,
+                orderBy: Components.Schemas.SearchOrder? = nil,
+                originalFileName: Swift.String? = nil,
+                originalPath: Swift.String? = nil,
+                page: Swift.Int? = nil,
+                personIds: [Swift.String]? = nil,
+                previewPath: Swift.String? = nil,
+                rating: Swift.Int? = nil,
+                size: Swift.Int? = nil,
+                state: Swift.String? = nil,
+                tagIds: [Swift.String]? = nil,
+                takenAfter: Foundation.Date? = nil,
+                takenBefore: Foundation.Date? = nil,
+                thumbnailPath: Swift.String? = nil,
+                trashedAfter: Foundation.Date? = nil,
+                trashedBefore: Foundation.Date? = nil,
+                _type: Components.Schemas.AssetTypeEnum? = nil,
+                updatedAfter: Foundation.Date? = nil,
+                updatedBefore: Foundation.Date? = nil,
+                visibility: Components.Schemas.AssetVisibility? = nil,
+                withDeleted: Swift.Bool? = nil,
+                withExif: Swift.Bool? = nil,
+                withPeople: Swift.Bool? = nil,
+                withStacked: Swift.Bool? = nil
+            ) {
+                self.albumIds = albumIds
+                self.checksum = checksum
+                self.city = city
+                self.country = country
+                self.createdAfter = createdAfter
+                self.createdBefore = createdBefore
+                self.cursor = cursor
+                self.description = description
+                self.encodedVideoPath = encodedVideoPath
+                self.filter = filter
+                self.id = id
+                self.isEncoded = isEncoded
+                self.isFavorite = isFavorite
+                self.isMotion = isMotion
+                self.isNotInAlbum = isNotInAlbum
+                self.isOffline = isOffline
+                self.lensModel = lensModel
+                self.libraryId = libraryId
+                self.make = make
+                self.model = model
+                self.ocr = ocr
+                self.order = order
+                self.orderBy = orderBy
+                self.originalFileName = originalFileName
+                self.originalPath = originalPath
+                self.page = page
+                self.personIds = personIds
+                self.previewPath = previewPath
+                self.rating = rating
+                self.size = size
+                self.state = state
+                self.tagIds = tagIds
+                self.takenAfter = takenAfter
+                self.takenBefore = takenBefore
+                self.thumbnailPath = thumbnailPath
+                self.trashedAfter = trashedAfter
+                self.trashedBefore = trashedBefore
+                self._type = _type
+                self.updatedAfter = updatedAfter
+                self.updatedBefore = updatedBefore
+                self.visibility = visibility
+                self.withDeleted = withDeleted
+                self.withExif = withExif
+                self.withPeople = withPeople
+                self.withStacked = withStacked
+            }
+            public enum CodingKeys: String, CodingKey {
+                case albumIds
+                case checksum
+                case city
+                case country
+                case createdAfter
+                case createdBefore
+                case cursor
+                case description
+                case encodedVideoPath
+                case filter
+                case id
+                case isEncoded
+                case isFavorite
+                case isMotion
+                case isNotInAlbum
+                case isOffline
+                case lensModel
+                case libraryId
+                case make
+                case model
+                case ocr
+                case order
+                case orderBy
+                case originalFileName
+                case originalPath
+                case page
+                case personIds
+                case previewPath
+                case rating
+                case size
+                case state
+                case tagIds
+                case takenAfter
+                case takenBefore
+                case thumbnailPath
+                case trashedAfter
+                case trashedBefore
+                case _type = "type"
+                case updatedAfter
+                case updatedBefore
+                case visibility
+                case withDeleted
+                case withExif
+                case withPeople
+                case withStacked
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/NumberFilter`.
         public struct NumberFilter: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/NumberFilter/eq`.
@@ -3119,6 +3539,36 @@ public enum Components {
                     "visibility"
                 ])
             }
+        }
+        /// - Remark: Generated from `#/components/schemas/SearchOrder`.
+        public struct SearchOrder: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SearchOrder/direction`.
+            public var direction: Components.Schemas.AssetOrder?
+            /// - Remark: Generated from `#/components/schemas/SearchOrder/field`.
+            public var field: Components.Schemas.SearchOrderField?
+            /// Creates a new `SearchOrder`.
+            ///
+            /// - Parameters:
+            ///   - direction:
+            ///   - field:
+            public init(
+                direction: Components.Schemas.AssetOrder? = nil,
+                field: Components.Schemas.SearchOrderField? = nil
+            ) {
+                self.direction = direction
+                self.field = field
+            }
+            public enum CodingKeys: String, CodingKey {
+                case direction
+                case field
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SearchOrderField`.
+        @frozen public enum SearchOrderField: String, Codable, Hashable, Sendable, CaseIterable {
+            case fileCreatedAt = "fileCreatedAt"
+            case localDateTime = "localDateTime"
+            case fileSizeInBytes = "fileSizeInBytes"
+            case rating = "rating"
         }
         /// - Remark: Generated from `#/components/schemas/SearchResponseDto`.
         public struct SearchResponseDto: Codable, Hashable, Sendable {
@@ -5728,6 +6178,152 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
             public var ok: Operations.ValidateAccessToken.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Search assets by metadata
+    ///
+    /// Search for assets based on various metadata criteria.
+    ///
+    /// - Remark: HTTP `POST /search/metadata`.
+    /// - Remark: Generated from `#/paths//search/metadata/post(searchAssets)`.
+    public enum SearchAssets {
+        public static let id: Swift.String = "searchAssets"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/search/metadata/POST/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/search/metadata/POST/query/key`.
+                public var key: Swift.String?
+                /// - Remark: Generated from `#/paths/search/metadata/POST/query/slug`.
+                public var slug: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - key:
+                ///   - slug:
+                public init(
+                    key: Swift.String? = nil,
+                    slug: Swift.String? = nil
+                ) {
+                    self.key = key
+                    self.slug = slug
+                }
+            }
+            public var query: Operations.SearchAssets.Input.Query
+            /// - Remark: Generated from `#/paths/search/metadata/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchAssets.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.SearchAssets.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.SearchAssets.Input.Headers
+            /// - Remark: Generated from `#/paths/search/metadata/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/search/metadata/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.MetadataSearchDto)
+            }
+            public var body: Operations.SearchAssets.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            ///   - body:
+            public init(
+                query: Operations.SearchAssets.Input.Query = .init(),
+                headers: Operations.SearchAssets.Input.Headers = .init(),
+                body: Operations.SearchAssets.Input.Body
+            ) {
+                self.query = query
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/search/metadata/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/search/metadata/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.SearchResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SearchResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.SearchAssets.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.SearchAssets.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//search/metadata/post(searchAssets)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.SearchAssets.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.SearchAssets.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):

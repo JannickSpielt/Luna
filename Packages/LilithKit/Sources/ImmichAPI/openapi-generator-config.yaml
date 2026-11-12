@@ -33,5 +33,6 @@ filter:
     - restoreAssets
     # Suche
     - searchSmart
+    - searchAssets
     # Upload
     - checkBulkUpload

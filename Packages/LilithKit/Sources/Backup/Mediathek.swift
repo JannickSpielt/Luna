@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Persistence
 
@@ -42,6 +43,21 @@ public enum MediathekFehler: Error, Equatable, LocalizedError {
     }
 }
 
+/// Ein Album der Mediathek (eigenes Album oder von iOS, z. B. „Screenshots“).
+public struct MediathekAlbum: Sendable, Hashable, Identifiable {
+    public var id: String
+    public var titel: String
+    public var anzahl: Int
+    /// Von iOS angelegt (Screenshots, Selfies, Videos …).
+    public var vonIOS: Bool
+    /// Foto für die Vorschau.
+    public var titelBildId: String?
+
+    public init(id: String, titel: String, anzahl: Int, vonIOS: Bool = false, titelBildId: String? = nil) {
+        self.id = id; self.titel = titel; self.anzahl = anzahl; self.vonIOS = vonIOS; self.titelBildId = titelBildId
+    }
+}
+
 /// Die Mediathek, austauschbar für Tests.
 public protocol Mediathek: Sendable {
     func zugriff() -> MediathekZugriff
@@ -53,4 +69,10 @@ public protocol Mediathek: Sendable {
     func pruefsumme(_ id: String) async throws -> String
     /// Schreibt das Foto (und bei Live Photos das Video) in den Ordner.
     func exportiere(_ id: String, nach ordner: URL) async throws -> ExportiertesMedium
+    /// Alle Alben (eigene und von iOS), ohne leere.
+    func alben() async -> [MediathekAlbum]
+    /// Kennungen der Fotos in einem Album.
+    func medienIds(inAlbum id: String) async -> Set<String>
+    /// Kleines Vorschaubild vom Gerät.
+    func vorschau(_ id: String, kante: CGFloat) async -> CGImage?
 }

@@ -25,9 +25,12 @@ final class BibliothekKontext {
     let uploads: UploadWarteschlange?
     /// Automatisches Backup (nur iPhone/iPad).
     let backup: BackupDienst?
+    /// Für das Profilbild oben rechts.
+    let nutzerId: String?
 
     init(client: ImmichClient?, papierkorbAktiv: Bool, smartSearch: Bool = false, uploads: UploadWarteschlange? = nil,
-         backup: BackupDienst? = nil) {
+         backup: BackupDienst? = nil, nutzerId: String? = nil) {
+        self.nutzerId = nutzerId
         self.client = client
         self.uploads = uploads
         self.backup = backup

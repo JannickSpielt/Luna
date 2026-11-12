@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Observation
 import Networking
@@ -39,8 +40,14 @@ public final class BackupDienst {
     public private(set) var phase: Phase
     public private(set) var uebersicht = Uebersicht()
     public private(set) var letzterAbschluss: Date?
+    /// Welche Alben gesichert werden.
+    public private(set) var auswahl: AlbenAuswahl
+    /// Gewählte iPhone-Alben auch auf dem Server anlegen und füllen.
+    public private(set) var serverAlben: Bool
 
     @ObservationIgnored public var onSitzungAbgelaufen: (() -> Void)?
+    /// Der Stand einzelner Fotos hat sich geändert (z. B. für die Anzeige in der Bibliothek).
+    @ObservationIgnored public var onAenderung: (() -> Void)?
 
     @ObservationIgnored private let client: ImmichClient?
     @ObservationIgnored private let db: Datenbank?
@@ -52,9 +59,12 @@ public final class BackupDienst {
     /// Wie viele Fotos auf einmal exportiert werden (begrenzt den Platz für Upload-Dateien).
     @ObservationIgnored var exportBlock = 20
     @ObservationIgnored var pruefBlock = 100
+    @ObservationIgnored private var starteNachLauf = false
 
     private var schluesselAktiv: String { "lilith.backup.aktiv.\(konto)" }
     private var schluesselAbschluss: String { "lilith.backup.abschluss.\(konto)" }
+    private var schluesselAuswahl: String { "lilith.backup.alben.\(konto)" }
+    private var schluesselServerAlben: String { "lilith.backup.serveralben.\(konto)" }
 
     public init(client: ImmichClient?, db: Datenbank?, konto: String, mediathek: any Mediathek,
                 uploads: UploadWarteschlange?, speicher: UserDefaults = .standard) {
@@ -69,6 +79,9 @@ public final class BackupDienst {
         self.phase = an ? .bereit : .aus
         self.zugriff = mediathek.zugriff()
         self.letzterAbschluss = speicher.object(forKey: "lilith.backup.abschluss.\(konto)") as? Date
+        self.auswahl = speicher.data(forKey: "lilith.backup.alben.\(konto)")
+            .flatMap { try? JSONDecoder().decode(AlbenAuswahl.self, from: $0) } ?? AlbenAuswahl()
+        self.serverAlben = speicher.bool(forKey: "lilith.backup.serveralben.\(konto)")
         zaehle()
     }
 
@@ -114,6 +127,11 @@ public final class BackupDienst {
         laufAufgabe = Task {
             await lauf()
             laufAufgabe = nil
+            // Wurde währenddessen die Auswahl geändert: gleich noch einmal.
+            if starteNachLauf {
+                starteNachLauf = false
+                starte()
+            }
         }
     }
 
@@ -125,6 +143,50 @@ public final class BackupDienst {
     /// Nach Rückkehr aus den Einstellungen oder der Auswahl: Zugriff neu lesen.
     public func aktualisiereZugriff() {
         zugriff = mediathek.zugriff()
+    }
+
+    /// Neue Albenauswahl speichern. Wirkt beim nächsten Durchgang, der gleich startet.
+    public func setze(auswahl neu: AlbenAuswahl) {
+        auswahl = neu
+        speicher.set(try? JSONEncoder().encode(neu), forKey: schluesselAuswahl)
+        if laufAufgabe != nil { halteAn() }
+        starteNachLauf = true
+        starte()
+    }
+
+    public func setze(serverAlben an: Bool) {
+        serverAlben = an
+        speicher.set(an, forKey: schluesselServerAlben)
+        if an { starte() }
+    }
+
+    /// Die Alben der Mediathek für die Auswahl.
+    public func mediathekAlben() async -> [MediathekAlbum] {
+        await mediathek.alben()
+    }
+
+    /// Vorschaubild vom Gerät (für Albenliste und nicht gesicherte Fotos).
+    public func vorschau(_ id: String, kante: CGFloat) async -> CGImage? {
+        await mediathek.vorschau(id, kante: kante)
+    }
+
+    /// Fotos vom Gerät, die (noch) nicht auf dem Server sind. Ungeprüfte („neu“) zählen nicht dazu,
+    /// weil viele davon schon auf dem Server liegen und sonst kurz doppelt erscheinen würden.
+    public func nichtGesicherte() -> [LokalesFoto] {
+        guard aktiv, let db else { return [] }
+        return [LokalesFoto.Zustand.bereit, .eingereiht, .fehler, .uebersprungen]
+            .flatMap { (try? db.lokaleFotos(konto: konto, zustand: $0)) ?? [] }
+    }
+
+    /// „Jetzt sichern“ für ein einzelnes Foto: wieder einreihen und einen Durchgang starten.
+    public func sichereJetzt(_ lokaleId: String) {
+        guard let db else { return }
+        if let f = nichtGesicherte().first(where: { $0.lokaleId == lokaleId }), f.zustand != .eingereiht {
+            try? db.setzeLokal(konto: konto, lokaleId: lokaleId, zustand: .bereit)
+        }
+        zaehle()
+        onAenderung?()
+        if laufAufgabe == nil { starte() } else { starteNachLauf = true }
     }
 
     /// Eine einzelne Prüfung auf Fehler zurücksetzen, damit sie beim nächsten Durchgang neu versucht werden.
@@ -147,7 +209,8 @@ public final class BackupDienst {
         }
         do {
             phase = .liest
-            let medien = try await mediathek.alleMedien()
+            starteNachLauf = false
+            let medien = await filtere(try await mediathek.alleMedien())
             let konto = self.konto
             try await Task.detached(priority: .utility) {
                 try db.gleicheAb(konto: konto, medien: medien)
@@ -156,7 +219,10 @@ public final class BackupDienst {
             zaehle()
 
             try await pruefeNeue(client: client, db: db)
+            onAenderung?()
             try await sichereFehlende(db: db, uploads: uploads)
+            if serverAlben { await gleicheServerAlbenAb(client: client, db: db) }
+            onAenderung?()
 
             if let grund = uploads.halt {
                 phase = .halt(grund)
@@ -253,6 +319,36 @@ public final class BackupDienst {
             try uploads.reiheEin(auftraege)
             await uploads.warteBisFertig()
             zaehle()
+        }
+    }
+
+    /// Nur Fotos, die laut Albenauswahl gesichert werden sollen.
+    func filtere(_ medien: [MediumKopf]) async -> [MediumKopf] {
+        guard !auswahl.gewaehlt.contains(AlbenAuswahl.alle) || !auswahl.ausgeschlossen.isEmpty else { return medien }
+        var erlaubt: Set<String>?
+        if !auswahl.gewaehlt.contains(AlbenAuswahl.alle) {
+            var ids = Set<String>()
+            for album in auswahl.gewaehlt { ids.formUnion(await mediathek.medienIds(inAlbum: album)) }
+            erlaubt = ids
+        }
+        var verboten = Set<String>()
+        for album in auswahl.ausgeschlossen { verboten.formUnion(await mediathek.medienIds(inAlbum: album)) }
+        return medien.filter { (erlaubt?.contains($0.id) ?? true) && !verboten.contains($0.id) }
+    }
+
+    /// Gewählte eigene Alben auf dem Server anlegen (gleicher Name) und die gesicherten Fotos hinzufügen.
+    /// Fehler hier halten das Backup nicht auf: Die Fotos selbst sind ja gesichert.
+    private func gleicheServerAlbenAb(client: ImmichClient, db: Datenbank) async {
+        let eigene = await mediathek.alben().filter { !$0.vonIOS && auswahl.gewaehlt.contains($0.id) }
+        guard !eigene.isEmpty, var vorhanden = try? await client.alben() else { return }
+        for album in eigene {
+            let ids = await mediathek.medienIds(inAlbum: album.id)
+            guard let remote = try? db.remoteIds(konto: konto, lokaleIds: ids), !remote.isEmpty else { continue }
+            if let ziel = vorhanden.first(where: { $0.name == album.titel && !$0.geteilt }) {
+                _ = try? await client.fuegeZuAlbum(albumId: ziel.id, assetIds: remote)
+            } else if let neu = try? await client.erstelleAlbum(name: album.titel, assetIds: remote) {
+                vorhanden.append(neu)
+            }
         }
     }
 

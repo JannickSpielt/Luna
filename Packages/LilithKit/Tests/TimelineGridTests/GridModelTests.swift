@@ -40,9 +40,12 @@ struct GridModelTests {
     @Test("Zoomstufen bleiben in den Grenzen")
     func zoom() {
         var zoom = GridZoom.iPhone
-        #expect(zoom.spalten == 3)
+        // Standard auf dem iPhone: 4 Fotos pro Reihe.
+        #expect(zoom.spalten == 4)
         let ersterSchritt = zoom.groesser()
         #expect(ersterSchritt)
+        #expect(zoom.spalten == 3)
+        zoom.groesser()
         #expect(zoom.spalten == 1)
         let zweiterSchritt = zoom.groesser()
         #expect(!zweiterSchritt)

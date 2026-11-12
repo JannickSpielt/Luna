@@ -33,7 +33,9 @@ struct TimelineInhalt: View {
     @Environment(BibliothekKontext.self) private var kontext
     @State private var zoom: GridZoom = Self.startZoom
     @State private var sprung: SprungAnfrage?
-    @State private var scrollAnteil = 0.0
+    /// Eigenes Objekt, damit beim Scrollen nur der Scrubber neu gezeichnet wird, nicht die ganze Ansicht.
+    @State private var scroll = ScrollStand()
+    @AppStorage(NichtGesicherte.schluessel) private var zeigeNichtGesicherte = true
     @State private var auswahlModus = false
     @State private var auswahl: [String] = []
     @State private var auswahlStand = 0
@@ -115,6 +117,7 @@ struct TimelineInhalt: View {
                           allowsMultipleSelection: true) { ergebnis in
                 if case .success(let urls) = ergebnis { ladeHoch(urls, quelle: "import") }
             }
+            .onChange(of: zeigeNichtGesicherte) { _, _ in Task { await store?.laden() } }
             .onChange(of: fotoAuswahl) { _, neu in
                 guard !neu.isEmpty else { return }
                 ladeHochAusAuswahl(neu)
@@ -193,10 +196,10 @@ struct TimelineInhalt: View {
                              auswahlModus: auswahlModus, auswahlStand: auswahlStand,
                              onAuswahl: { auswahl = $0 },
                              onTap: { section, index, rahmen in oeffne(DetailPosition(section: section, index: index), rahmen) },
-                             onScroll: { scrollAnteil = $0 })
+                             onScroll: { [scroll] in scroll.anteil = $0 })
                 .ignoresSafeArea(edges: .bottom)
                 .overlay(alignment: .trailing) {
-                    Scrubber(quelle: quelle, anteil: scrollAnteil) { sprung = SprungAnfrage(section: $0) }
+                    ScrubberMitStand(quelle: quelle, scroll: scroll) { sprung = SprungAnfrage(section: $0) }
                         .padding(.vertical, 8)
                 }
                 .refreshable { await store?.laden() }
@@ -209,6 +212,7 @@ struct TimelineInhalt: View {
         case .favoriten: ("Noch keine Favoriten", "Tippe bei einem Foto auf das Herz, dann findest du es hier wieder.", "heart")
         case .archiv: ("Archiv ist leer", "Archivierte Fotos verschwinden aus der Bibliothek und liegen hier.", "archivebox")
         case .papierkorb: ("Papierkorb ist leer", "Gelöschte Fotos liegen hier, bis der Server sie endgültig entfernt.", "trash")
+        case .kuerzlich: ("Nichts Neues", "In den letzten 30 Tagen wurde nichts hochgeladen.", "clock.arrow.circlepath")
         case .suche: ("Nichts gefunden", "Versuch es mit anderen Worten, zum Beispiel einem Ort, einem Tier oder einer Farbe.", "magnifyingglass")
         case .album: ("Album ist leer", "Wähle in der Bibliothek Fotos aus und füge sie diesem Album hinzu.", "rectangle.stack")
         }
@@ -234,12 +238,26 @@ struct TimelineInhalt: View {
             }
             #if os(iOS)
             if kontext.client != nil, store?.zustand == .bereit {
-                Button(auswahlModus ? "Fertig" : "Auswählen") {
-                    if auswahlModus { beendeAuswahl() } else { auswahlModus = true }
+                // „Auswählen“ steckt im Menü, damit die Leiste kompakt bleibt. „Fertig“ bleibt sichtbar.
+                if auswahlModus {
+                    Button("Fertig") { beendeAuswahl() }
                 }
             }
             #endif
+            if !auswahlModus {
             Menu {
+                #if os(iOS)
+                if kontext.client != nil, store?.zustand == .bereit {
+                    Button("Auswählen", systemImage: "checkmark.circle") { auswahlModus = true }
+                    Divider()
+                }
+                #endif
+                #if os(iOS)
+                if filter == .alle, kontext.backup?.aktiv == true {
+                    Toggle("Nicht gesicherte zeigen", systemImage: "icloud.slash", isOn: $zeigeNichtGesicherte)
+                    Divider()
+                }
+                #endif
                 Button("Größer (weniger Spalten)", systemImage: "plus.magnifyingglass") { zoom.groesser() }
                     .keyboardShortcut("+", modifiers: .command)
                 Button("Kleiner (mehr Spalten)", systemImage: "minus.magnifyingglass") { zoom.kleiner() }
@@ -257,8 +275,10 @@ struct TimelineInhalt: View {
             } label: {
                 Label("Ansicht", systemImage: "slider.horizontal.3")
             }
+            }
             if let konto, !auswahlModus {
-                KontoKnopf(buchstabe: konto.buchstabe, backup: kontext.backup, oeffnen: konto.oeffnen)
+                KontoKnopf(buchstabe: konto.buchstabe, backup: kontext.backup, client: kontext.client,
+                           nutzerId: kontext.nutzerId, oeffnen: konto.oeffnen)
             }
         }
     }
@@ -459,5 +479,23 @@ struct OfflineHinweis: View {
         .padding(.horizontal, 16)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isStaticText)
+    }
+}
+
+/// Scroll-Position der Timeline (0…1). Nur der Scrubber liest sie.
+@MainActor
+@Observable
+final class ScrollStand {
+    var anteil = 0.0
+}
+
+/// Liest die Scroll-Position selbst, damit Änderungen nur diese kleine Ansicht neu zeichnen.
+private struct ScrubberMitStand: View {
+    let quelle: TimelineQuelle
+    let scroll: ScrollStand
+    let springe: (Int) -> Void
+
+    var body: some View {
+        Scrubber(quelle: quelle, anteil: scroll.anteil, springe: springe)
     }
 }

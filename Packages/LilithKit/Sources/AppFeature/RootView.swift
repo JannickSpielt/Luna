@@ -121,7 +121,7 @@ struct HauptView: View {
             .accessibilityHidden(true)
         }
         .sheet(isPresented: $zeigeKonto) {
-            KontoView(account: account, backup: kontext?.backup)
+            KontoView(account: account, backup: kontext?.backup, client: session.client)
         }
     }
 
@@ -145,7 +145,8 @@ struct HauptView: View {
         }
         #endif
         let neu = BibliothekKontext(client: session.client, papierkorbAktiv: account.server.capabilities.trash,
-                                    smartSearch: account.server.capabilities.smartSearch, uploads: uploads, backup: backup)
+                                    smartSearch: account.server.capabilities.smartSearch, uploads: uploads, backup: backup,
+                                    nutzerId: account.user.id)
         backup?.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
         neu.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
         uploads?.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
@@ -156,6 +157,32 @@ struct HauptView: View {
         if let client = session.client {
             let store = TimelineStore(client: client)
             store.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
+            if let backup {
+                // Nicht gesicherte Fotos vom Gerät in der Bibliothek zeigen (abschaltbar im Ansicht-Menü).
+                store.lokaleFotos = { [weak backup] in
+                    guard let backup, UserDefaults.standard.object(forKey: NichtGesicherte.schluessel) as? Bool ?? true else { return [] }
+                    return backup.nichtGesicherte().map(LokalerEintrag.init)
+                }
+                store.lokalesBildLader = { [weak backup] id, pixel in await backup?.vorschau(id, kante: pixel) }
+                backup.onAenderung = { [weak neu] in neu?.melde(von: nil) }
+            }
+            #if DEBUG && os(iOS)
+            // Nur zum Prüfen der Anzeige: Fotos der Mediathek als „nicht gesichert“ zeigen, ohne etwas hochzuladen.
+            if UserDefaults.standard.bool(forKey: "LilithLokalVorschau") {
+                let mediathek = FotoMediathek()
+                store.lokalesBildLader = { id, pixel in await mediathek.vorschau(id, kante: pixel) }
+                Task { [weak store] in
+                    let medien = (try? await mediathek.alleMedien()) ?? []
+                    let eintraege = medien.enumerated().map { i, m in
+                        LokalerEintrag(item: GridItem(id: GridItem.lokalPraefix + m.id, farbe: 0x8A8A8E, art: m.istVideo ? .video : .foto,
+                                                      favorit: false, dauer: 0, lokal: [GridLokal.nurHier, .laedtHoch, .fehler][i % 3]),
+                                       erstellt: Date.now.addingTimeInterval(-Double(i) * 3600))
+                    }
+                    store?.lokaleFotos = { eintraege }
+                    await store?.laden()
+                }
+            }
+            #endif
             timeline = store
         } else {
             demo = BeispielQuelle()
@@ -207,16 +234,42 @@ struct DetailEbene: View {
     @Environment(\.accessibilityReduceMotion) private var wenigBewegung
 
     var body: some View {
-        GeometryReader { geo in
-            if let d = kontext.detail {
-                let flaeche = geo.frame(in: .global)
-                DetailView(quelle: d.quelle, store: d.store, start: d.start, loeschen: d.loeschen, schliessen: d.schliessen)
-                    .environment(kontext)
-                    .transition(wenigBewegung ? .opacity : .scale(scale: 0.15, anchor: UnitPoint(
-                        x: (d.rahmen.midX - flaeche.minX) / max(flaeche.width, 1),
-                        y: (d.rahmen.midY - flaeche.minY) / max(flaeche.height, 1))).combined(with: .opacity))
+        // Außen: Abstände zu Notch und Home-Leiste messen. Innen: von Anfang an den ganzen Bildschirm nutzen.
+        // Sonst wächst die Ansicht erst nach dem Zoom auf volle Größe und das Foto springt (es ist zentriert).
+        GeometryReader { aussen in
+            let rand = aussen.safeAreaInsets
+            GeometryReader { geo in
+                if let d = kontext.detail {
+                    let flaeche = geo.frame(in: .global)
+                    DetailView(quelle: d.quelle, store: d.store, start: d.start, loeschen: d.loeschen, schliessen: d.schliessen)
+                        .safeAreaPadding(rand)
+                        .environment(kontext)
+                        .transition(wenigBewegung ? .opacity : .scale(scale: 0.15, anchor: UnitPoint(
+                            x: (d.rahmen.midX - flaeche.minX) / max(flaeche.width, 1),
+                            y: (d.rahmen.midY - flaeche.minY) / max(flaeche.height, 1))).combined(with: .opacity))
+                }
             }
+            .ignoresSafeArea()
         }
         .animation(wenigBewegung ? .easeInOut(duration: 0.2) : .spring(duration: 0.32), value: kontext.detail)
+    }
+}
+
+/// Einstellung „Nicht gesicherte zeigen“.
+enum NichtGesicherte {
+    static let schluessel = "lilith.zeigeNichtGesicherte"
+}
+
+extension LokalerEintrag {
+    /// Eintrag fürs Grid aus dem Stand in der Datenbank.
+    init(_ foto: LokalesFoto) {
+        let lokal: GridLokal = switch foto.zustand {
+        case .eingereiht: .laedtHoch
+        case .fehler: .fehler
+        default: .nurHier
+        }
+        self.init(item: GridItem(id: GridItem.lokalPraefix + foto.lokaleId, farbe: 0x8A8A8E,
+                                 art: foto.istVideo ? .video : .foto, favorit: false, dauer: 0, lokal: lokal),
+                  erstellt: foto.erstellt)
     }
 }

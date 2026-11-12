@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Testing
 @testable import Backup
@@ -9,6 +10,8 @@ final class TestMediathek: Mediathek, @unchecked Sendable {
     var medien: [MediumKopf]
     var live: Set<String> = []
     var nurICloud: Set<String> = []
+    /// Album-ID → Foto-IDs.
+    var albenInhalt: [String: Set<String>] = [:]
     private(set) var exportiert: [String] = []
 
     init(_ ids: [String]) {
@@ -38,6 +41,12 @@ final class TestMediathek: Mediathek, @unchecked Sendable {
         }
         return ExportiertesMedium(datei: datei, dateiname: "\(id).heic", liveVideo: video)
     }
+
+    func alben() async -> [MediathekAlbum] {
+        albenInhalt.keys.sorted().map { MediathekAlbum(id: $0, titel: $0, anzahl: albenInhalt[$0]!.count) }
+    }
+    func medienIds(inAlbum id: String) async -> Set<String> { albenInhalt[id] ?? [] }
+    func vorschau(_ id: String, kante: CGFloat) async -> CGImage? { nil }
 }
 
 extension WarteschlangeTests {
@@ -55,13 +64,13 @@ extension WarteschlangeTests {
         }
     }
 
-    func dienst(_ mediathek: TestMediathek, db: Datenbank, transport: FunktionsTransport) -> (BackupDienst, URL) {
+    func dienst(_ mediathek: TestMediathek, db: Datenbank, transport: FunktionsTransport, aktiv: Bool = true) -> (BackupDienst, URL) {
         let client = ImmichClient(address: ServerAddress(eingabe: "foto.example.de")!, credential: .apiKey("k"),
                                   transport: transport, uploadSession: UploadAttrappe.session())
         let ordner = tempOrdner()
         let schlange = UploadWarteschlange(client: client, db: db, konto: "k", ordner: ordner)
         let speicher = UserDefaults(suiteName: "lilith-test-\(UUID().uuidString)")!
-        speicher.set(true, forKey: "lilith.backup.aktiv.k")
+        speicher.set(aktiv, forKey: "lilith.backup.aktiv.k")
         return (BackupDienst(client: client, db: db, konto: "k", mediathek: mediathek, uploads: schlange, speicher: speicher), ordner)
     }
 
@@ -95,6 +104,35 @@ extension WarteschlangeTests {
         #expect(UploadAttrappe.sperre.withLock { UploadAttrappe.anfragen.count } == 3)
         #expect(dienst.uebersicht.gesamt == 3)
         #expect(dienst.statusText.hasPrefix("Alles gesichert"))
+    }
+
+    @Test("Albenauswahl: nur gewählte Alben, ausgeschlossene nie")
+    func albenAuswahl() async throws {
+        let mediathek = TestMediathek(["a", "b", "c", "d"])
+        mediathek.albenInhalt = ["Urlaub": ["b", "c"], "Screenshots": ["c", "d"]]
+        let db = try Datenbank.imSpeicher()
+        // Ausgeschaltet, damit `setze` keinen echten Durchgang startet.
+        let (dienst, _) = dienst(mediathek, db: db, transport: Self.backupServer(), aktiv: false)
+        let alle = try await mediathek.alleMedien()
+
+        // Voreinstellung: alles.
+        #expect(await dienst.filtere(alle).count == 4)
+        // Alles außer Screenshots.
+        var auswahl = AlbenAuswahl()
+        auswahl.ausgeschlossen = ["Screenshots"]
+        dienst.setze(auswahl: auswahl)
+        #expect(await dienst.filtere(alle).map(\.id) == ["a", "b"])
+        // Nur Urlaub, aber ohne Screenshots: c liegt in beiden und fällt raus.
+        dienst.setze(auswahl: AlbenAuswahl(gewaehlt: ["Urlaub"], ausgeschlossen: ["Screenshots"]))
+        #expect(await dienst.filtere(alle).map(\.id) == ["b"])
+    }
+
+    @Test("Antippen wechselt neutral → gewählt → ausgeschlossen → neutral")
+    func antippen() {
+        var a = AlbenAuswahl(gewaehlt: [])
+        a.weiter("x"); #expect(a.zustand("x") == .gewaehlt)
+        a.weiter("x"); #expect(a.zustand("x") == .ausgeschlossen)
+        a.weiter("x"); #expect(a.zustand("x") == .neutral)
     }
 
     @Test("Bearbeitete Fotos werden neu geprüft")

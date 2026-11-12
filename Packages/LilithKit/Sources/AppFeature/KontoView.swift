@@ -7,6 +7,7 @@ import Backup
 struct KontoView: View {
     let account: Account
     var backup: BackupDienst?
+    var client: ImmichClient?
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
     @State private var frageAbmelden = false
@@ -17,11 +18,8 @@ struct KontoView: View {
             Form {
                 Section {
                     HStack(spacing: 14) {
-                        Text(String(account.user.name.prefix(1)).uppercased())
-                            .font(.title2.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 52, height: 52)
-                            .background(LilithColor.nachtroseFill, in: .circle)
+                        ProfilBild(client: client, nutzerId: account.user.id,
+                                   buchstabe: String(account.user.name.prefix(1)).uppercased(), groesse: 52)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(account.user.name).font(.headline)
                             Text(account.user.email).font(.subheadline).foregroundStyle(.secondary)

@@ -121,3 +121,20 @@ Plan: `docs/BACKUP-PLAN.md`.
 - **Prüfen ohne echten Upload:** Mit dem Startargument `-LilithBackupVorschau YES` zeigt die App feste Beispielzahlen.
 
 **Offen:** Hinweis-Banner in der Bibliothek („Fotos von diesem iPhone sichern?“), Einstellungen (WLAN, Laden, Videos, Alben) und Hintergrund kommen mit Etappe 3, die Fehlerliste mit Etappe 4.
+
+## 10. Feinschliff, Albenauswahl, nicht gesicherte Fotos (12.11.2026)
+
+- **Kompakte Leiste:** Oben nur noch „+“, Ansicht-Menü und Konto. „Auswählen“ steht im Ansicht-Menü.
+- **Auswählen per Wischen:** Im Auswahl-Modus Foto antippen, nach rechts und dann nach unten wischen. Das ist UIKits eingebaute Mehrfachauswahl (wie in Fotos), mit zwei Fingern auch ohne Auswahl-Modus.
+- **Profilbild** vom Server (`/users/{id}/profile-image`). Ohne Bild bleibt der Anfangsbuchstabe.
+- **Scrubber ruckelte:** Die Scroll-Position lag im Zustand der ganzen Bibliotheksansicht, die dadurch bis zu 120-mal pro Sekunde neu berechnet wurde. Jetzt liegt sie in einem eigenen Objekt, das nur der Scrubber liest.
+- **Albenauswahl fürs Backup** (Plan Abschnitt 9 B): wie in der Immich-App einmal tippen = sichern, zweimal = ausschließen. Gespeichert pro Konto in den Einstellungen der App (klein, kein eigener Tabellenbedarf). Optional werden gewählte eigene Alben auf dem Server mit demselben Namen angelegt und gefüllt (Schalter, aus).
+- **Nicht gesicherte Fotos in der Bibliothek** (Plan Abschnitt 9 A): Gezeigt wird, was laut Server fehlt (bereit, in der Warteschlange, Fehler, übersprungen). Noch ungeprüfte Fotos nicht, sonst stünden Fotos, die längst auf dem Server sind, kurz doppelt da. Sie werden nach Datum zwischen die Server-Fotos gemischt. Monate nur mit Fotos vom Gerät bekommen einen eigenen Abschnitt.
+- **Datum der Server-Fotos:** Die Timeline liefert die Ortszeit ohne Zeitzone und mit wechselnden Nachkommastellen („2026-11-12T10:01:18.13“). Lilith liest sie als Ortszeit des Geräts.
+- **Auswahl:** Fotos nur auf dem Gerät lassen sich nicht markieren (Favorit, Archiv, Löschen gehen erst nach dem Upload).
+- **Prüfen ohne Upload:** `-LilithLokalVorschau YES` zeigt die Fotos der Mediathek als „nicht gesichert“, ohne etwas hochzuladen.
+
+**Offen:** Videos vom Gerät zeigen in der Detailansicht nur das Standbild. Die Videodauer fehlt auf der Kachel.
+- **Zittern beim Öffnen eines Fotos:** Während des Zooms füllte die Detailansicht nur den sicheren Bereich (ohne Statusleiste und Home-Leiste) und wuchs erst danach auf den ganzen Bildschirm. Das zentrierte Foto sprang dabei um einige Punkte. Jetzt hat die Detailansicht von Anfang an die volle Größe, nur die Knöpfe halten Abstand zu Notch und Home-Leiste. Die Statusleiste bleibt sichtbar (weiß auf Schwarz). Geprüft per Bildschirmaufnahme: Der Versatz nach dem Zoom ist in jedem Bild 0.
+- **4 Fotos pro Reihe** sind auf dem iPhone jetzt Standard (Stufen 1, 3, 4, 5, 7, 11).
+- **Kürzlich hinzugefügt** (im Alben-Tab, ganz oben): Was in den letzten 30 Tagen hochgeladen wurde, neueste zuerst, bis 1.000 Objekte. Immich kann nur nach Hochladezeit filtern (`createdAfter`), nicht sortieren. Lilith sortiert deshalb selbst.

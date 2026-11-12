@@ -111,6 +111,16 @@ extension Datenbank {
         }
     }
 
+    /// Server-IDs der gesicherten Fotos aus einer Menge lokaler Kennungen.
+    public func remoteIds(konto: String, lokaleIds: Set<String>) throws -> [String] {
+        try pool.read { db in
+            try LokalesFoto.filter(Column("konto") == konto && Column("zustand") == LokalesFoto.Zustand.gesichert.rawValue)
+                .fetchAll(db)
+                .filter { lokaleIds.contains($0.lokaleId) }
+                .compactMap(\.remoteId)
+        }
+    }
+
     /// Anzahl der Fotos je Zustand.
     public func zaehleLokal(konto: String) throws -> [LokalesFoto.Zustand: Int] {
         try pool.read { db in

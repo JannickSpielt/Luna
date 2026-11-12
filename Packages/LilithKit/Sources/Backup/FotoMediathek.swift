@@ -81,6 +81,69 @@ public struct FotoMediathek: Mediathek {
         }
     }
 
+    // MARK: - Alben
+
+    public func alben() async -> [MediathekAlbum] {
+        var ergebnis: [MediathekAlbum] = []
+        // Von iOS: nur sinnvolle Sammlungen, keine „Zuletzt gelöscht“ oder „Ausgeblendet“.
+        let vonIOS: [PHAssetCollectionSubtype] = [.smartAlbumFavorites, .smartAlbumScreenshots, .smartAlbumSelfPortraits,
+                                                  .smartAlbumVideos, .smartAlbumLivePhotos, .smartAlbumPanoramas,
+                                                  .smartAlbumBursts, .smartAlbumSlomoVideos, .smartAlbumTimelapses,
+                                                  .smartAlbumDepthEffect, .smartAlbumRAW]
+        for typ in vonIOS {
+            PHAssetCollection.fetchAssetCollections(with: .smartAlbum, subtype: typ, options: nil).enumerateObjects { c, _, _ in
+                if let a = Self.album(c, vonIOS: true) { ergebnis.append(a) }
+            }
+        }
+        PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: nil).enumerateObjects { c, _, _ in
+            if let a = Self.album(c, vonIOS: false) { ergebnis.append(a) }
+        }
+        return ergebnis
+    }
+
+    static func album(_ c: PHAssetCollection, vonIOS: Bool) -> MediathekAlbum? {
+        let inhalt = PHAsset.fetchAssets(in: c, options: Self.nurMedien())
+        guard inhalt.count > 0 else { return nil }
+        return MediathekAlbum(id: c.localIdentifier, titel: c.localizedTitle ?? "Album", anzahl: inhalt.count,
+                              vonIOS: vonIOS, titelBildId: inhalt.lastObject?.localIdentifier)
+    }
+
+    public func medienIds(inAlbum id: String) async -> Set<String> {
+        guard let c = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [id], options: nil).firstObject else { return [] }
+        var ids = Set<String>()
+        PHAsset.fetchAssets(in: c, options: Self.nurMedien()).enumerateObjects { a, _, _ in ids.insert(a.localIdentifier) }
+        return ids
+    }
+
+    public func vorschau(_ id: String, kante: CGFloat) async -> CGImage? {
+        guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else { return nil }
+        let optionen = PHImageRequestOptions()
+        optionen.deliveryMode = .highQualityFormat
+        optionen.resizeMode = .fast
+        optionen.isNetworkAccessAllowed = true
+        let groesse = CGSize(width: kante, height: kante)
+        return await withCheckedContinuation { fortsetzen in
+            PHImageManager.default().requestImage(for: asset, targetSize: groesse, contentMode: .aspectFill,
+                                                  options: optionen) { bild, _ in
+                #if os(iOS)
+                fortsetzen.resume(returning: bild?.cgImage)
+                #else
+                // Auf dem Mac gibt es kein automatisches Backup.
+                _ = bild
+                fortsetzen.resume(returning: nil)
+                #endif
+            }
+        }
+    }
+
+    static func nurMedien() -> PHFetchOptions {
+        let o = PHFetchOptions()
+        o.predicate = NSPredicate(format: "mediaType == %d OR mediaType == %d",
+                                  PHAssetMediaType.image.rawValue, PHAssetMediaType.video.rawValue)
+        o.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
+        return o
+    }
+
     // MARK: - Hilfen
 
     /// Das Foto, die Datei der aktuellen Version und bei Live Photos das Video.

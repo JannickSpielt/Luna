@@ -133,6 +133,11 @@ extension ImmichClient {
         anfrage(["assets", assetId, "original"])
     }
 
+    /// Anfrage für das Profilbild eines Nutzers (404, wenn keins hochgeladen ist).
+    public func profilbildAnfrage(nutzerId: String) -> URLRequest {
+        anfrage(["users", nutzerId, "profile-image"])
+    }
+
     /// Anmelde-Header, z. B. für den Videoplayer.
     public var anmeldeHeader: [String: String] {
         switch credential {

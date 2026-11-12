@@ -27,6 +27,7 @@ struct DetailView: View {
     @State private var frageLoeschen = false
     @State private var loescht = false
     @FocusState private var fokus: Bool
+    @Environment(BibliothekKontext.self) private var kontext
 
     init(quelle: TimelineQuelle, store: TimelineStore?, start: DetailPosition,
          loeschen: ((String) async -> Bool)? = nil, schliessen: @escaping (DetailPosition) -> Void) {
@@ -50,10 +51,6 @@ struct DetailView: View {
             }
         }
         .environment(\.colorScheme, .dark)
-        #if os(iOS)
-        // Auf schwarzem Grund wäre die dunkle Statusleiste nicht lesbar.
-        .statusBarHidden()
-        #endif
         .focusable()
         .focusEffectDisabled()
         .focused($fokus)
@@ -76,7 +73,7 @@ struct DetailView: View {
                 item = quelle.item(section: aktuell.section, index: aktuell.index)
                 if item == nil { try? await Task.sleep(for: .milliseconds(150)) }
             }
-            guard let id = item?.id, let client = store?.client else { return }
+            guard let id = item?.id, item?.lokal == nil, let client = store?.client else { return }
             info = try? await client.assetInfo(id: id)
         }
         .sheet(isPresented: $zeigeInfo) {
@@ -106,6 +103,8 @@ struct DetailView: View {
             .scrollTargetLayout()
         }
         .scrollTargetBehavior(.paging)
+        // Jede Seite füllt den ganzen Bildschirm, ohne zusätzliche Ränder.
+        .contentMargins(.all, 0, for: .scrollContent)
         .scrollPosition(id: $aktuell)
         .scrollIndicators(.hidden)
         .scrollDisabled(gezoomt)
@@ -209,6 +208,45 @@ struct DetailView: View {
             }
             .padding(.horizontal, 16)
             Spacer()
+            if let lokal = item?.lokal {
+                lokaleLeiste(lokal)
+            } else {
+                serverLeiste
+            }
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .sensoryFeedback(.impact(weight: .light), trigger: item?.favorit)
+    }
+
+    /// Für Fotos nur auf dem Gerät: Stand und „Jetzt sichern“ statt Favorit, Teilen und Löschen.
+    private func lokaleLeiste(_ lokal: GridLokal) -> some View {
+        HStack(spacing: 12) {
+            Label(lokal == .laedtHoch ? "Wird hochgeladen …" : (lokal == .fehler ? "Hochladen gescheitert" : "Nur auf diesem Gerät"),
+                  systemImage: lokal == .laedtHoch ? "arrow.up.circle" : (lokal == .fehler ? "exclamationmark.circle" : "icloud.slash"))
+                .font(.subheadline)
+            if lokal != .laedtHoch, let id = item?.lokaleId, let backup = kontext.backup {
+                Button("Jetzt sichern") {
+                    backup.sichereJetzt(id)
+                    if let alt = item {
+                        item = Kachel(id: alt.id, farbe: alt.farbe, art: alt.art, favorit: false, dauer: alt.dauer, lokal: .laedtHoch)
+                    }
+                }
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(LilithColor.nachtroseFill, in: .capsule)
+                .foregroundStyle(.white)
+            }
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 6)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: .capsule)
+        .padding(.bottom, 12)
+    }
+
+    private var serverLeiste: some View {
             HStack(spacing: 4) {
                 teilenKnopf
                 Button {
@@ -248,10 +286,6 @@ struct DetailView: View {
             .padding(.vertical, 4)
             .background(.ultraThinMaterial, in: .capsule)
             .padding(.bottom, 12)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.primary)
-        .sensoryFeedback(.impact(weight: .light), trigger: item?.favorit)
     }
 
     @ViewBuilder

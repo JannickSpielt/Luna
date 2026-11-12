@@ -34,9 +34,12 @@ public struct TimelineAsset: Hashable, Sendable {
     /// Thumbhash (Base64) für einen sofortigen Platzhalter.
     public let thumbhash: String?
     public let stadt: String?
+    /// Aufnahmezeitpunkt (zum Einsortieren von Fotos, die nur auf dem Gerät liegen).
+    public let erstellt: Date?
 
     public init(id: String, istBild: Bool, dauerMs: Int?, istFavorit: Bool, livePhotoVideoId: String?,
-                seitenverhaeltnis: Double, thumbhash: String?, stadt: String?) {
+                seitenverhaeltnis: Double, thumbhash: String?, stadt: String?, erstellt: Date? = nil) {
+        self.erstellt = erstellt
         self.id = id
         self.istBild = istBild
         self.dauerMs = dauerMs
@@ -109,8 +112,28 @@ extension ImmichClient {
         case .archiv: (nil, nil, nil, .archive)
         case .papierkorb: (nil, nil, true, nil)
         case .album(let id): (id, nil, nil, nil)
-        case .suche: (nil, nil, nil, .timeline)
+        case .suche, .kuerzlich: (nil, nil, nil, .timeline)
         }
+    }
+
+    /// ISO-Datum mit oder ohne Sekundenbruchteile.
+    static func leseDatum(_ text: String) -> Date? {
+        // Immich schreibt je nach Version „…Z“ oder „…+00:00“, mit oder ohne Sekundenbruchteile.
+        let mit = ISO8601DateFormatter()
+        mit.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = mit.date(from: text) { return d }
+        let ohne = ISO8601DateFormatter()
+        ohne.formatOptions = [.withInternetDateTime]
+        if let d = ohne.date(from: text) { return d }
+        // Die Timeline liefert die Ortszeit ohne Zeitzone („2026-11-12T10:01:18.975“): als Ortszeit des Geräts lesen.
+        let teile = text.split(separator: ".", maxSplits: 1)
+        let basis = DateFormatter()
+        basis.locale = Locale(identifier: "en_US_POSIX")
+        basis.timeZone = .current
+        basis.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        guard let sekunden = teile.first.flatMap({ basis.date(from: String($0)) }) else { return nil }
+        let bruch = teile.count > 1 ? Double("0." + teile[1].prefix { $0.isNumber }) ?? 0 : 0
+        return sekunden.addingTimeInterval(bruch)
     }
 
     static func zusammensetzen(_ d: Components.Schemas.TimeBucketAssetResponseDto, mitPapierkorb: Bool = false) -> [TimelineAsset] {
@@ -128,7 +151,8 @@ extension ImmichClient {
                 livePhotoVideoId: wert(d.livePhotoVideoId, i) ?? nil,
                 seitenverhaeltnis: wert(d.ratio, i) ?? 1,
                 thumbhash: wert(d.thumbhash, i) ?? nil,
-                stadt: d.city.flatMap { wert($0, i) } ?? nil
+                stadt: d.city.flatMap { wert($0, i) } ?? nil,
+                erstellt: wert(d.fileCreatedAt, i).flatMap(Self.leseDatum)
             ))
         }
         return ergebnis

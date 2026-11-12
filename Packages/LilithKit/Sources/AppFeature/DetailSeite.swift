@@ -34,7 +34,12 @@ struct DetailSeite: View {
     var body: some View {
         Group {
             if let item {
-                if item.art == .video, let client = store?.client {
+                if item.lokal != nil {
+                    // Nur auf dem Gerät: Bild aus der Mediathek (auch bei Videos nur das Standbild).
+                    let quelle = self.quelle
+                    FotoSeite(item: item, client: nil, istAktuell: istAktuell, gezoomt: $gezoomt, onTap: onTap,
+                              lokalesBild: { await quelle.lokalesBild(fuer: item, pixel: 2048) })
+                } else if item.art == .video, let client = store?.client {
                     VideoSeite(item: item, client: client, istAktuell: istAktuell)
                 } else {
                     FotoSeite(item: item, client: store?.client, istAktuell: istAktuell, gezoomt: $gezoomt, onTap: onTap)
@@ -65,6 +70,8 @@ struct FotoSeite: View {
     let istAktuell: Bool
     @Binding var gezoomt: Bool
     let onTap: () -> Void
+    /// Für Fotos, die nur auf dem Gerät liegen.
+    var lokalesBild: (() async -> CGImage?)?
 
     @State private var bild: PlattformBild?
     @State private var zoom: CGFloat = 1
@@ -132,6 +139,16 @@ struct FotoSeite: View {
             }
         }
         .task(id: item.id) {
+            if let lokalesBild {
+                if let cg = await lokalesBild() {
+                    #if os(iOS)
+                    bild = UIImage(cgImage: cg)
+                    #else
+                    bild = NSImage(cgImage: cg, size: .zero)
+                    #endif
+                }
+                return
+            }
             guard let client else { return }
             // Erst das kleine Bild (meist schon im Cache), dann die scharfe Vorschau.
             if bild == nil, let klein = try? await BilderCache.lade(client.vorschauAnfrage(assetId: item.id, groesse: .thumbnail)) {

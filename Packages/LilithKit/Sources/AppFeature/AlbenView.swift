@@ -55,6 +55,8 @@ struct AlbenView: View {
 
     private var sammlungen: some View {
         VStack(spacing: 0) {
+            sammlung("Kürzlich hinzugefügt", "clock.arrow.circlepath", .kuerzlich)
+            Divider().padding(.leading, 52)
             sammlung("Favoriten", "heart", .favoriten)
             Divider().padding(.leading, 52)
             sammlung("Archiv", "archivebox", .archiv)

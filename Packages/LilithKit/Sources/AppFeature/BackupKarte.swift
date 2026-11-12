@@ -1,6 +1,8 @@
 import SwiftUI
 import DesignSystem
 import Backup
+import Networking
+import TimelineGrid
 #if os(iOS)
 import Photos
 import PhotosUI
@@ -10,15 +12,13 @@ import PhotosUI
 struct KontoKnopf: View {
     let buchstabe: String
     let backup: BackupDienst?
+    var client: ImmichClient?
+    var nutzerId: String?
     let oeffnen: () -> Void
 
     var body: some View {
         Button(action: oeffnen) {
-            Text(buchstabe)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
-                .frame(width: 30, height: 30)
-                .background(LilithColor.nachtroseFill, in: .circle)
+            ProfilBild(client: client, nutzerId: nutzerId, buchstabe: buchstabe, groesse: 30)
                 .padding(backup?.aktiv == true ? 4 : 0)
                 .overlay {
                     if let backup, backup.aktiv {
@@ -37,6 +37,35 @@ struct KontoKnopf: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Konto und Server")
         .accessibilityValue(backup?.aktiv == true ? backup!.zaehlerText : "")
+    }
+}
+
+/// Profilbild vom Server. Ohne Bild (oder offline) der Anfangsbuchstabe im Nachtrose-Kreis.
+struct ProfilBild: View {
+    let client: ImmichClient?
+    let nutzerId: String?
+    let buchstabe: String
+    let groesse: CGFloat
+    @State private var bild: PlattformBild?
+
+    var body: some View {
+        ZStack {
+            Circle().fill(LilithColor.nachtroseFill)
+            if let bild {
+                Image(plattform: bild).resizable().scaledToFill()
+            } else {
+                Text(buchstabe)
+                    .font(.system(size: groesse * 0.45, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+        }
+        .frame(width: groesse, height: groesse)
+        .clipShape(.circle)
+        .task(id: nutzerId) {
+            guard let client, let nutzerId else { return }
+            // Ohne Profilbild antwortet der Server mit 404: dann bleibt der Buchstabe.
+            bild = try? await BilderCache.lade(client.profilbildAnfrage(nutzerId: nutzerId))
+        }
     }
 }
 
@@ -141,9 +170,23 @@ struct BackupKarte: View {
         if case .halt = backup.phase, backup.zugriff == .verweigert {
             Button("Einstellungen öffnen") { oeffneEinstellungen() }
         }
+        NavigationLink {
+            AlbenAuswahlView(backup: backup)
+        } label: {
+            LabeledContent("Alben", value: albenText)
+        }
         Button("Jetzt prüfen") { backup.starte() }
             .disabled(backup.laeuft)
         Button("Backup ausschalten", role: .destructive) { backup.ausschalten() }
+    }
+
+    /// Kurzfassung der Albenauswahl.
+    private var albenText: String {
+        let a = backup.auswahl
+        if a.leer { return "Keine" }
+        let basis = a.gewaehlt.contains(AlbenAuswahl.alle)
+            ? "Alle Fotos" : (a.gewaehlt.count == 1 ? "1 Album" : "\(a.gewaehlt.count) Alben")
+        return a.ausgeschlossen.isEmpty ? basis : "\(basis), \(a.ausgeschlossen.count) ausgeschlossen"
     }
 
     private func oeffneEinstellungen() {
@@ -159,6 +202,121 @@ struct BackupKarte: View {
                 backup.aktualisiereZugriff()
                 backup.starte()
             }
+        }
+    }
+}
+#endif
+
+#if os(iOS)
+/// Alben fürs Backup auswählen, wie in der Immich-App:
+/// einmal antippen = sichern, zweimal = ausschließen, dreimal = neutral.
+struct AlbenAuswahlView: View {
+    let backup: BackupDienst
+    @State private var alben: [MediathekAlbum] = []
+    @State private var laedt = true
+    @State private var auswahl: AlbenAuswahl
+
+    init(backup: BackupDienst) {
+        self.backup = backup
+        _auswahl = State(initialValue: backup.auswahl)
+    }
+
+    var body: some View {
+        List {
+            Section {
+                zeile(id: AlbenAuswahl.alle, titel: "Alle Fotos", untertitel: "Alles in der Mediathek", bildId: nil)
+            } footer: {
+                Text(auswahl.leer
+                     ? "Nichts gewählt: Es wird nichts gesichert."
+                     : "Einmal tippen: sichern. Zweimal: ausschließen (z. B. Screenshots). Gesichert wird, was in einem gewählten und in keinem ausgeschlossenen Album liegt.")
+            }
+            if laedt {
+                Section { ProgressView().frame(maxWidth: .infinity) }
+            }
+            let eigene = alben.filter { !$0.vonIOS }
+            if !eigene.isEmpty {
+                Section("Meine Alben") {
+                    ForEach(eigene) { a in zeile(id: a.id, titel: a.titel, untertitel: anzahl(a.anzahl), bildId: a.titelBildId) }
+                }
+            }
+            let ios = alben.filter(\.vonIOS)
+            if !ios.isEmpty {
+                Section("Von iOS") {
+                    ForEach(ios) { a in zeile(id: a.id, titel: a.titel, untertitel: anzahl(a.anzahl), bildId: a.titelBildId) }
+                }
+            }
+            Section {
+                Toggle("Alben auch auf dem Server anlegen", isOn: Binding(
+                    get: { backup.serverAlben }, set: { backup.setze(serverAlben: $0) }))
+            } footer: {
+                Text("Gesicherte Fotos aus deinen gewählten Alben landen auf dem Server im Album mit demselben Namen.")
+            }
+        }
+        .navigationTitle("Alben fürs Backup")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            alben = await backup.mediathekAlben()
+            laedt = false
+        }
+        .onDisappear {
+            if auswahl != backup.auswahl { backup.setze(auswahl: auswahl) }
+        }
+    }
+
+    private func anzahl(_ n: Int) -> String { n == 1 ? "1 Objekt" : "\(n.formatted(.number)) Objekte" }
+
+    private func zeile(id: String, titel: String, untertitel: String, bildId: String?) -> some View {
+        let zustand = auswahl.zustand(id)
+        return Button {
+            auswahl.weiter(id)
+        } label: {
+            HStack(spacing: 12) {
+                LokalesVorschaubild(backup: backup, id: bildId, kante: 44)
+                    .clipShape(.rect(cornerRadius: 6))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(titel).foregroundStyle(LilithColor.text)
+                    Text(untertitel).font(.footnote).foregroundStyle(.secondary)
+                }
+                Spacer()
+                switch zustand {
+                case .neutral:
+                    Image(systemName: "circle").foregroundStyle(.tertiary)
+                case .gewaehlt:
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(LilithColor.nachtrose)
+                case .ausgeschlossen:
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+                }
+            }
+            .font(.body)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityValue(zustand == .gewaehlt ? "wird gesichert" : zustand == .ausgeschlossen ? "ausgeschlossen" : "nicht gewählt")
+    }
+}
+
+/// Vorschaubild direkt vom Gerät.
+struct LokalesVorschaubild: View {
+    let backup: BackupDienst
+    let id: String?
+    let kante: CGFloat
+    @State private var bild: CGImage?
+    @Environment(\.displayScale) private var skala
+
+    var body: some View {
+        ZStack {
+            LilithColor.flaeche
+            if let bild {
+                Image(decorative: bild, scale: skala).resizable().scaledToFill()
+            } else {
+                Image(systemName: id == nil ? "photo.stack" : "photo").foregroundStyle(LilithColor.textLeise)
+            }
+        }
+        .frame(width: kante, height: kante)
+        .clipped()
+        .task(id: id) {
+            guard let id else { bild = nil; return }
+            bild = await backup.vorschau(id, kante: kante * skala)
         }
     }
 }
