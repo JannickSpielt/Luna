@@ -16,6 +16,7 @@ struct StartBildschirm: View {
 
     /// Farbe wie „StartFarbe“ im Asset-Katalog der App.
     static let nacht = Color(red: 0x12 / 255, green: 0x0E / 255, blue: 0x10 / 255)
+    static let creme = Color(red: 0xF4 / 255, green: 0xED / 255, blue: 0xE4 / 255)
 
     var body: some View {
         GeometryReader { geo in
@@ -28,17 +29,20 @@ struct StartBildschirm: View {
                     .frame(width: 120, height: 120)
                     .scaleEffect(1 + 7 * oeffnung)
                     .opacity(1 - max((oeffnung - 0.5) / 0.5, 0))
-                VStack(spacing: 6) {
-                    Text("Lilith")
-                        .font(.system(size: 34, weight: .semibold))
-                    Text("von Jannick Stahn")
-                        .font(.subheadline)
-                        .opacity(0.6)
-                }
-                .foregroundStyle(Color(red: 0xF4 / 255, green: 0xED / 255, blue: 0xE4 / 255))
-                // Oberkante wie vorher (Name 110 pt unter der Mitte), der Untertitel hängt darunter.
-                .offset(y: 124 + 200 * oeffnung)
+                Text("Lilith")
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(Self.creme)
+                    // Wie im Startbild von iOS: 110 pt unter der Mitte.
+                    .offset(y: 110 + 200 * oeffnung)
                     .opacity(nameSichtbar ? 1 - min(oeffnung * 3, 1) : 0)
+                // Ganz unten, wie bei vielen Apps der Hinweis, von wem sie ist.
+                Text("von Jannick Stahn")
+                    .font(.subheadline)
+                    .foregroundStyle(Self.creme.opacity(0.6))
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    // Über dem Home-Balken.
+                    .padding(.bottom, 50)
+                    .opacity(1 - min(oeffnung * 3, 1))
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
