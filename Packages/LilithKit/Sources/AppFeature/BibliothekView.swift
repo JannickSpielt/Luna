@@ -89,6 +89,21 @@ struct TimelineInhalt: View {
             #endif
             #endif
             .toolbar { werkzeuge }
+            #if os(iOS)
+            .toolbar {
+                // In Sammlungen: Titel in einer Glas-Kapsel, gut lesbar über den Fotos.
+                if konto == nil {
+                    ToolbarItem(placement: .principal) {
+                        Text(auswahl.isEmpty ? titel : "\(auswahl.count) ausgewählt")
+                            .font(.headline)
+                            .lineLimit(1)
+                            .padding(.horizontal, 16)
+                            .frame(height: 40)
+                            .lilithGlas(in: .capsule)
+                    }
+                }
+            }
+            #endif
             .overlay(alignment: .top) {
                 if let hinweis = store?.hinweis {
                     OfflineHinweis(text: hinweis) { Task { await store?.laden() } }
@@ -227,13 +242,16 @@ struct TimelineInhalt: View {
                     .overlay(alignment: .topLeading) {
                         // Kein großer Titel: Der Tab sagt schon, wo man ist. Oben links steht, was man sieht –
                         // Monat, Ort und Anzahl, in derselben Reihe wie die Leiste rechts (bzw. die Auswahl).
-                        MonatsEtikett(quelle: quelle, scroll: scroll,
-                                      auswahlText: auswahl.isEmpty ? nil : "\(auswahl.count) ausgewählt")
-                            // Nie unter die Leiste rechts: lange Ortsnamen werden gekürzt.
-                            .frame(maxWidth: max(geo.size.width - 200, 120), alignment: .leading)
-                            .padding(.leading, 16)
-                            .padding(.top, konto != nil ? fenster : rand.top + 8)
-                            .ignoresSafeArea(edges: .top)
+                        // Nur in „Fotos“. In Sammlungen (Alben, Videos …) steht oben schon der Titel.
+                        if konto != nil {
+                            MonatsEtikett(quelle: quelle, scroll: scroll,
+                                          auswahlText: auswahl.isEmpty ? nil : "\(auswahl.count) ausgewählt")
+                                // Nie unter die Leiste rechts: lange Ortsnamen werden gekürzt.
+                                .frame(maxWidth: max(geo.size.width - 200, 120), alignment: .leading)
+                                .padding(.leading, 16)
+                                .padding(.top, fenster)
+                                .ignoresSafeArea(edges: .top)
+                        }
                     }
                     .overlay(alignment: .trailing) {
                         ScrubberMitStand(quelle: quelle, scroll: scroll, umgekehrt: umgekehrt) { sprung = SprungAnfrage(section: $0) }
