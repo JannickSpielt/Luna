@@ -16,7 +16,7 @@ struct BibliothekView: View {
 
     var body: some View {
         NavigationStack {
-            TimelineInhalt(titel: "Bibliothek", quelle: quelle, store: store,
+            TimelineInhalt(titel: "Fotos", quelle: quelle, store: store,
                            konto: (kontoBuchstabe, { zeigeKonto = true }))
         }
     }
@@ -35,6 +35,8 @@ struct TimelineInhalt: View {
     @State private var sprung: SprungAnfrage?
     /// Eigenes Objekt, damit beim Scrollen nur der Scrubber neu gezeichnet wird, nicht die ganze Ansicht.
     @State private var scroll = ScrollStand()
+    /// Tab-Leiste unten: verschwindet beim Scrollen in ältere Fotos.
+    @State private var leisteSichtbar = true
     @AppStorage(NichtGesicherte.schluessel) private var zeigeNichtGesicherte = true
     @State private var auswahlModus = false
     @State private var auswahl: [String] = []
@@ -78,6 +80,14 @@ struct TimelineInhalt: View {
         inhalt
             .background(LilithColor.hintergrund)
             .navigationTitle(auswahl.isEmpty ? titel : "\(auswahl.count) ausgewählt")
+            #if os(iOS)
+            // Kein großer Titel über weißem Grund: Die Fotos beginnen ganz oben.
+            .navigationBarTitleDisplayMode(.inline)
+            .modifier(TitelAusblenden(aktiv: konto != nil && store?.zustand == .bereit))
+            #if os(iOS)
+            .toolbarVisibility(leisteSichtbar ? .visible : .hidden, for: .tabBar)
+            #endif
+            #endif
             .toolbar { werkzeuge }
             .overlay(alignment: .top) {
                 if let hinweis = store?.hinweis {
@@ -192,29 +202,82 @@ struct TimelineInhalt: View {
                     .buttonStyle(.borderedProminent)
             }
         case .bereit:
-            TimelineGridView(quelle: quelle, zoom: $zoom, sprung: sprung,
-                             auswahlModus: auswahlModus, auswahlStand: auswahlStand,
-                             onAuswahl: { auswahl = $0 },
-                             onTap: { section, index, rahmen in oeffne(DetailPosition(section: section, index: index), rahmen) },
-                             onScroll: { [scroll] in scroll.anteil = $0 })
-                .ignoresSafeArea(edges: .bottom)
+            #if os(iOS)
+            // Die Fotos laufen unter Statusleiste, Leiste und Tab-Leiste durch. Darüber: Titel, Monats-Etikett
+            // aus Glas und Scrubber, jeweils mit Abstand zu den Leisten (rand = Bereich unter der Leiste).
+            GeometryReader { geo in
+                let rand = geo.safeAreaInsets
+                // Abstand zur Statusleiste: Der Titel steht in derselben Reihe wie die Leiste rechts.
+                let fenster = VollerPlayer.fensterRand().top
+                raster
+                    .ignoresSafeArea()
+                    .overlay(alignment: .top) {
+                        // Weicher Verlauf, damit Titel und Leiste über hellen Fotos lesbar bleiben.
+                        LinearGradient(colors: [.black.opacity(0.38), .black.opacity(0)], startPoint: .top, endPoint: .bottom)
+                            .frame(height: fenster + 90)
+                            .ignoresSafeArea()
+                            .allowsHitTesting(false)
+                    }
+                    .overlay(alignment: .topLeading) {
+                        // Kein großer Titel: Der Tab sagt schon, wo man ist. Oben links steht, was man sieht –
+                        // Monat, Ort und Anzahl, in derselben Reihe wie die Leiste rechts (bzw. die Auswahl).
+                        MonatsEtikett(quelle: quelle, scroll: scroll,
+                                      auswahlText: auswahl.isEmpty ? nil : "\(auswahl.count) ausgewählt")
+                            // Nie unter die Leiste rechts: lange Ortsnamen werden gekürzt.
+                            .frame(maxWidth: max(geo.size.width - 200, 120), alignment: .leading)
+                            .padding(.leading, 16)
+                            .padding(.top, konto != nil ? fenster : rand.top + 8)
+                            .ignoresSafeArea(edges: .top)
+                    }
+                    .overlay(alignment: .trailing) {
+                        ScrubberMitStand(quelle: quelle, scroll: scroll, umgekehrt: umgekehrt) { sprung = SprungAnfrage(section: $0) }
+                            .padding(.top, fenster + 72)
+                            .padding(.bottom, rand.bottom + 8)
+                    }
+            }
+            #else
+            raster
                 .overlay(alignment: .trailing) {
                     ScrubberMitStand(quelle: quelle, scroll: scroll) { sprung = SprungAnfrage(section: $0) }
                         .padding(.vertical, 8)
                 }
-                .refreshable { await store?.laden() }
+            #endif
         }
+    }
+
+    private var raster: some View {
+        TimelineGridView(quelle: quelle, zoom: $zoom, sprung: sprung,
+                         auswahlModus: auswahlModus, auswahlStand: auswahlStand,
+                         onAuswahl: { auswahl = $0 },
+                         onTap: { section, index, rahmen in oeffne(DetailPosition(section: section, index: index), rahmen) },
+                         onScroll: { [scroll] in scroll.anteil = $0 },
+                         onMonat: { [scroll] in scroll.monat = $0 },
+                         onEnde: { [scroll] in scroll.amEnde = $0 },
+                         onDatum: { [scroll] in scroll.datum = $0 },
+                         onLeiste: { zeigen in withAnimation(.easeOut(duration: 0.25)) { leisteSichtbar = zeigen } },
+                         umgekehrt: umgekehrt)
+    }
+
+    /// Wie in Apples Fotos-App: Neuestes unten, nach oben scrollen für Älteres.
+    /// Suchergebnisse bleiben von oben nach unten, weil sie nach Relevanz sortiert sind.
+    private var umgekehrt: Bool {
+        #if os(iOS)
+        if case .suche = filter { return false }
+        return true
+        #else
+        return false
+        #endif
     }
 
     static func leerText(_ filter: TimelineFilter) -> (titel: String, text: String, symbol: String) {
         switch filter {
         case .alle: ("Noch keine Fotos", "Sobald Fotos auf deinem Immich-Server sind, erscheinen sie hier.", "photo.on.rectangle.angled")
         case .favoriten: ("Noch keine Favoriten", "Tippe bei einem Foto auf das Herz, dann findest du es hier wieder.", "heart")
-        case .archiv: ("Archiv ist leer", "Archivierte Fotos verschwinden aus der Bibliothek und liegen hier.", "archivebox")
+        case .archiv: ("Archiv ist leer", "Archivierte Fotos verschwinden aus „Fotos“ und liegen hier.", "archivebox")
         case .papierkorb: ("Papierkorb ist leer", "Gelöschte Fotos liegen hier, bis der Server sie endgültig entfernt.", "trash")
         case .kuerzlich: ("Nichts Neues", "In den letzten 30 Tagen wurde nichts hochgeladen.", "clock.arrow.circlepath")
         case .suche: ("Nichts gefunden", "Versuch es mit anderen Worten, zum Beispiel einem Ort, einem Tier oder einer Farbe.", "magnifyingglass")
-        case .album: ("Album ist leer", "Wähle in der Bibliothek Fotos aus und füge sie diesem Album hinzu.", "rectangle.stack")
+        case .album: ("Album ist leer", "Wähle unter „Fotos“ Bilder aus und füge sie diesem Album hinzu.", "rectangle.stack")
         }
     }
 
@@ -230,6 +293,7 @@ struct TimelineInhalt: View {
                     Label("Hochladen", systemImage: "plus")
                 }
                 .accessibilityLabel(zielAlbum == nil ? "Fotos hochladen" : "Fotos in dieses Album hochladen")
+                .tint(.primary)
                 #else
                 Button("Importieren …", systemImage: "plus") { zeigeImport = true }
                     .keyboardShortcut("i", modifiers: .command)
@@ -273,8 +337,9 @@ struct TimelineInhalt: View {
                         .keyboardShortcut("r", modifiers: .command)
                 }
             } label: {
-                Label("Ansicht", systemImage: "slider.horizontal.3")
+                Label("Ansicht", systemImage: "line.3.horizontal.decrease")
             }
+            .tint(.primary)
             }
             if let konto, !auswahlModus {
                 KontoKnopf(buchstabe: konto.buchstabe, backup: kontext.backup, client: kontext.client,
@@ -307,7 +372,7 @@ struct TimelineInhalt: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(.regularMaterial, in: .capsule)
+        .lilithGlas(in: .capsule)
         .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
         .padding(.bottom, 12)
         .disabled(arbeitet)
@@ -457,7 +522,7 @@ struct OfflineHinweis: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "wifi.slash").foregroundStyle(LilithColor.nachtrose)
+            Image(systemName: "wifi.slash").foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 1) {
                 Text("Server nicht erreichbar").font(.subheadline.weight(.semibold))
                 Text(zeigeDetails ? text : "Du siehst die zuletzt geladenen Fotos.")
@@ -474,7 +539,7 @@ struct OfflineHinweis: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .frame(maxWidth: 520)
-        .background(.regularMaterial, in: .rect(cornerRadius: 16))
+        .lilithGlas(in: .rect(cornerRadius: 16))
         .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
         .padding(.horizontal, 16)
         .accessibilityElement(children: .combine)
@@ -487,15 +552,75 @@ struct OfflineHinweis: View {
 @Observable
 final class ScrollStand {
     var anteil = 0.0
+    /// Monat, der gerade oben unter der Leiste steht.
+    var monat = 0
+    /// Ganz unten bei den neuesten Fotos: dann zeigt das Etikett die Anzahl statt des Monats.
+    var amEnde = false
+    /// Aufnahmedatum des Fotos, das gerade am Rand steht.
+    var datum: Date?
+}
+
+/// Monats-Etikett aus Glas: welcher Monat gerade oben steht, mit Ort und Anzahl.
+/// Ersetzt die grauen Monats-Bänder im Raster.
+private struct MonatsEtikett: View {
+    let quelle: TimelineQuelle
+    let scroll: ScrollStand
+    /// Im Auswahl-Modus steht hier die Anzahl statt des Monats.
+    var auswahlText: String?
+
+    var body: some View {
+        if let auswahlText {
+            Text(auswahlText)
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 16)
+                .frame(height: 44)
+                .lilithGlas(in: .capsule)
+        } else if scroll.amEnde {
+            // Wie in Apples Fotos-App: ganz unten steht, wie viele Objekte es sind.
+            let gesamt = quelle.sections.reduce(0) { $0 + $1.anzahl }
+            Text("\(gesamt.formatted()) Objekte")
+                .font(.subheadline.weight(.semibold))
+                .monospacedDigit()
+                .padding(.horizontal, 16)
+                .frame(height: 44)
+                .lilithGlas(in: .capsule)
+        } else if scroll.monat < quelle.sections.count {
+            // Zwei getrennte Pillen auf derselben Höhe: links nur das Datum (Tag, Monat, Jahr),
+            // rechts die Leiste. Gleiche Höhe (44 pt), gleiche Oberkante.
+            Text(scroll.datum.map { $0.formatted(.dateTime.day().month(.wide).year()) }
+                 ?? quelle.sections[scroll.monat].titel)
+            .font(.subheadline.weight(.semibold))
+            .monospacedDigit()
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .padding(.horizontal, 14)
+            .frame(height: 44)
+            .lilithGlas(in: .capsule)
+            .contentTransition(.opacity)
+            .animation(.easeOut(duration: 0.2), value: scroll.datum)
+            .accessibilityElement(children: .combine)
+        }
+    }
 }
 
 /// Liest die Scroll-Position selbst, damit Änderungen nur diese kleine Ansicht neu zeichnen.
 private struct ScrubberMitStand: View {
     let quelle: TimelineQuelle
     let scroll: ScrollStand
+    var umgekehrt = false
     let springe: (Int) -> Void
 
     var body: some View {
-        Scrubber(quelle: quelle, anteil: scroll.anteil, springe: springe)
+        Scrubber(quelle: quelle, anteil: scroll.anteil, umgekehrt: umgekehrt, springe: springe)
     }
 }
+
+#if os(iOS)
+/// Blendet den Titel der Leiste aus, wenn er stattdessen groß über den Fotos steht.
+private struct TitelAusblenden: ViewModifier {
+    let aktiv: Bool
+    func body(content: Content) -> some View {
+        if aktiv { content.toolbar(removing: .title) } else { content }
+    }
+}
+#endif

@@ -20,6 +20,42 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
     var letzterSprung: UUID?
     /// Ein Foto wurde angetippt: Monat, Position und Rahmen der Kachel im Fenster.
     public var onTap: ((Int, Int, CGRect) -> Void)?
+    /// Meldet den Monat, der gerade oben unter der Leiste steht (für das Monats-Etikett aus Glas).
+    public var onMonat: ((Int) -> Void)?
+    /// Meldet, ob man ganz am Ende (bei den neuesten Fotos) steht.
+    public var onEnde: ((Bool) -> Void)?
+    /// Meldet das Aufnahmedatum des Fotos, das gerade oben (bzw. umgekehrt unten) steht.
+    public var onDatum: ((Date?) -> Void)?
+    /// `true`: Tab-Leiste zeigen. Weg beim Scrollen, zurück nach kurzem Stillstand.
+    public var onLeiste: ((Bool) -> Void)?
+    private var leisteSichtbar = true
+    private var letzterOffset: CGFloat = 0
+    private var letzterTag: DateComponents?
+    private var amEnde: Bool?
+    /// Wie in Apples Fotos-App: das Neueste unten rechts, ältere Fotos weiter oben.
+    /// Umgesetzt durch Drehen der Sammlung um 180° (und der Zellen zurück), die Daten bleiben gleich.
+    public var umgekehrt = false {
+        didSet {
+            guard umgekehrt != oldValue, let collectionView else { return }
+            wendeRichtungAn()
+            collectionView.reloadData()
+        }
+    }
+    private var insetGesetzt = false
+    /// Solange niemand selbst gescrollt hat, bleibt die Ansicht ganz unten bei den neuesten Fotos.
+    private var nutzerHatGescrollt = false
+
+    /// Ganz ans Ende (die neuesten Fotos), sofern umgekehrt und noch nicht selbst gescrollt.
+    private func zumNeuesten() {
+        guard umgekehrt, !nutzerHatGescrollt, let collectionView else { return }
+        collectionView.layoutIfNeeded()
+        collectionView.contentOffset.y = -collectionView.adjustedContentInset.top
+        meldeSichtbare()
+        meldeMonat()
+    }
+    private var letzterMonat = -1
+    /// Oberkante des sichtbaren Bereichs unter Statusleiste und Leiste. Die Fotos laufen darunter durch.
+    private var oben: CGFloat { (view.window?.safeAreaInsets.top ?? 0) + 56 }
 
     /// Mehrfachauswahl: Antippen markiert Fotos, statt sie zu öffnen.
     public var auswahlModus = false {
@@ -123,6 +159,8 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: layout)
         collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.backgroundColor = .clear
+        // Die Fotos laufen bis ganz nach oben unter Statusleiste und Leiste (Liquid Glass liegt darüber).
+        collectionView.contentInsetAdjustmentBehavior = .never
         // Der Scrubber ersetzt die Scroll-Leiste.
         collectionView.showsVerticalScrollIndicator = false
         collectionView.dataSource = self
@@ -133,8 +171,28 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         collectionView.register(MonatsKopf.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
                                 withReuseIdentifier: MonatsKopf.id)
         view.addSubview(collectionView)
+        wendeRichtungAn()
         collectionView.addGestureRecognizer(UIPinchGestureRecognizer(target: self, action: #selector(pinch(_:))))
         verbindeQuelle()
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // Unten Platz für die Tab-Leiste, oben keiner: Die erste Reihe liegt unter dem Glas.
+        let unten = (view.window?.safeAreaInsets.bottom ?? 0) + 64
+        // Umgekehrt liegt die sichtbare Unterkante am Anfang der Sammlung.
+        let neu = umgekehrt ? UIEdgeInsets(top: unten, left: 0, bottom: 0, right: 0)
+                            : UIEdgeInsets(top: 0, left: 0, bottom: unten, right: 0)
+        if collectionView.contentInset != neu {
+            collectionView.contentInset = neu
+            // Beim ersten Mal ganz ans Ende (die neuesten Fotos), nicht unter die Tab-Leiste.
+            insetGesetzt = true
+            zumNeuesten()
+        }
+    }
+
+    private func wendeRichtungAn() {
+        collectionView.transform = umgekehrt ? CGAffineTransform(rotationAngle: .pi) : .identity
     }
 
     private func verbindeQuelle() {
@@ -145,6 +203,7 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
             guard let self, let collectionView = self.collectionView else { return }
             self.letzteSichtbare = []
             collectionView.reloadData()
+            self.zumNeuesten()
             self.onAuswahl?([])
         }
     }
@@ -156,6 +215,13 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
             messMonatMs = Int(Date().timeIntervalSince(start) * 1000)
         }
         #endif
+        // Ort und Anzahl sind jetzt bekannt: das Monats-Etikett auffrischen.
+        if section == max(letzterMonat, 0) {
+            onMonat?(section)
+            // Daten sind jetzt da: das Datum oben links neu bestimmen.
+            letzterTag = nil
+            meldeMonat()
+        }
         if anzahlGeaendert {
             UIView.performWithoutAnimation { collectionView.reloadSections([section]) }
         } else {
@@ -204,13 +270,30 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         starteMessung(section)
         #endif
         collectionView.layoutIfNeeded()
-        if let kopf = collectionView.layoutAttributesForSupplementaryElement(
-            ofKind: UICollectionView.elementKindSectionHeader, at: IndexPath(item: 0, section: section)) {
+        if umgekehrt, section == 0 {
+            // Der neueste Monat steht unten: ganz ans Ende, nicht an seinen Anfang.
+            vorlader.stopPrefetching()
+            collectionView.layoutIfNeeded()
+            collectionView.contentOffset.y = -collectionView.adjustedContentInset.top
+            collectionView.layoutIfNeeded()
+            meldeSichtbare()
+            meldeMonat()
+        } else if umgekehrt, let letztes = collectionView.layoutAttributesForItem(
+            at: IndexPath(item: quelle.sections[section].anzahl - 1, section: section)) {
+            // Umgekehrt steht der Anfang des Monats (das älteste Foto) oben: das letzte Element der Section.
+            vorlader.stopPrefetching()
+            let minY = -collectionView.adjustedContentInset.top
+            let maxY = max(minY, collectionView.contentSize.height - collectionView.bounds.height)
+            collectionView.contentOffset.y = min(max(letztes.frame.maxY - collectionView.bounds.height + oben, minY), maxY)
+            collectionView.layoutIfNeeded()
+            meldeSichtbare()
+        } else if let erstes = collectionView.layoutAttributesForItem(at: IndexPath(item: 0, section: section)) {
             let maxY = max(-collectionView.adjustedContentInset.top,
                            collectionView.contentSize.height - collectionView.bounds.height + collectionView.adjustedContentInset.bottom)
             // Vorladen für die alte Position abbrechen: Die Bilder dort werden nicht mehr gebraucht.
             vorlader.stopPrefetching()
-            collectionView.contentOffset.y = min(kopf.frame.minY - collectionView.adjustedContentInset.top, maxY)
+            // Der Monat beginnt direkt unter der Leiste, nicht unter dem Glas.
+            collectionView.contentOffset.y = max(0, min(erstes.frame.minY - oben, maxY))
             collectionView.layoutIfNeeded()
             meldeSichtbare()
         }
@@ -231,11 +314,73 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         }
     }
 
+    public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        nutzerHatGescrollt = true
+    }
+
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
         meldeSichtbare()
         let max = scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom
             + scrollView.adjustedContentInset.top
         onScroll?(max > 0 ? Double((scrollView.contentOffset.y + scrollView.adjustedContentInset.top) / max) : 0)
+        meldeMonat()
+        meldeLeiste(scrollView)
+    }
+
+    /// Beim Scrollen (egal in welche Richtung) verschwindet die Tab-Leiste.
+    /// Bleibt man stehen, kommt sie nach `leistePause` Sekunden wieder.
+    private let leistePause: TimeInterval = 3
+    private var leisteZurueck: DispatchWorkItem?
+
+    private func meldeLeiste(_ scrollView: UIScrollView) {
+        let y = scrollView.contentOffset.y
+        defer { letzterOffset = y }
+        guard scrollView.isTracking || scrollView.isDecelerating, abs(y - letzterOffset) > 2 else { return }
+        if leisteSichtbar {
+            leisteSichtbar = false
+            onLeiste?(false)
+        }
+        planeLeisteZurueck()
+    }
+
+    private func planeLeisteZurueck() {
+        leisteZurueck?.cancel()
+        let zurueck = DispatchWorkItem { [weak self] in
+            guard let self, let cv = self.collectionView else { return }
+            // Noch in Bewegung oder Finger liegt noch drauf: später nochmal schauen.
+            if cv.isTracking || cv.isDecelerating { self.planeLeisteZurueck(); return }
+            self.leisteSichtbar = true
+            self.onLeiste?(true)
+        }
+        leisteZurueck = zurueck
+        DispatchQueue.main.asyncAfter(deadline: .now() + leistePause, execute: zurueck)
+    }
+
+    /// Welcher Monat steht oben unter der Leiste?
+    private func meldeMonat() {
+        let punkt = umgekehrt
+            ? CGPoint(x: collectionView.bounds.width - 4, y: collectionView.contentOffset.y + collectionView.bounds.height - oben - 2)
+            : CGPoint(x: 4, y: collectionView.contentOffset.y + oben + 2)
+        let ende = umgekehrt && collectionView.contentOffset.y <= -collectionView.adjustedContentInset.top + 24
+        if ende != amEnde {
+            amEnde = ende
+            onEnde?(ende)
+        }
+        let stelle = collectionView.indexPathForItem(at: punkt)
+        let monat = stelle?.section
+            ?? collectionView.indexPathsForVisibleItems.map(\.section).min() ?? 0
+        if let stelle {
+            let datum = quelle.datum(section: stelle.section, index: stelle.item)
+            let tag = datum.map { Calendar.current.dateComponents([.year, .month, .day], from: $0) }
+            if tag != letzterTag {
+                letzterTag = tag
+                onDatum?(datum)
+            }
+        }
+        if monat != letzterMonat {
+            letzterMonat = monat
+            onMonat?(monat)
+        }
     }
 
     // MARK: - Layout
@@ -256,12 +401,9 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         gruppe.interItemSpacing = .fixed(abstand)
         let section = NSCollectionLayoutSection(group: gruppe)
         section.interGroupSpacing = abstand
-        section.contentInsets = .init(top: 0, leading: 0, bottom: 18, trailing: 0)
-        let kopf = NSCollectionLayoutBoundarySupplementaryItem(
-            layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .absolute(48)),
-            elementKind: UICollectionView.elementKindSectionHeader, alignment: .top)
-        kopf.pinToVisibleBounds = true
-        section.boundarySupplementaryItems = [kopf]
+        // Keine Monats-Bänder mehr: Monate gehen mit derselben Fuge ineinander über.
+        // Welcher Monat gerade oben steht, zeigt ein Etikett aus Glas über den Fotos.
+        section.contentInsets = .init(top: 0, leading: 0, bottom: abstand, trailing: 0)
         return section
     }
 
@@ -275,6 +417,7 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let zelle = collectionView.dequeueReusableCell(withReuseIdentifier: GridZelle.id, for: indexPath) as! GridZelle
+        zelle.contentView.transform = umgekehrt ? CGAffineTransform(rotationAngle: .pi) : .identity
         if let item = quelle.item(section: indexPath.section, index: indexPath.item) {
             let pixel = kantePixel
             zelle.zeige(item, anfragen: quelle.bildAnfragen(fuer: item, pixel: pixel).map { BilderCache.anfrage($0, pixel: pixel) })
@@ -528,8 +671,8 @@ final class MonatsKopf: UICollectionReusableView {
         hintergrund.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         addSubview(hintergrund)
         let basis = UIFont.preferredFont(forTextStyle: .title3).fontDescriptor
-        let serif = basis.withDesign(.serif)?.withSymbolicTraits(.traitBold) ?? basis
-        titel.font = UIFont(descriptor: serif, size: 0)
+        let fett = basis.withSymbolicTraits(.traitBold) ?? basis
+        titel.font = UIFont(descriptor: fett, size: 0)
         titel.adjustsFontForContentSizeCategory = true
         untertitel.font = .preferredFont(forTextStyle: .footnote)
         untertitel.adjustsFontForContentSizeCategory = true

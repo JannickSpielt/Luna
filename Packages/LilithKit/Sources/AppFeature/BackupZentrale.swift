@@ -18,6 +18,8 @@ public final class BackupZentrale {
     private(set) var konto: String?
     private(set) var uploads: UploadWarteschlange?
     private(set) var backup: BackupDienst?
+    /// Läuft gerade „Jetzt sichern“? Dann beim Verlassen der App nicht anhalten.
+    private(set) var jetztAktiv = false
 
     private init() {}
 
@@ -51,7 +53,8 @@ public final class BackupZentrale {
 
     /// Beim Verlassen der App: Uploads an iOS übergeben und die nächsten Läufe anmelden.
     func inDenHintergrund() {
-        backup?.halteAn()
+        // Mit „Jetzt sichern“ darf der Durchgang weiterlaufen (iOS zeigt den Fortschritt an).
+        if !jetztAktiv { backup?.halteAn() }
         uploads?.uebergibAnHintergrund()
         planeHintergrund()
     }
@@ -95,6 +98,62 @@ public final class BackupZentrale {
     }
 
     #if os(iOS)
+    /// „Jetzt sichern“ (ab iOS 26): Der Durchgang läuft weiter, auch wenn du die App verlässt.
+    /// iOS zeigt dabei den Fortschritt an. Gibt `false` zurück, wenn iOS ihn gerade nicht annimmt.
+    @available(iOS 26, *)
+    func jetztSichern() -> Bool {
+        guard let backup, backup.aktiv, !jetztAktiv else { return false }
+        // Jede Anfrage braucht eine eigene Kennung (Muster in der Info.plist: app.lilith.Lilith.jetzt.*).
+        let kennung = "app.lilith.Lilith.jetzt.\(UUID().uuidString.prefix(8))"
+        let registriert = BGTaskScheduler.shared.register(forTaskWithIdentifier: kennung, using: nil) { aufgabe in
+            guard let a = aufgabe as? BGContinuedProcessingTask else { aufgabe.setTaskCompleted(success: false); return }
+            let gesendet = Gesendet(a)
+            Task { @MainActor in await BackupZentrale.shared.fuehreJetztAus(gesendet.wert) }
+        }
+        guard registriert else { return false }
+        let anfrage = BGContinuedProcessingTaskRequest(identifier: kennung, title: "Fotos sichern",
+                                                       subtitle: backup.statusText)
+        anfrage.strategy = .fail
+        do {
+            try BGTaskScheduler.shared.submit(anfrage)
+            jetztAktiv = true
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    @available(iOS 26, *)
+    private func fuehreJetztAus(_ aufgabe: BGContinuedProcessingTask) async {
+        guard let backup, let uploads else { aufgabe.setTaskCompleted(success: false); return }
+        jetztAktiv = true
+        defer { jetztAktiv = false }
+        let gesendet = Gesendet(aufgabe)
+        aufgabe.progress.totalUnitCount = 100
+        aufgabe.expirationHandler = {
+            Task { @MainActor in
+                backup.halteAn()
+                uploads.uebergibAnHintergrund()
+                gesendet.wert.setTaskCompleted(success: false)
+            }
+        }
+        // Fortschritt melden: Anteil der Fotos, die zu Beginn noch fehlten.
+        let anfang = max(backup.uebersicht.offen, 1)
+        let melder = Task { @MainActor in
+            while !Task.isCancelled {
+                let erledigt = max(0, anfang - backup.uebersicht.offen)
+                gesendet.wert.progress.completedUnitCount = Int64(min(99, erledigt * 100 / anfang))
+                gesendet.wert.updateTitle("Fotos sichern", subtitle: backup.statusText)
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+        await backup.durchgang()
+        melder.cancel()
+        uploads.uebergibAnHintergrund()
+        aufgabe.progress.completedUnitCount = 100
+        aufgabe.setTaskCompleted(success: true)
+    }
+
     private func fuehreAus(_ aufgabe: BGTask) async {
         planeHintergrund()
         guard let (uploads, backup) = await bereit(), let backup, backup.aktiv else {

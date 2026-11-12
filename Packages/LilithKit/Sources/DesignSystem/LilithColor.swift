@@ -19,25 +19,46 @@ public struct RGB: Equatable, Sendable {
     }
 }
 
-/// Die Farbpalette „Nachtrose“. Dark Mode ist das Herzstück,
-/// der Light Mode ist schlicht weiß.
+/// Die Farben von Lilith. Flächen und Text kommen vom System (hell und dunkel, erhöhter Kontrast),
+/// damit die Fotos die Farbe tragen. Nachtrose ist der einzige Akzent und wird sparsam eingesetzt:
+/// gewählter Tab, Auswahl, Favorit, ein Hauptknopf. Mondlicht gehört nur dem Mond (Backup).
 public enum LilithColor {
     /// Akzent für Buttons, Auswahl und Favoriten.
-    public static let nachtrose = Color.lilith(light: 0xB0305A, dark: 0xE46A8C)
+    /// Hell 7,2 : 1 auf Weiß, dunkel 7,6 : 1 auf Schwarz.
+    public static let nachtrose = Color.lilith(light: 0x9E2A50, dark: 0xE8799A)
     /// Akzent als Fläche (Button-Hintergrund), in beiden Modi gleich.
-    public static let nachtroseFill = Color.lilith(light: 0xB0305A, dark: 0xB0305A)
-    /// Warmer Mondlicht-Ton für Highlights und den Mond.
-    public static let mondlicht = Color.lilith(light: 0xC9A96A, dark: 0xEBD9B4)
+    public static let nachtroseFill = Color.lilith(light: 0x9E2A50, dark: 0x9E2A50)
+    /// Nur für den Mond (Backup-Ring, Statuskarte, Start). Hell 3,5 : 1 auf Weiß.
+    public static let mondlicht = Color.lilith(light: 0xA8843E, dark: 0xEBD9B4)
     /// Grundfläche der App.
-    public static let hintergrund = Color.lilith(light: 0xFFFFFF, dark: 0x120E10)
+    public static let hintergrund = system(ui: "systemBackground", mac: "windowBackgroundColor")
     /// Flächen wie Sidebar, Karten und Sheets.
-    public static let flaeche = Color.lilith(light: 0xF2F2F7, dark: 0x1A1517)
+    public static let flaeche = system(ui: "secondarySystemBackground", mac: "controlBackgroundColor")
     /// Haupttext.
-    public static let text = Color.lilith(light: 0x1C1C1E, dark: 0xF4EDE4)
+    public static let text = Color.primary
     /// Nebentext.
-    public static let textLeise = Color.lilith(light: 0x6C6C70, dark: 0xB8ADA6)
+    public static let textLeise = Color.secondary
+    /// Schalter (Toggle) wie im System: grün, nicht im Akzent.
+    public static let schalter = Color.green
     /// Hintergrund in der Vollbild-Fotoansicht (echtes Schwarz).
     public static let betrachter = Color.black
+}
+
+extension LilithColor {
+    /// Systemfarbe je Plattform.
+    static func system(ui: String, mac: String) -> Color {
+        #if canImport(UIKit)
+        switch ui {
+        case "systemBackground": return Color(uiColor: .systemBackground)
+        default: return Color(uiColor: .secondarySystemBackground)
+        }
+        #else
+        switch mac {
+        case "windowBackgroundColor": return Color(nsColor: .windowBackgroundColor)
+        default: return Color(nsColor: .controlBackgroundColor)
+        }
+        #endif
+    }
 }
 
 extension Color {

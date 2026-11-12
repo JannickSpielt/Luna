@@ -223,6 +223,35 @@ public final class BackupDienst {
         if laufAufgabe == nil { starte() } else { starteNachLauf = true }
     }
 
+    /// Fotos vom Gerät, die nicht gesichert werden konnten (z. B. Export gescheitert).
+    public func fehlerFotos() -> [LokalesFoto] {
+        guard let db else { return [] }
+        return (try? db.lokaleFotos(konto: konto, zustand: .fehler)) ?? []
+    }
+
+    /// Fotos, die bewusst übersprungen wurden (nur in iCloud, ignoriert, Format).
+    public func uebersprungeneFotos() -> [LokalesFoto] {
+        guard let db else { return [] }
+        return (try? db.lokaleFotos(konto: konto, zustand: .uebersprungen)) ?? []
+    }
+
+    /// Ein einzelnes Foto beim nächsten Durchgang neu versuchen.
+    public func wiederhole(lokaleId: String) {
+        guard let db else { return }
+        try? db.pruefeNeu(konto: konto, lokaleId: lokaleId)
+        zaehle()
+        onAenderung?()
+        if laufAufgabe == nil { starte() } else { starteNachLauf = true }
+    }
+
+    /// Ein Foto nicht mehr sichern (bis „erneut versuchen“).
+    public func ignoriere(lokaleId: String) {
+        guard let db else { return }
+        try? db.setzeLokal(konto: konto, lokaleId: lokaleId, zustand: .uebersprungen, grund: "Ignoriert")
+        zaehle()
+        onAenderung?()
+    }
+
     /// Eine einzelne Prüfung auf Fehler zurücksetzen, damit sie beim nächsten Durchgang neu versucht werden.
     public func wiederholeFehler() {
         guard let db else { return }
@@ -441,6 +470,17 @@ public final class BackupDienst {
     /// „8.412 von 9.030 gesichert“
     public var zaehlerText: String {
         "\(uebersicht.gesichert.formatted(.number)) von \(uebersicht.gesamt.formatted(.number)) gesichert"
+    }
+
+    /// Alles gesichert, nichts offen, keine Fehler (für den Vollmond-Moment).
+    public var allesGesichert: Bool {
+        aktiv && phase == .bereit && uebersicht.gesamt > 0 && uebersicht.offen == 0 && uebersicht.fehler == 0
+    }
+
+    /// Ob der Vollmond-Moment schon gezeigt wurde (nur einmal pro Konto).
+    public var vollmondGezeigt: Bool {
+        get { speicher.bool(forKey: "lilith.backup.vollmond.\(konto)") }
+        set { speicher.set(newValue, forKey: "lilith.backup.vollmond.\(konto)") }
     }
 
     public var laeuft: Bool {

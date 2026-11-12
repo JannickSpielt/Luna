@@ -129,6 +129,14 @@ extension Datenbank {
         }
     }
 
+    /// Ein Foto komplett neu prüfen (Prüfsumme, Server, Upload).
+    public func pruefeNeu(konto: String, lokaleId: String) throws {
+        try pool.write { db in
+            try db.execute(sql: "UPDATE lokales_foto SET zustand = 'neu', grund = NULL, pruefsumme = NULL WHERE konto = ? AND lokale_id = ?",
+                           arguments: [konto, lokaleId])
+        }
+    }
+
     /// Anzahl der Fotos je Zustand.
     public func zaehleLokal(konto: String) throws -> [LokalesFoto.Zustand: Int] {
         try pool.read { db in

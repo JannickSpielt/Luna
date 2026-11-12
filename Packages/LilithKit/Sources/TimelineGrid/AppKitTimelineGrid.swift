@@ -422,8 +422,7 @@ final class MonatsKopfView: NSVisualEffectView, NSCollectionViewElement {
         super.init(frame: frame)
         material = .headerView
         blendingMode = .withinWindow
-        let serif = NSFont.systemFont(ofSize: 20, weight: .semibold).fontDescriptor.withDesign(.serif)
-        titel.font = serif.flatMap { NSFont(descriptor: $0, size: 20) } ?? .systemFont(ofSize: 20, weight: .semibold)
+        titel.font = .systemFont(ofSize: 17, weight: .semibold)
         untertitel.font = .systemFont(ofSize: 12)
         untertitel.textColor = .secondaryLabelColor
         let stapel = NSStackView(views: [titel, NSView(), untertitel])

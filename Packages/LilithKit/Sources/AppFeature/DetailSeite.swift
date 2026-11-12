@@ -88,14 +88,15 @@ struct FotoSeite: View {
                         .resizable()
                         .scaledToFit()
                         .accessibilityLabel(item.art == .livePhoto ? "Live Photo" : "Foto")
-                } else {
-                    // Ohne Server (Demo) oder bis das Bild da ist: Platzhalterfarbe.
+                } else if client == nil && lokalesBild == nil {
+                    // Demo ohne Server: Platzhalterfarbe.
                     let c = item.rgb
                     Rectangle()
                         .fill(Color(red: c.r, green: c.g, blue: c.b))
                         .aspectRatio(4 / 3, contentMode: .fit)
-                        .padding(client == nil ? 0 : 40)
-                        .opacity(client == nil ? 1 : 0.5)
+                } else {
+                    // Bis das Bild da ist: Ladeanzeige statt eines halben Bildes.
+                    LadeMond()
                 }
                 if let livePlayer {
                     PlayerFlaeche(player: livePlayer)
@@ -130,7 +131,7 @@ struct FotoSeite: View {
                         .font(.footnote.weight(.semibold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(.ultraThinMaterial, in: .capsule)
+                        .lilithGlas(in: .capsule, klar: true)
                 }
                 .buttonStyle(.plain)
                 .padding(.leading, 16)
@@ -152,7 +153,7 @@ struct FotoSeite: View {
             guard let client else { return }
             // Erst das kleine Bild (meist schon im Cache), dann die scharfe Vorschau.
             if bild == nil, let klein = try? await BilderCache.lade(client.vorschauAnfrage(assetId: item.id, groesse: .thumbnail)) {
-                bild = klein
+                withAnimation(.easeOut(duration: 0.2)) { bild = klein }
             }
             if let gross = try? await BilderCache.lade(client.vorschauAnfrage(assetId: item.id, groesse: .preview)) {
                 bild = gross
@@ -226,13 +227,23 @@ struct VideoSeite: View {
 
     var body: some View {
         ZStack {
-            if let vorschau, player == nil {
+            if let vorschau {
+                // Bleibt hinter dem Player sichtbar, bis das erste Bild des Videos da ist.
                 Image(plattform: vorschau).resizable().scaledToFit()
             }
             if let player {
+                #if os(iOS)
+                // Apples voller Player (Vollbild, Bild-in-Bild, Geschwindigkeit). Er liegt zwischen den eigenen
+                // Leisten oben und unten, damit sich die Bedienelemente nicht überdecken.
+                let rand = VollerPlayer.fensterRand()
+                VollerPlayer(player: player)
+                    .padding(.top, rand.top + 64)
+                    .padding(.bottom, rand.bottom + 76)
+                #else
                 VideoPlayer(player: player)
-            } else {
-                ProgressView().tint(.white)
+                #endif
+            } else if vorschau == nil {
+                LadeMond()
             }
         }
         .accessibilityLabel("Video, \(item.dauerText)")
@@ -252,6 +263,61 @@ struct VideoSeite: View {
         .onDisappear {
             player?.pause()
             player = nil
+        }
+    }
+}
+
+#if os(iOS)
+/// `AVPlayerViewController` mit allen Bedienelementen.
+struct VollerPlayer: UIViewControllerRepresentable {
+    let player: AVPlayer
+
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let vc = AVPlayerViewController()
+        vc.player = player
+        vc.showsPlaybackControls = true
+        vc.allowsPictureInPicturePlayback = true
+        vc.canStartPictureInPictureAutomaticallyFromInline = false
+        vc.entersFullScreenWhenPlaybackBegins = false
+        vc.exitsFullScreenWhenPlaybackEnds = true
+        vc.videoGravity = .resizeAspect
+        vc.view.backgroundColor = .clear
+        return vc
+    }
+
+    func updateUIViewController(_ vc: AVPlayerViewController, context: Context) {
+        if vc.player !== player { vc.player = player }
+    }
+
+    /// Abstände zu Notch und Home-Leiste des Fensters (die Detailansicht selbst nutzt den ganzen Bildschirm).
+    static func fensterRand() -> UIEdgeInsets {
+        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.safeAreaInsets ?? .zero
+    }
+}
+#endif
+
+/// Ladeanzeige: ein Mond, der zu- und abnimmt. Erscheint erst nach kurzer Zeit, damit sie nicht aufblitzt.
+struct LadeMond: View {
+    @State private var sichtbar = false
+    @State private var phase = 0.25
+    @Environment(\.accessibilityReduceMotion) private var wenigBewegung
+
+    var body: some View {
+        VStack(spacing: 14) {
+            MondSymbol(phase: phase)
+                .frame(width: 44, height: 44)
+            Text("Lädt …")
+                .font(.footnote)
+                .foregroundStyle(.white.opacity(0.7))
+        }
+        .opacity(sichtbar ? 1 : 0)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Wird geladen")
+        .task {
+            try? await Task.sleep(for: .milliseconds(250))
+            withAnimation(.easeOut(duration: 0.25)) { sichtbar = true }
+            guard !wenigBewegung else { return }
+            withAnimation(.easeInOut(duration: 1.1).repeatForever(autoreverses: true)) { phase = 0.85 }
         }
     }
 }

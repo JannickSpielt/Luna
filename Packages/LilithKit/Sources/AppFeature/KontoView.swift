@@ -7,6 +7,7 @@ import Backup
 struct KontoView: View {
     let account: Account
     var backup: BackupDienst?
+    var uploads: UploadWarteschlange?
     var client: ImmichClient?
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
@@ -29,7 +30,7 @@ struct KontoView: View {
                 }
 
                 #if os(iOS)
-                if let backup { BackupKarte(backup: backup) }
+                if let backup { BackupKarte(backup: backup, uploads: uploads) }
                 #endif
 
                 Section("Server") {
@@ -60,6 +61,7 @@ struct KontoView: View {
                                 sperreAn = false
                             }
                         }))
+                    .tint(LilithColor.schalter)
                     .disabled(!Entsperren.verfuegbar)
                 } header: {
                     Text("Sicherheit")

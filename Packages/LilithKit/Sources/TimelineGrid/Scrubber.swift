@@ -8,6 +8,8 @@ public struct Scrubber: View {
     /// Aktuelle Scroll-Position (0…1), damit der Griff mitwandert.
     let anteil: Double
     let springe: (Int) -> Void
+    /// Neuestes unten (wie in Apples Fotos-App): Anteil 0 liegt unten.
+    var umgekehrt = false
 
     @State private var ziehend = false
     @State private var fingerAnteil = 0.0
@@ -16,7 +18,8 @@ public struct Scrubber: View {
     @State private var ausblenden: Task<Void, Never>?
     @State private var letzteBewegung = Date.distantPast
 
-    public init(quelle: TimelineQuelle, anteil: Double, springe: @escaping (Int) -> Void) {
+    public init(quelle: TimelineQuelle, anteil: Double, umgekehrt: Bool = false, springe: @escaping (Int) -> Void) {
+        self.umgekehrt = umgekehrt
         self.quelle = quelle
         self.anteil = anteil
         self.springe = springe
@@ -25,12 +28,12 @@ public struct Scrubber: View {
     public var body: some View {
         GeometryReader { geo in
             let hoehe = max(geo.size.height - 40, 1)
-            let position = ziehend ? fingerAnteil : min(max(anteil, 0), 1)
+            let position = ziehend ? fingerAnteil : (umgekehrt ? 1 - min(max(anteil, 0), 1) : min(max(anteil, 0), 1))
             ZStack(alignment: .topTrailing) {
                 Color.clear
                 if sichtbar || ziehend {
                     Capsule()
-                        .fill(ziehend ? LilithColor.nachtroseFill : LilithColor.mondlicht)
+                        .fill(ziehend ? LilithColor.nachtroseFill : Color.secondary)
                         .frame(width: 6, height: 40)
                         .shadow(color: .black.opacity(0.3), radius: 2)
                         .offset(x: -6, y: position * hoehe)
@@ -38,7 +41,7 @@ public struct Scrubber: View {
                 }
                 if ziehend, let zielSection, zielSection < quelle.sections.count {
                     Text(quelle.sections[zielSection].titel)
-                        .font(.system(.subheadline, design: .serif, weight: .semibold))
+                        .font(.subheadline.weight(.semibold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
                         .background(.regularMaterial, in: .capsule)
@@ -59,7 +62,7 @@ public struct Scrubber: View {
                             .onChanged { wert in
                                 if !ziehend { withAnimation(.easeOut(duration: 0.15)) { ziehend = true } }
                                 fingerAnteil = min(max((wert.location.y - 20) / hoehe, 0), 1)
-                                if let ziel = quelle.section(beiAnteil: fingerAnteil), ziel != zielSection {
+                                if let ziel = quelle.section(beiAnteil: umgekehrt ? 1 - fingerAnteil : fingerAnteil), ziel != zielSection {
                                     zielSection = ziel
                                     springe(ziel)
                                 }

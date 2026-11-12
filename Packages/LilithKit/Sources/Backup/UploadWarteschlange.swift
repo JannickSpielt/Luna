@@ -17,6 +17,8 @@ public final class UploadWarteschlange {
         /// Fortschritt der gerade laufenden Datei (0…1).
         public var anteil = 0.0
         public var laeuft = false
+        /// Davon per Hand hinzugefügt (für die Live Activity bei großen Uploads).
+        public var manuell = 0
         public var erledigt: Int { hochgeladen + duplikate + fehler }
         /// Gesamtfortschritt über alle Dateien dieses Durchgangs.
         public var gesamtAnteil: Double { gesamt == 0 ? 0 : min(1, (Double(erledigt) + anteil) / Double(gesamt)) }
@@ -168,6 +170,7 @@ public final class UploadWarteschlange {
         _ = try db.speichere(auftraege)
         if !stand.laeuft { stand = Stand() }
         stand.gesamt += auftraege.count
+        stand.manuell += auftraege.count
         halt = nil
         arbeite()
         return auftraege.count
@@ -218,6 +221,50 @@ public final class UploadWarteschlange {
             try? db.entferne(a)
         }
         stand.fehler = 0
+    }
+
+    /// Ein gescheiterter Auftrag für die Fehlerliste.
+    public struct FehlerEintrag: Identifiable, Sendable, Hashable {
+        public let id: Int64
+        public let dateiname: String
+        public let fehler: String
+        /// Kennung in der Mediathek (automatisches Backup), sonst `nil`.
+        public let lokaleId: String?
+        /// Pfad der Kopie (für die Vorschau).
+        public let datei: String
+    }
+
+    public func fehlerEintraege() -> [FehlerEintrag] {
+        ((try? db.auftraege(konto: konto, zustand: .fehler)) ?? []).compactMap { a in
+            a.id.map { FehlerEintrag(id: $0, dateiname: a.dateiname, fehler: a.fehler ?? "Unbekannter Fehler",
+                                     lokaleId: a.lokaleId, datei: a.datei) }
+        }
+    }
+
+    /// Einen einzelnen gescheiterten Auftrag erneut versuchen.
+    public func wiederhole(_ id: Int64) {
+        guard var a = try? db.auftrag(id: id), a.zustand == .fehler else { return }
+        a.zustand = .wartet
+        a.versuche = 0
+        a.fehler = nil
+        try? db.aktualisiere(a)
+        if let lokal = a.lokaleId { try? db.setzeLokal(konto: konto, lokaleId: lokal, zustand: .eingereiht) }
+        if !stand.laeuft { stand = Stand() }
+        stand.gesamt += 1
+        if stand.fehler > 0 { stand.fehler -= 1 }
+        halt = nil
+        arbeite()
+    }
+
+    /// Einen einzelnen gescheiterten Auftrag verwerfen (die Kopie wird gelöscht).
+    public func verwirf(_ id: Int64) {
+        guard let a = try? db.auftrag(id: id), a.zustand == .fehler else { return }
+        if let lokal = a.lokaleId {
+            try? db.setzeLokal(konto: konto, lokaleId: lokal, zustand: .uebersprungen, grund: "Verworfen")
+        }
+        entferneKopie(a)
+        try? db.entferne(a)
+        if stand.fehler > 0 { stand.fehler -= 1 }
     }
 
     /// Fehlertexte der gescheiterten Aufträge, für die Anzeige.

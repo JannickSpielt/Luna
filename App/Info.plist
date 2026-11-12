@@ -3,6 +3,16 @@
 <plist version="1.0">
 <dict>
 	<!-- Wird mit den automatisch erzeugten Einträgen aus project.yml zusammengeführt. -->
+	<!-- Startbildschirm: Nachthimmel mit dem Lilith-Mond (die App übernimmt nahtlos dasselbe Bild). -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>StartFarbe</string>
+		<key>UIImageName</key>
+		<string>StartMond</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<false/>
+	</dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<!-- Backup im Hintergrund: nachts am Ladekabel (processing) und kurz zwischendurch (fetch). -->
@@ -10,6 +20,7 @@
 	<array>
 		<string>app.lilith.backup.nacht</string>
 		<string>app.lilith.backup.kurz</string>
+		<string>app.lilith.Lilith.jetzt.*</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

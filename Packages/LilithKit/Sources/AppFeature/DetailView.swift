@@ -191,8 +191,8 @@ struct DetailView: View {
                 Button(action: schliesse) {
                     Image(systemName: "chevron.left").font(.body.weight(.semibold)).frame(width: 44, height: 44)
                 }
-                .background(.ultraThinMaterial, in: .circle)
-                .accessibilityLabel("Zurück zur Bibliothek")
+                .lilithGlas(in: .circle, klar: true)
+                .accessibilityLabel("Zurück")
                 .keyboardShortcut(.cancelAction)
                 Spacer()
                 VStack(spacing: 1) {
@@ -201,7 +201,7 @@ struct DetailView: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(.ultraThinMaterial, in: .capsule)
+                .lilithGlas(in: .capsule, klar: true)
                 .accessibilityElement(children: .combine)
                 Spacer()
                 Color.clear.frame(width: 44, height: 44)
@@ -242,7 +242,7 @@ struct DetailView: View {
         .padding(.leading, 16)
         .padding(.trailing, 6)
         .padding(.vertical, 6)
-        .background(.ultraThinMaterial, in: .capsule)
+        .lilithGlas(in: .capsule, klar: true)
         .padding(.bottom, 12)
     }
 
@@ -284,7 +284,7 @@ struct DetailView: View {
             .font(.title3)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(.ultraThinMaterial, in: .capsule)
+            .lilithGlas(in: .capsule, klar: true)
             .padding(.bottom, 12)
     }
 
@@ -407,7 +407,7 @@ struct InfoPanel: View {
             Section {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(Self.datum(info.aufgenommenLokal, mitWochentag: true))
-                        .font(.system(.title3, design: .serif, weight: .semibold))
+                        .font(.title3.weight(.semibold))
                     Text("\(Self.uhrzeit(info.aufgenommenLokal)) Uhr · \(info.dateiname)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)

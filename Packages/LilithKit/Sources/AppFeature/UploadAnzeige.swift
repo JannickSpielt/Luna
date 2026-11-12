@@ -42,14 +42,14 @@ struct UploadAnzeige: View {
                 .accessibilityLabel("Lädt hoch, \(s.erledigt) von \(s.gesamt) fertig")
             } else if let halt = uploads.halt {
                 inhalt {
-                    Image(systemName: "pause.circle").foregroundStyle(LilithColor.nachtrose)
+                    Image(systemName: "pause.circle").foregroundStyle(.secondary)
                     Text(halt).font(.caption).fixedSize(horizontal: false, vertical: true).frame(maxWidth: 260, alignment: .leading)
                     Button("Erneut") { uploads.wiederhole(); uploads.start() }.font(.caption.weight(.semibold))
                 }
             } else if zeigeErgebnis || s.fehler > 0 {
                 inhalt {
                     Image(systemName: s.fehler > 0 ? "exclamationmark.triangle" : "checkmark.circle")
-                        .foregroundStyle(s.fehler > 0 ? LilithColor.nachtrose : Color.green)
+                        .foregroundStyle(s.fehler > 0 ? Color.red : Color.green)
                     Text(zusammenfassung(s)).font(.subheadline)
                     if s.fehler > 0 {
                         Button("Details") { zeigeFehler = true }.font(.subheadline.weight(.semibold))
@@ -67,12 +67,16 @@ struct UploadAnzeige: View {
                 zeigeErgebnis = false
             }
         }
-        .alert("Nicht hochgeladen", isPresented: $zeigeFehler) {
-            Button("Erneut versuchen") { uploads.wiederhole() }
-            Button("Verwerfen", role: .destructive) { uploads.verwirfFehler() }
-            Button("Schließen", role: .cancel) {}
-        } message: {
-            Text(uploads.fehlerListe().prefix(5).map { "\($0.dateiname): \($0.fehler)" }.joined(separator: "\n\n"))
+        .sheet(isPresented: $zeigeFehler) {
+            NavigationStack {
+                FehlerListeView(uploads: uploads, backup: nil)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) { Button("Fertig") { zeigeFehler = false } }
+                    }
+            }
+            #if os(macOS)
+            .frame(minWidth: 460, minHeight: 420)
+            #endif
         }
     }
 
@@ -80,7 +84,7 @@ struct UploadAnzeige: View {
         HStack(spacing: 10) { inhalt() }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(.regularMaterial, in: .capsule)
+            .lilithGlas(in: .capsule)
             .shadow(color: .black.opacity(0.15), radius: 10, y: 4)
             .transition(.move(edge: .bottom).combined(with: .opacity))
     }

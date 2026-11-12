@@ -60,7 +60,7 @@ struct OnboardingView: View {
                 .frame(width: 88, height: 88)
                 .animation(wenigBewegung ? nil : .easeInOut(duration: 0.9), value: server == nil)
             Text("Deine Fotos.\nDein Server.")
-                .font(.system(.largeTitle, design: .serif, weight: .semibold))
+                .font(.largeTitle.bold())
                 .multilineTextAlignment(.center)
                 .foregroundStyle(LilithColor.text)
             Text("Verbinde Lilith mit deiner Immich-Instanz. Deine Fotos bleiben bei dir.")

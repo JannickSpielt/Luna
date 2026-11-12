@@ -48,7 +48,7 @@ struct SucheView: View {
                 VStack(alignment: .leading, spacing: 18) {
                     MondSymbol(phase: 0.3).frame(width: 44, height: 44)
                     Text("Beschreib, was du suchst")
-                        .font(.system(.title2, design: .serif, weight: .semibold))
+                        .font(.title2.bold())
                     Text("Lilith findet Fotos über ihren Inhalt. Du brauchst keine Schlagworte.")
                         .foregroundStyle(LilithColor.textLeise)
                     VStack(alignment: .leading, spacing: 10) {

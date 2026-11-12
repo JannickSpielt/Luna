@@ -17,11 +17,23 @@ public struct TimelineGridView {
     let auswahlModus: Bool
     let auswahlStand: Int
     let onAuswahl: (([String]) -> Void)?
+    let onMonat: ((Int) -> Void)?
+    let onEnde: ((Bool) -> Void)?
+    let onDatum: ((Date?) -> Void)?
+    let onLeiste: ((Bool) -> Void)?
+    let umgekehrt: Bool
 
     /// - Parameter auswahlStand: Ändert sich der Wert, wird die Auswahl geleert.
     public init(quelle: TimelineQuelle, zoom: Binding<GridZoom>, sprung: SprungAnfrage? = nil,
                 auswahlModus: Bool = false, auswahlStand: Int = 0, onAuswahl: (([String]) -> Void)? = nil,
-                onTap: ((Int, Int, CGRect) -> Void)? = nil, onScroll: ((Double) -> Void)? = nil) {
+                onTap: ((Int, Int, CGRect) -> Void)? = nil, onScroll: ((Double) -> Void)? = nil,
+                onMonat: ((Int) -> Void)? = nil, onEnde: ((Bool) -> Void)? = nil, onDatum: ((Date?) -> Void)? = nil, onLeiste: ((Bool) -> Void)? = nil,
+                umgekehrt: Bool = false) {
+        self.onMonat = onMonat
+        self.onEnde = onEnde
+        self.onDatum = onDatum
+        self.onLeiste = onLeiste
+        self.umgekehrt = umgekehrt
         self.onTap = onTap
         self.auswahlModus = auswahlModus
         self.auswahlStand = auswahlStand
@@ -36,6 +48,13 @@ public struct TimelineGridView {
     func macheController() -> TimelineGridController {
         let controller = TimelineGridController(quelle: quelle, zoom: zoom)
         controller.onScroll = onScroll
+        #if canImport(UIKit)
+        controller.onMonat = onMonat
+        controller.onEnde = onEnde
+        controller.onDatum = onDatum
+        controller.onLeiste = onLeiste
+        controller.umgekehrt = umgekehrt
+        #endif
         controller.onTap = onTap
         controller.onAuswahl = onAuswahl
         controller.auswahlModus = auswahlModus
@@ -51,6 +70,13 @@ public struct TimelineGridView {
     func aktualisiere(_ controller: TimelineGridController) {
         if controller.quelle !== quelle { controller.quelle = quelle }
         controller.onScroll = onScroll
+        #if canImport(UIKit)
+        controller.onMonat = onMonat
+        controller.onEnde = onEnde
+        controller.onDatum = onDatum
+        controller.onLeiste = onLeiste
+        controller.umgekehrt = umgekehrt
+        #endif
         controller.onTap = onTap
         controller.onAuswahl = onAuswahl
         controller.auswahlModus = auswahlModus

@@ -151,3 +151,31 @@ Plan: `docs/BACKUP-PLAN.md`.
 - **Statuszeile:** „Wartet auf WLAN“, „Wartet auf Strom“ oder „Zu wenig Speicher frei“, der Mond-Ring zeigt dann die Wolke.
 
 **Nicht geprüft:** Ob iOS die Läufe wirklich auslöst, lässt sich im Simulator nicht zuverlässig testen. Das zeigt erst ein echtes iPhone über ein paar Nächte. **Offen (Etappe 4):** „Jetzt sichern“ ab iOS 26, Live Activity, Fehlerliste, Vollmond-Moment.
+
+## 12. Backup-Etappe 4 und Feinschliff (12.11.2026)
+
+- **Fehlerliste:** Im Konto unter Backup („N nicht gesichert“) und nach Uploads per Hand („Details“). Pro Foto: Vorschau, Grund, „Erneut“, per Wischen „Ignorieren“ (wird dann nicht mehr gesichert, bis man es erneut versucht). Übersprungene (z. B. nur in iCloud) stehen in einem eigenen Abschnitt.
+- **Vollmond-Moment:** Einmal pro Konto, wenn das erste Backup komplett ist (alles gesichert, keine Fehler): Der Mond geht auf, „Alles sicher. Gute Nacht.“ Mit „Bewegung reduzieren“ ohne Animation. Zum Ansehen: `-LilithVollmond YES`.
+- **„Jetzt sichern“ (ab iOS 26):** Startet einen Durchgang als `BGContinuedProcessingTask`. Er läuft weiter, wenn man die App verlässt, iOS zeigt Titel und Fortschritt an. Unter iOS 26 bleibt es bei „Jetzt prüfen“. Jede Anfrage hat eine eigene Kennung (`app.lilith.Lilith.jetzt.*`).
+- **Live Activity:** Ab 20 Fotos per Hand erscheint der Fortschritt auf dem Sperrbildschirm und in der Dynamic Island (eigene Widget-Erweiterung `LilithWidgets`, gemeinsames Modul `LiveAktivitaet`). Höchstens alle 1,5 Sekunden aktualisiert, nach dem Ende noch eine Minute sichtbar. Zum Ansehen: `-LilithLiveVorschau YES`.
+- **Hilfeseite:** „So funktioniert das Backup“ steht in den Backup-Einstellungen (seit Etappe 3).
+- **Foto öffnen ohne Zoom:** Der Zoom aus der Kachel blieb auf dem iPhone manchmal auf halbem Weg stehen. Jetzt blendet die Detailansicht schnell ein (0,18 s), und bis das Bild da ist, zeigt sie einen Lade-Mond statt einer leeren Fläche.
+- **Videoplayer:** Apples voller Player (`AVPlayerViewController`) mit Vollbild, Bild-in-Bild, AirPlay und Geschwindigkeit. Er liegt zwischen den eigenen Leisten, damit sich die Bedienelemente nicht überdecken. Bis das erste Bild des Videos da ist, ist die Vorschau zu sehen.
+- **Ladebildschirm beim Start:** Statt eines weißen Bildschirms zeigt iOS einen Nachthimmel mit dem Lilith-Mond (Asset `StartMond`, Farbe `StartFarbe`). Die App übernimmt genau dieses Bild, lässt den Mond zunehmen und „Lilith“ erscheinen, bis die Bibliothek geladen ist (höchstens 5 Sekunden), und blendet dann über.
+
+**Nicht geprüft:** „Jetzt sichern“ und die Läufe im Hintergrund brauchen ein echtes Gerät mit iOS 26.
+
+## 13. Redesign: Fotos zuerst, Liquid Glass maßvoll (12.11.2026)
+
+Plan: `docs/REDESIGN-PLAN.md`. Vorbild: Apples Fotos-App mit Liquid Glass, ohne es zu überladen.
+
+- **Schrift:** nur noch SF mit den Textstilen des Systems. Die Serife (New York) bei Monaten, Alben, Suche und Anmeldung ist weg.
+- **Farbe:** Flächen und Text kommen vom System. Nachtrose (hell #9E2A50, dunkel #E8799A) nur noch für gewählten Tab, Auswahl, Favorit und Hauptknopf. Symbole in Leisten sind einfarbig, Listen-Symbole grau, Schalter grün wie im System. Mondlicht nur für den Mond, auf Weiß kräftiger (#A8843E, 3,5 : 1).
+- **„Fotos“ statt „Bibliothek“:** Der Tab heißt „Fotos“. Ein großer Titel fehlt bewusst: Der Tab sagt schon, wo man ist. Oben links steht stattdessen, was man sieht: Monat, Ort und Anzahl als Glas-Kapsel in derselben Reihe wie die Leiste rechts (im Auswahl-Modus die Anzahl der ausgewählten Fotos).
+- **Fotos unter den Leisten:** Das Raster beginnt ganz oben und läuft unter Statusleiste, Leiste und Tab-Leiste durch. Ein weicher Verlauf oben hält die Leiste lesbar. Die grauen Monats-Bänder sind weg, Monate gehen mit derselben 2-pt-Fuge ineinander über.
+- **Liquid Glass (ab iOS 26, sonst Material):** Leiste, Tab-Leiste, Monats-Kapsel, Knöpfe der Fotoansicht (klares Glas), Upload-Anzeige, Auswahl-Leiste, Offline-Hinweis. Bewusst ohne Glas: Scrubber, Listen, Karten, Album-Kacheln.
+- **Ecken:** Album-Kacheln 10, Karten 12.
+- **Reihenfolge wie in Apples Fotos-App (iPhone/iPad):** Das Neueste steht unten rechts, nach oben scrollt man in die Vergangenheit. Umgesetzt durch Drehen der Sammlung um 180° (die Zellen werden zurückgedreht), die Daten und Indizes bleiben unverändert. Die App öffnet ganz unten, solange man nicht selbst gescrollt hat. Scrubber und „Zum neuesten Monat“ springen ganz nach unten. Suchergebnisse bleiben von oben nach unten (Relevanz). „Ziehen zum Aktualisieren“ entfällt dort, neu laden geht über das Menü.
+- **Pille oben links:** nur das Datum des Fotos am Rand (Tag, Monat, Jahr, z. B. „10. November 2026“), kein Ort, keine Anzahl. Exakt so hoch (44 pt) und auf derselben Höhe wie die Leiste rechts. Ganz unten zeigt sie die Gesamtzahl („3.571 Objekte“).
+- **Tab-Leiste (iPhone):** wie in Apples Fotos-App: „Fotos“ und „Alben“ zusammen links, die Suche als eigener runder Knopf rechts (`tabViewSearchActivation(.searchTabSelection)`). In „Fotos“ verschwindet sie beim Scrollen in beide Richtungen und kommt nach 3 Sekunden Stillstand wieder. iPad und Mac behalten die Seitenleiste.
+- **Ansicht-Menü** mit Apples Filtersymbol (`line.3.horizontal.decrease`) statt drei Punkten.

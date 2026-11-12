@@ -22,7 +22,7 @@ struct KontoKnopf: View {
                 .padding(backup?.aktiv == true ? 4 : 0)
                 .overlay {
                     if let backup, backup.aktiv {
-                        MondRing(anteil: backup.uebersicht.anteil, fehler: backup.uebersicht.fehler > 0, breite: 2)
+                        MondRing(anteil: backup.uebersicht.anteil, fehler: backup.uebersicht.fehler > 0, breite: 2.5)
                     }
                 }
                 .overlay(alignment: .bottomTrailing) {
@@ -92,6 +92,7 @@ struct MondRing: View {
 /// Abschnitt „Backup“ im Konto: Einladung zum Einschalten oder Statuskarte.
 struct BackupKarte: View {
     let backup: BackupDienst
+    var uploads: UploadWarteschlange?
     @Environment(\.openURL) private var openURL
 
     private var geraet: String { UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone" }
@@ -154,18 +155,18 @@ struct BackupKarte: View {
                 Button("Auswahl ändern") { aendereAuswahl() }
             }
         }
-        if backup.uebersicht.fehler > 0 {
-            Button {
-                backup.wiederholeFehler()
+        if backup.uebersicht.fehler > 0 || backup.uebersicht.uebersprungen > 0 {
+            NavigationLink {
+                FehlerListeView(uploads: uploads, backup: backup)
             } label: {
-                Label("\(backup.uebersicht.fehler) nicht gesichert – erneut versuchen", systemImage: "exclamationmark.circle")
+                if backup.uebersicht.fehler > 0 {
+                    Label("\(backup.uebersicht.fehler) nicht gesichert", systemImage: "exclamationmark.circle")
+                        .foregroundStyle(.red)
+                } else {
+                    Label("\(backup.uebersicht.uebersprungen) übersprungen", systemImage: "icloud.slash")
+                        .foregroundStyle(.secondary)
+                }
             }
-            .tint(.red)
-        }
-        if backup.uebersicht.uebersprungen > 0 {
-            Label("\(backup.uebersicht.uebersprungen) übersprungen (meist: Original nur in iCloud)", systemImage: "icloud")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
         }
         if case .halt = backup.phase, backup.zugriff == .verweigert {
             Button("Einstellungen öffnen") { oeffneEinstellungen() }
@@ -180,8 +181,16 @@ struct BackupKarte: View {
         } label: {
             LabeledContent("Einstellungen", value: backup.einstellungen.nurWLAN ? "Nur WLAN" : "WLAN und Mobilfunk")
         }
-        Button("Jetzt prüfen") { backup.starte() }
-            .disabled(backup.laeuft)
+        if #available(iOS 26, *) {
+            // Läuft weiter, wenn du die App verlässt. iOS zeigt den Fortschritt an.
+            Button("Jetzt sichern") {
+                if !BackupZentrale.shared.jetztSichern() { backup.starte() }
+            }
+            .disabled(BackupZentrale.shared.jetztAktiv)
+        } else {
+            Button("Jetzt prüfen") { backup.starte() }
+                .disabled(backup.laeuft)
+        }
         Button("Backup ausschalten", role: .destructive) { backup.ausschalten() }
     }
 
@@ -253,6 +262,7 @@ struct AlbenAuswahlView: View {
             Section {
                 Toggle("Alben auch auf dem Server anlegen", isOn: Binding(
                     get: { backup.serverAlben }, set: { backup.setze(serverAlben: $0) }))
+                    .tint(LilithColor.schalter)
             } footer: {
                 Text("Gesicherte Fotos aus deinen gewählten Alben landen auf dem Server im Album mit demselben Namen.")
             }
@@ -322,13 +332,17 @@ struct BackupEinstellungenView: View {
         Form {
             Section {
                 Toggle("Nur über WLAN", isOn: $e.nurWLAN)
+                    .tint(LilithColor.schalter)
                 Toggle("Nur beim Laden", isOn: $e.nurBeimLaden)
+                    .tint(LilithColor.schalter)
             } footer: {
                 Text("Ohne WLAN vergleicht Lilith nur mit dem Server (wenige Daten) und lädt erst im WLAN hoch.")
             }
             Section {
                 Toggle("Videos sichern", isOn: $e.videos)
+                    .tint(LilithColor.schalter)
                 Toggle("Originale aus iCloud laden", isOn: $e.iCloud)
+                    .tint(LilithColor.schalter)
             } footer: {
                 Text("Bei „iPhone-Speicher optimieren“ liegen manche Originale nur in iCloud. Lilith lädt sie dann einzeln und sichert sie. Ist weniger als 1 GB frei, hält das Backup an.")
             }

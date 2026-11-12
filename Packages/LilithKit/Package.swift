@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "DesignSystem", targets: ["DesignSystem"]),
         .library(name: "Networking", targets: ["Networking"]),
         .library(name: "AppFeature", targets: ["AppFeature"]),
+        .library(name: "LiveAktivitaet", targets: ["LiveAktivitaet"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.0"),
@@ -48,7 +49,9 @@ let package = Package(
         .target(name: "Persistence", dependencies: [.product(name: "GRDB", package: "GRDB.swift")]),
         // Hochladen: Warteschlange, Prüfsummen, Duplikat-Prüfung.
         .target(name: "Backup", dependencies: ["Networking", "Persistence"]),
-        .target(name: "AppFeature", dependencies: ["DesignSystem", "Networking", "TimelineGrid", "Backup"]),
+        // Gemeinsam für App und Widget-Erweiterung (Live Activity).
+        .target(name: "LiveAktivitaet"),
+        .target(name: "AppFeature", dependencies: ["DesignSystem", "Networking", "TimelineGrid", "Backup", "LiveAktivitaet"]),
         .testTarget(
             name: "BackupTests",
             dependencies: [

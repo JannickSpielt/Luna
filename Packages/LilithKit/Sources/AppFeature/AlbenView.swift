@@ -34,6 +34,7 @@ struct AlbenView: View {
                 if kontext.client != nil {
                     ToolbarItem(placement: .primaryAction) {
                         Button("Neues Album", systemImage: "plus") { neuerName = ""; neuesAlbum = true }
+                            .tint(.primary)
                     }
                 }
             }
@@ -65,13 +66,13 @@ struct AlbenView: View {
                 sammlung("Papierkorb", "trash", .papierkorb)
             }
         }
-        .background(LilithColor.flaeche, in: .rect(cornerRadius: 16))
+        .background(LilithColor.flaeche, in: .rect(cornerRadius: 12))
     }
 
     private func sammlung(_ titel: String, _ symbol: String, _ filter: TimelineFilter) -> some View {
         NavigationLink(value: TimelineZiel(titel: titel, filter: filter)) {
             HStack(spacing: 14) {
-                Image(systemName: symbol).foregroundStyle(LilithColor.nachtrose).frame(width: 24)
+                Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 24)
                 Text(titel).foregroundStyle(LilithColor.text)
                 Spacer()
                 Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(LilithColor.textLeise)
@@ -98,7 +99,7 @@ struct AlbenView: View {
             }
         } else {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Meine Alben").font(.system(.title3, design: .serif, weight: .semibold))
+                Text("Meine Alben").font(.title2.bold())
                 LazyVGrid(columns: [SwiftUI.GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 18) {
                     ForEach(alben) { album in
                         NavigationLink(value: TimelineZiel(titel: album.name, filter: .album(album.id))) {
@@ -147,7 +148,7 @@ struct AlbumKarte: View {
         VStack(alignment: .leading, spacing: 8) {
             VorschauBild(client: client, assetId: album.coverAssetId)
                 .aspectRatio(1, contentMode: .fit)
-                .clipShape(.rect(cornerRadius: 16))
+                .clipShape(.rect(cornerRadius: 10))
                 .overlay(alignment: .topTrailing) {
                     if album.geteilt {
                         Text("Geteilt")

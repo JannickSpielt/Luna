@@ -95,10 +95,13 @@ public protocol TimelineQuelle: AnyObject {
     func ladeOriginal(_ item: GridItem) async throws -> URL
     /// Vorschaubild für Fotos, die nur auf dem Gerät liegen.
     func lokalesBild(fuer item: GridItem, pixel: CGFloat) async -> CGImage?
+    /// Aufnahmedatum eines Eintrags, `nil` wenn unbekannt oder noch nicht geladen.
+    func datum(section: Int, index: Int) -> Date?
 }
 
 extension TimelineQuelle {
     public func lokalesBild(fuer item: GridItem, pixel: CGFloat) async -> CGImage? { nil }
+    public func datum(section: Int, index: Int) -> Date? { nil }
 }
 
 extension TimelineQuelle {

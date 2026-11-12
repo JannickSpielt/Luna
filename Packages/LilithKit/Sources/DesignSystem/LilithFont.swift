@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// Schriften: Serif (New York) für große Titel, SF Pro für alles andere.
-/// Beide skalieren mit Dynamic Type.
+/// Schriften: nur SF mit den Textstilen des Systems (Dynamic Type). Keine Serife:
+/// Lilith ist eine Foto-App, die Schrift soll leise sein.
 public enum LilithFont {
     /// Großer Bildschirmtitel, z. B. „Bibliothek“.
-    public static let titel = Font.system(.largeTitle, design: .serif, weight: .semibold)
+    public static let titel = Font.largeTitle.bold()
     /// Abschnittstitel, z. B. „Oktober 2026“.
-    public static let abschnitt = Font.system(.title3, design: .serif, weight: .semibold)
+    public static let abschnitt = Font.headline
     /// Albumnamen und Kartentitel.
-    public static let karte = Font.system(.headline, design: .serif, weight: .semibold)
+    public static let karte = Font.subheadline.weight(.medium)
 }

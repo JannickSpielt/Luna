@@ -31,10 +31,7 @@ public struct RootView: View {
         Group {
             switch session.phase {
             case .startet:
-                MondSymbol(phase: 0.6)
-                    .frame(width: 64, height: 64)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(LilithColor.hintergrund.ignoresSafeArea())
+                StartBildschirm()
             case .abgemeldet:
                 OnboardingView()
             case .angemeldet(let account):
@@ -60,6 +57,9 @@ struct HauptView: View {
     @State private var demo: BeispielQuelle?
     @State private var kontext: BibliothekKontext?
     @Environment(\.scenePhase) private var szene
+    @State private var zeigeVollmond = false
+    /// Der Ladebildschirm bleibt, bis die Bibliothek das erste Mal geladen ist.
+    @State private var startVorbei = false
 
     private var quelle: TimelineQuelle? { timeline ?? demo }
 
@@ -71,6 +71,45 @@ struct HauptView: View {
             tabs
                 .environment(kontext)
                 .overlay { DetailEbene(kontext: kontext) }
+                .overlay {
+                    if !startVorbei {
+                        StartBildschirm().transition(.opacity)
+                    }
+                }
+                .task {
+                    // Höchstens 5 Sekunden: Ist der Server langsam, zeigt die Bibliothek selbst an, dass sie lädt.
+                    let start = Date.now
+                    while timeline?.zustand == .laedt, Date.now.timeIntervalSince(start) < 5 {
+                        try? await Task.sleep(for: .milliseconds(100))
+                    }
+                    withAnimation(.easeOut(duration: 0.45)) { startVorbei = true }
+                }
+                .overlay {
+                    if zeigeVollmond {
+                        VollmondMoment { withAnimation(.easeIn(duration: 0.4)) { zeigeVollmond = false } }
+                            .transition(.opacity)
+                    }
+                }
+                #if DEBUG
+                .onAppear {
+                    // Zum Ansehen: „-LilithVollmond YES“ zeigt den Moment sofort.
+                    if UserDefaults.standard.bool(forKey: "LilithVollmond") { zeigeVollmond = true }
+                    #if os(iOS)
+                    if UserDefaults.standard.bool(forKey: "LilithLiveVorschau") { UploadLiveSteuerung.shared.zeigeVorschau() }
+                    #endif
+                }
+                #endif
+                #if os(iOS)
+                .onChange(of: kontext.uploads?.stand) { _, neu in
+                    if let neu { UploadLiveSteuerung.shared.aktualisiere(neu) }
+                }
+                #endif
+                .onChange(of: kontext.backup?.allesGesichert ?? false) { _, fertig in
+                    // Nur einmal: nach dem ersten kompletten Backup.
+                    guard fertig, let backup = kontext.backup, !backup.vollmondGezeigt else { return }
+                    backup.vollmondGezeigt = true
+                    withAnimation(.easeOut(duration: 0.4)) { zeigeVollmond = true }
+                }
                 .onChange(of: szene) { _, neu in
                     switch neu {
                     case .active:
@@ -90,7 +129,7 @@ struct HauptView: View {
 
     private var tabs: some View {
         TabView(selection: $auswahl) {
-            Tab("Bibliothek", systemImage: "square.grid.2x2", value: Bereich.bibliothek) {
+            Tab("Fotos", systemImage: "photo.on.rectangle", value: Bereich.bibliothek) {
                 if let quelle {
                     BibliothekView(quelle: quelle, store: timeline, zeigeKonto: $zeigeKonto,
                                    kontoBuchstabe: String(account.user.name.prefix(1)).uppercased())
@@ -106,15 +145,15 @@ struct HauptView: View {
             Tab("Alben", systemImage: "rectangle.stack", value: Bereich.alben) {
                 AlbenView()
             }
-            Tab(value: Bereich.suche, role: .search) {
+            Tab("Suchen", systemImage: "magnifyingglass", value: Bereich.suche, role: .search) {
                 SucheView()
             }
         }
-        .tabViewStyle(.sidebarAdaptable)
+        .modifier(TabStil())
         .background {
             // Unsichtbare Knöpfe nur für Tastenkürzel (Mac, iPad mit Tastatur).
             Group {
-                Button("Bibliothek") { auswahl = .bibliothek }.keyboardShortcut("1", modifiers: .command)
+                Button("Fotos") { auswahl = .bibliothek }.keyboardShortcut("1", modifiers: .command)
                 Button("Alben") { auswahl = .alben }.keyboardShortcut("2", modifiers: .command)
                 Button("Suche") { auswahl = .suche }.keyboardShortcut("3", modifiers: .command)
                 Button("Suchen") { auswahl = .suche }.keyboardShortcut("f", modifiers: .command)
@@ -123,7 +162,7 @@ struct HauptView: View {
             .accessibilityHidden(true)
         }
         .sheet(isPresented: $zeigeKonto) {
-            KontoView(account: account, backup: kontext?.backup, client: session.client)
+            KontoView(account: account, backup: kontext?.backup, uploads: kontext?.uploads, client: session.client)
         }
     }
 
@@ -228,27 +267,25 @@ struct Platzhalter: View {
 /// Die Detailansicht über dem ganzen Fenster, mit Zoom aus der angetippten Kachel.
 struct DetailEbene: View {
     let kontext: BibliothekKontext
-    @Environment(\.accessibilityReduceMotion) private var wenigBewegung
 
     var body: some View {
         // Außen: Abstände zu Notch und Home-Leiste messen. Innen: von Anfang an den ganzen Bildschirm nutzen.
-        // Sonst wächst die Ansicht erst nach dem Zoom auf volle Größe und das Foto springt (es ist zentriert).
         GeometryReader { aussen in
             let rand = aussen.safeAreaInsets
-            GeometryReader { geo in
+            ZStack {
                 if let d = kontext.detail {
-                    let flaeche = geo.frame(in: .global)
+                    // Erst sofort ein schwarzer Grund mit Ladeanzeige, dann das Foto. Kein Zoom aus der Kachel mehr:
+                    // Der blieb auf manchen Geräten auf halbem Weg stehen.
                     DetailView(quelle: d.quelle, store: d.store, start: d.start, loeschen: d.loeschen, schliessen: d.schliessen)
                         .safeAreaPadding(rand)
                         .environment(kontext)
-                        .transition(wenigBewegung ? .opacity : .scale(scale: 0.15, anchor: UnitPoint(
-                            x: (d.rahmen.midX - flaeche.minX) / max(flaeche.width, 1),
-                            y: (d.rahmen.midY - flaeche.minY) / max(flaeche.height, 1))).combined(with: .opacity))
+                        .transition(.opacity)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .ignoresSafeArea()
         }
-        .animation(wenigBewegung ? .easeInOut(duration: 0.2) : .spring(duration: 0.32), value: kontext.detail)
+        .animation(.easeOut(duration: 0.18), value: kontext.detail)
     }
 }
 
@@ -268,5 +305,26 @@ extension LokalerEintrag {
         self.init(item: GridItem(id: GridItem.lokalPraefix + foto.lokaleId, farbe: 0x8A8A8E,
                                  art: foto.istVideo ? .video : .foto, favorit: false, dauer: 0, lokal: lokal),
                   erstellt: foto.erstellt)
+    }
+}
+
+/// iPhone: normale Tab-Leiste, damit die Suche wie in Apples Fotos-App als eigener runder Knopf rechts steht.
+/// iPad und Mac: Seitenleiste.
+private struct TabStil: ViewModifier {
+    func body(content: Content) -> some View {
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            if #available(iOS 26, *) {
+                // Damit steht die Suche wie in Apples Fotos-App als eigener runder Knopf rechts.
+                content.tabViewStyle(.automatic).tabViewSearchActivation(.searchTabSelection)
+            } else {
+                content.tabViewStyle(.automatic)
+            }
+        } else {
+            content.tabViewStyle(.sidebarAdaptable)
+        }
+        #else
+        content.tabViewStyle(.sidebarAdaptable)
+        #endif
     }
 }

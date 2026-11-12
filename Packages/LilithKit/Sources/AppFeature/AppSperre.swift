@@ -41,7 +41,7 @@ struct SperrBildschirm: View {
             LilithColor.hintergrund.ignoresSafeArea()
             VStack(spacing: 18) {
                 MondSymbol(phase: gesperrt ? 0.15 : 0.6).frame(width: 72, height: 72)
-                Text("Lilith").font(.system(.largeTitle, design: .serif, weight: .semibold))
+                Text("Lilith").font(.largeTitle.bold())
                 if gesperrt {
                     Text("Deine Fotos sind gesperrt.").foregroundStyle(LilithColor.textLeise)
                     Button(action: entsperren) {

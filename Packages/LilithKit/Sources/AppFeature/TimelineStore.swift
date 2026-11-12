@@ -29,6 +29,8 @@ final class TimelineStore: TimelineQuelle {
     @ObservationIgnored private var monate: [TimelineMonat?] = []
     /// Nicht gesicherte Fotos vom Gerät je Abschnitt, neueste zuerst.
     @ObservationIgnored private var lokalJeMonat: [[LokalerEintrag]] = []
+    /// Aufnahmedatum je Foto, für das Datum oben links.
+    @ObservationIgnored private var datumJeId: [String: Date] = [:]
     /// Liefert die nicht gesicherten Fotos vom Gerät (nur Bibliothek, nur wenn das Backup an ist).
     @ObservationIgnored var lokaleFotos: (() -> [LokalerEintrag])?
     /// Lädt Vorschaubilder vom Gerät.
@@ -74,6 +76,7 @@ final class TimelineStore: TimelineQuelle {
             // Monate nur mit Fotos vom Gerät sind sofort fertig.
             for (i, m) in monatsliste.enumerated() where m.server == nil {
                 inhalte[i] = m.lokal.map(\.item)
+                for l in m.lokal { datumJeId[l.item.id] = l.erstellt }
             }
             gesamt = sections.reduce(0) { $0 + $1.anzahl }
             zustand = sections.isEmpty ? .leer : .bereit
@@ -128,6 +131,10 @@ final class TimelineStore: TimelineQuelle {
         return liste[index]
     }
 
+    func datum(section: Int, index: Int) -> Date? {
+        item(section: section, index: index).flatMap { datumJeId[$0.id] }
+    }
+
     /// Monate in der Nähe des Sichtbaren (±1) werden gebraucht, alles andere wurde nur überflogen.
     private func wirdGebraucht(_ section: Int) -> Bool {
         sichtbareMonate.isEmpty || sichtbareMonate.contains { abs($0 - section) <= 1 }
@@ -167,6 +174,8 @@ final class TimelineStore: TimelineQuelle {
                 guard section < monate.count, monate[section] == monat else { return }
                 let lokal = section < lokalJeMonat.count ? lokalJeMonat[section] : []
                 inhalte[section] = Self.mische(assets, lokal: lokal)
+                for a in assets { if let d = a.erstellt { datumJeId[a.id] = d } }
+                for l in lokal { datumJeId[l.item.id] = l.erstellt }
                 let alteAnzahl = sections[section].anzahl
                 let neueAnzahl = assets.count + lokal.count
                 sections[section].anzahl = neueAnzahl
