@@ -1,10 +1,12 @@
 import SwiftUI
 import DesignSystem
 import Networking
+import Backup
 
 /// Konto und Server: wer angemeldet ist, welcher Server, Abmelden.
 struct KontoView: View {
     let account: Account
+    var backup: BackupDienst?
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
     @State private var frageAbmelden = false
@@ -27,6 +29,10 @@ struct KontoView: View {
                     }
                     .padding(.vertical, 4)
                 }
+
+                #if os(iOS)
+                if let backup { BackupKarte(backup: backup) }
+                #endif
 
                 Section("Server") {
                     LabeledContent("Adresse", value: account.server.address.description)

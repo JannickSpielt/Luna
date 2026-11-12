@@ -48,6 +48,27 @@ public final class Datenbank: Sendable {
             }
             try db.create(index: "upload_auftrag_zustand", on: "upload_auftrag", columns: ["konto", "zustand"])
         }
+        m.registerMigration("v2-mediathek") { db in
+            // Welches Foto der Mediathek zu welchem Auftrag gehört, und das Video eines Live Photos.
+            try db.alter(table: "upload_auftrag") { t in
+                t.add(column: "lokale_id", .text)
+                t.add(column: "live_video_datei", .text)
+            }
+            // Ein Eintrag pro Foto oder Video der Mediathek: was Lilith darüber weiß.
+            try db.create(table: "lokales_foto") { t in
+                t.column("konto", .text).notNull()
+                t.column("lokale_id", .text).notNull()
+                t.column("erstellt", .datetime).notNull()
+                t.column("geaendert", .datetime).notNull()
+                t.column("ist_video", .boolean).notNull().defaults(to: false)
+                t.column("pruefsumme", .text)
+                t.column("zustand", .text).notNull()
+                t.column("remote_id", .text)
+                t.column("grund", .text)
+                t.primaryKey(["konto", "lokale_id"])
+            }
+            try db.create(index: "lokales_foto_zustand", on: "lokales_foto", columns: ["konto", "zustand"])
+        }
         return m
     }
 }

@@ -106,3 +106,18 @@ Plan: `docs/BACKUP-PLAN.md`.
 - **Fotos nur in iCloud:** Die Foto-Auswahl liefert sie ggf. nicht. Lilith meldet dann, wie viele fehlen.
 
 **Offen:** Live Photos werden über die Foto-Auswahl noch als einzelnes Foto hochgeladen (Live-Paar kommt mit Etappe 2). Ablegen auf ein Album in der Mac-Seitenleiste. Live Activity.
+
+## 9. Backup bei geöffneter App (Backup-Etappe 2, 12.11.2026)
+
+- **Nur iPhone und iPad.** Auf dem Mac bleibt es beim Hochladen per Hand (Entscheidung im Backup-Plan).
+- **Ablauf:** Mediathek lesen (nur Kopfdaten) → mit der Datenbank abgleichen → Prüfsumme pro Foto → beim Server nachfragen (100 auf einmal) → nur Fehlendes exportieren und hochladen. Was der Server schon hat, wird gar nicht erst exportiert.
+- **Prüfsumme der aktuellen Version:** Bei bearbeiteten Fotos die bearbeitete Datei, sonst das Original, als SHA1 (Base64) stückweise aus PhotoKit. Wird ein Foto später bearbeitet, prüft Lilith es neu.
+- **Abgleich statt Änderungsabfrage:** Lilith liest bei jedem Durchgang die Liste aller Fotos (auch bei großen Mediatheken nur Sekunden) und vergleicht mit der Datenbank. Das ist einfacher und robuster als iOS' Änderungsabfrage. Die kommt erst, falls es zu langsam wird.
+- **Blöcke von 20:** Es werden höchstens 20 Fotos auf einmal exportiert. So liegen nie viele Kopien auf dem Gerät.
+- **Live Photos:** Das Video geht zuerst versteckt hoch, danach das Foto mit Verweis darauf, wie bei der offiziellen Immich-App.
+- **Nur in iCloud:** Originale, die nicht auf dem Gerät liegen, werden in dieser Etappe übersprungen und gezählt. Laden aus iCloud kommt mit Etappe 3.
+- **Wann:** Beim Öffnen der App, beim Zurückkehren in die App und mit „Jetzt prüfen“. Geht die App in den Hintergrund, hält das Backup an.
+- **Anzeige:** Konto-Kreis mit Mond-Ring (füllt sich mit dem Fortschritt, Wolke = angehalten, roter Rand = Fehler). Im Konto eine Statuskarte: „8.412 von 9.030 gesichert“, Statuszeile mit Grund, Fehler erneut versuchen, „Auswahl ändern“ bei eingeschränktem Zugriff.
+- **Prüfen ohne echten Upload:** Mit dem Startargument `-LilithBackupVorschau YES` zeigt die App feste Beispielzahlen.
+
+**Offen:** Hinweis-Banner in der Bibliothek („Fotos von diesem iPhone sichern?“), Einstellungen (WLAN, Laden, Videos, Alben) und Hintergrund kommen mit Etappe 3, die Fehlerliste mit Etappe 4.

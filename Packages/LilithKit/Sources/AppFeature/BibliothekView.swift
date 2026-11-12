@@ -258,15 +258,7 @@ struct TimelineInhalt: View {
                 Label("Ansicht", systemImage: "slider.horizontal.3")
             }
             if let konto, !auswahlModus {
-                Button(action: konto.oeffnen) {
-                    Text(konto.buchstabe)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 30, height: 30)
-                        .background(LilithColor.nachtroseFill, in: .circle)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Konto und Server")
+                KontoKnopf(buchstabe: konto.buchstabe, backup: kontext.backup, oeffnen: konto.oeffnen)
             }
         }
     }

@@ -23,10 +23,14 @@ final class BibliothekKontext {
 
     /// Hochladen. `nil` im Demo-Modus oder wenn die Datenbank nicht geöffnet werden konnte.
     let uploads: UploadWarteschlange?
+    /// Automatisches Backup (nur iPhone/iPad).
+    let backup: BackupDienst?
 
-    init(client: ImmichClient?, papierkorbAktiv: Bool, smartSearch: Bool = false, uploads: UploadWarteschlange? = nil) {
+    init(client: ImmichClient?, papierkorbAktiv: Bool, smartSearch: Bool = false, uploads: UploadWarteschlange? = nil,
+         backup: BackupDienst? = nil) {
         self.client = client
         self.uploads = uploads
+        self.backup = backup
         self.papierkorbAktiv = papierkorbAktiv
         self.smartSearch = smartSearch
     }

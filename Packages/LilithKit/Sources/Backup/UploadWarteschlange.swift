@@ -35,6 +35,10 @@ public final class UploadWarteschlange {
     @ObservationIgnored private let ordner: URL
     @ObservationIgnored private var arbeit: Task<Void, Never>?
     @ObservationIgnored private let maxVersuche = 5
+    @ObservationIgnored private var warter: [CheckedContinuation<Void, Never>] = []
+
+    /// Ordner für Upload-Dateien. Das Backup legt seine Exporte auch hier ab.
+    public var arbeitsordner: URL { ordner }
 
     public init(client: ImmichClient, db: Datenbank, konto: String, ordner: URL? = nil) {
         self.client = client
@@ -92,6 +96,25 @@ public final class UploadWarteschlange {
         return auftraege.count
     }
 
+    /// Fertig vorbereitete Aufträge aufnehmen (die Dateien liegen schon im Arbeitsordner).
+    public func reiheEin(_ auftraege: [UploadAuftrag]) throws {
+        guard !auftraege.isEmpty else { return }
+        let gespeichert = try db.speichere(auftraege)
+        for a in gespeichert {
+            if let lokal = a.lokaleId { try? db.setzeLokal(konto: konto, lokaleId: lokal, zustand: .eingereiht) }
+        }
+        if !stand.laeuft { stand = Stand() }
+        stand.gesamt += gespeichert.count
+        halt = nil
+        arbeite()
+    }
+
+    /// Wartet, bis die Warteschlange nichts mehr zu tun hat (oder angehalten hat).
+    public func warteBisFertig() async {
+        guard arbeit != nil else { return }
+        await withCheckedContinuation { warter.append($0) }
+    }
+
     /// Gescheiterte Aufträge noch einmal versuchen.
     public func wiederhole() {
         let gescheitert = (try? db.auftraege(konto: konto, zustand: .fehler)) ?? []
@@ -110,6 +133,10 @@ public final class UploadWarteschlange {
     /// Gescheiterte Aufträge verwerfen (Kopien werden gelöscht).
     public func verwirfFehler() {
         for a in (try? db.auftraege(konto: konto, zustand: .fehler)) ?? [] {
+            if let lokal = a.lokaleId {
+                // Nicht beim nächsten Durchgang wieder versuchen.
+                try? db.setzeLokal(konto: konto, lokaleId: lokal, zustand: .uebersprungen, grund: "Verworfen")
+            }
             entferneKopie(a)
             try? db.entferne(a)
         }
@@ -136,6 +163,9 @@ public final class UploadWarteschlange {
             stand.anteil = 0
             arbeit = nil
             onDurchgangFertig?()
+            let wartende = warter
+            warter = []
+            for w in wartende { w.resume() }
         }
     }
 
@@ -163,8 +193,13 @@ public final class UploadWarteschlange {
             case .abgelehnt:
                 throw ImmichError.formatNichtUnterstuetzt
             case .hochladen:
+                // Live Photo: zuerst das Video (versteckt), dann das Foto mit Verweis darauf.
+                var videoId: String?
+                if let live = a.liveVideoDatei {
+                    videoId = try await ladeLiveVideoHoch(URL(fileURLWithPath: live), fuer: a)
+                }
                 let upload = UploadDatei(datei: datei, dateiname: a.dateiname, erstellt: a.erstellt, geaendert: a.geaendert,
-                                         dauerMs: a.dauerMs, pruefsumme: a.pruefsumme)
+                                         dauerMs: a.dauerMs, livePhotoVideoId: videoId, pruefsumme: a.pruefsumme)
                 let ergebnis = try await client.ladeHoch(upload, arbeitsordner: ordner) { anteil in
                     Task { @MainActor [weak self] in self?.stand.anteil = anteil }
                 }
@@ -178,6 +213,9 @@ public final class UploadWarteschlange {
             }
             a.fehler = nil
             try? db.aktualisiere(a)
+            if let lokal = a.lokaleId {
+                try? db.setzeLokal(konto: konto, lokaleId: lokal, zustand: .gesichert, remoteId: a.remoteId)
+            }
             entferneKopie(a)
             return true
         } catch {
@@ -215,7 +253,20 @@ public final class UploadWarteschlange {
         }
         stand.fehler += 1
         try? db.aktualisiere(a)
+        if let lokal = a.lokaleId {
+            try? db.setzeLokal(konto: konto, lokaleId: lokal, zustand: .fehler, grund: a.fehler)
+        }
         return true
+    }
+
+    /// Lädt das Video eines Live Photos versteckt hoch (oder findet es auf dem Server) und gibt seine ID zurück.
+    private func ladeLiveVideoHoch(_ video: URL, fuer a: UploadAuftrag) async throws -> String {
+        let summe = try await Task.detached(priority: .utility) { try Pruefsumme.sha1Base64(datei: video) }.value
+        let vorab = try await client.pruefeVorab([("live", summe)])["live"] ?? .hochladen
+        if case .vorhanden(let id, _) = vorab { return id }
+        let upload = UploadDatei(datei: video, dateiname: video.lastPathComponent, erstellt: a.erstellt, geaendert: a.geaendert,
+                                 versteckt: true, pruefsumme: summe)
+        return try await client.ladeHoch(upload, arbeitsordner: ordner) { _ in }.id
     }
 
     private func entferneKopie(_ a: UploadAuftrag) {

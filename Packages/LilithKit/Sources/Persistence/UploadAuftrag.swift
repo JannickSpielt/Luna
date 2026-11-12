@@ -39,19 +39,26 @@ public struct UploadAuftrag: Codable, Sendable, Hashable, Identifiable, Fetchabl
     public var fehler: String?
     public var remoteId: String?
     public var angelegt: Date
+    /// Kennung des Fotos in der Mediathek (automatisches Backup), sonst `nil`.
+    public var lokaleId: String?
+    /// Bei Live Photos: das zugehörige Video. Es wird zuerst (versteckt) hochgeladen.
+    public var liveVideoDatei: String?
 
     enum CodingKeys: String, CodingKey {
         case id, konto, quelle, datei, dateiname, erstellt, geaendert
         case dauerMs = "dauer_ms", istVideo = "ist_video", albumId = "album_id"
         case pruefsumme, zustand, versuche, fehler
         case remoteId = "remote_id", angelegt
+        case lokaleId = "lokale_id", liveVideoDatei = "live_video_datei"
     }
 
     public init(konto: String, quelle: String, datei: String, dateiname: String, erstellt: Date, geaendert: Date,
-                dauerMs: Int? = nil, istVideo: Bool = false, albumId: String? = nil) {
+                dauerMs: Int? = nil, istVideo: Bool = false, albumId: String? = nil,
+                lokaleId: String? = nil, liveVideoDatei: String? = nil) {
         self.konto = konto; self.quelle = quelle; self.datei = datei; self.dateiname = dateiname
         self.erstellt = erstellt; self.geaendert = geaendert; self.dauerMs = dauerMs; self.istVideo = istVideo
         self.albumId = albumId; self.zustand = .wartet; self.versuche = 0; self.angelegt = Date()
+        self.lokaleId = lokaleId; self.liveVideoDatei = liveVideoDatei
     }
 
     public mutating func didInsert(_ inserted: InsertionSuccess) {

@@ -57,6 +57,7 @@ struct HauptView: View {
     @State private var timeline: TimelineStore?
     @State private var demo: BeispielQuelle?
     @State private var kontext: BibliothekKontext?
+    @Environment(\.scenePhase) private var szene
 
     private var quelle: TimelineQuelle? { timeline ?? demo }
 
@@ -68,6 +69,18 @@ struct HauptView: View {
             tabs
                 .environment(kontext)
                 .overlay { DetailEbene(kontext: kontext) }
+                .onChange(of: szene) { _, neu in
+                    // Backup nur bei geöffneter App (Hintergrund kommt in Etappe 3).
+                    switch neu {
+                    case .active:
+                        kontext.backup?.aktualisiereZugriff()
+                        kontext.backup?.starte()
+                    case .background:
+                        kontext.backup?.halteAn()
+                    default:
+                        break
+                    }
+                }
         } else {
             Color.clear.onAppear(perform: richteEin)
         }
@@ -108,7 +121,7 @@ struct HauptView: View {
             .accessibilityHidden(true)
         }
         .sheet(isPresented: $zeigeKonto) {
-            KontoView(account: account)
+            KontoView(account: account, backup: kontext?.backup)
         }
     }
 
@@ -117,16 +130,29 @@ struct HauptView: View {
         let sitzung = session
         // Upload-Warteschlange mit eigener Datenbank. Schlägt das Öffnen fehl, gibt es eben keinen Upload.
         var uploads: UploadWarteschlange?
+        var backup: BackupDienst?
         if let client = session.client, let db = try? Datenbank.standard() {
-            uploads = UploadWarteschlange(client: client, db: db, konto: account.id)
+            let schlange = UploadWarteschlange(client: client, db: db, konto: account.id)
+            uploads = schlange
+            #if os(iOS)
+            // Auf dem Mac nur per Hand (Entscheidung im Backup-Plan).
+            backup = BackupDienst(client: client, db: db, konto: account.id, mediathek: FotoMediathek(), uploads: schlange)
+            #endif
         }
+        #if DEBUG && os(iOS)
+        if UserDefaults.standard.bool(forKey: "LilithBackupVorschau") {
+            backup = BackupDienst.vorschau(mediathek: FotoMediathek())
+        }
+        #endif
         let neu = BibliothekKontext(client: session.client, papierkorbAktiv: account.server.capabilities.trash,
-                                    smartSearch: account.server.capabilities.smartSearch, uploads: uploads)
+                                    smartSearch: account.server.capabilities.smartSearch, uploads: uploads, backup: backup)
+        backup?.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
         neu.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
         uploads?.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
         // Nach dem Hochladen alle Ansichten neu laden, damit die neuen Fotos erscheinen.
         uploads?.onDurchgangFertig = { [weak neu] in neu?.melde(von: nil) }
         uploads?.start()
+        backup?.starte()
         if let client = session.client {
             let store = TimelineStore(client: client)
             store.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
