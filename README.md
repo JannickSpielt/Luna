@@ -46,9 +46,17 @@ Luna baut keine eigene Cloud und ersetzt keinen Immich-Server. Die App nutzt des
 | **Backup** | Automatisch vom iPhone: im Hintergrund, nachts am Ladekabel, nur WLAN, Albenauswahl, iCloud-Originale, Live-Aktivität, Fehlerliste |
 | **Design** | Liquid Glass (iOS 26), Hell- und Dunkelmodus, Mond-Startbildschirm, Kirschrot als Akzent |
 
+## Herunterladen
+
+**Mac:** Die fertige App liegt unter [Releases](https://github.com/JannickSpielt/Luna/releases/latest) (`Luna-…-Mac.zip`). Entpacken, in „Programme“ ziehen und beim ersten Start mit Rechtsklick → „Öffnen“ starten, weil die App noch nicht von Apple beglaubigt ist.
+
+**iPhone und iPad:** Noch nicht als Download (App Store oder TestFlight fehlen). Mit dem Xcode-Projekt aus dem Release lässt sich Luna selbst aufs Gerät bringen.
+
+Neue Versionen findet Luna selbst: Einstellungen → „Über Luna“ → „Nach Updates suchen“.
+
 ## Projektstatus
 
-**Beta.** Luna läuft im Alltag auf iPhone, iPad und Mac und wird laufend verbessert. Eine öffentliche Version im App Store oder über TestFlight gibt es noch nicht.
+**Beta.** Luna läuft im Alltag auf iPhone, iPad und Mac und wird laufend verbessert. Die Mac-App gibt es unter Releases. Eine Version im App Store oder über TestFlight gibt es noch nicht.
 
 ## Entwicklungsplan
 
