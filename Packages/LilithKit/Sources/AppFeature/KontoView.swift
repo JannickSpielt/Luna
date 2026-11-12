@@ -71,6 +71,8 @@ struct KontoView: View {
                          : "Richte auf diesem Gerät zuerst einen Code oder \(Entsperren.methode) ein.")
                 }
 
+                UeberLunaAbschnitt()
+
                 Section {
                     Button("Abmelden", role: .destructive) { frageAbmelden = true }
                 }
