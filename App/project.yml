@@ -14,7 +14,7 @@ settings:
     SWIFT_APPROACHABLE_CONCURRENCY: YES
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "${LILITH_TEAM}"
     CODE_SIGN_STYLE: Automatic
 packages:
   LilithKit:
@@ -34,6 +34,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: app.lilith.Lilith
         PRODUCT_NAME: Lilith
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Info.plist
+        INFOPLIST_KEY_NSFaceIDUsageDescription: Lilith nutzt Face ID, um die App zu entsperren, wenn du die App-Sperre einschaltest.
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: Lilith verbindet sich mit deinem Immich-Server, auch wenn er in deinem Heimnetz steht.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         INFOPLIST_KEY_CFBundleDisplayName: Lilith

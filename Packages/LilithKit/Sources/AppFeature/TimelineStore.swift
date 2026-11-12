@@ -17,6 +17,8 @@ final class TimelineStore: TimelineQuelle {
 
     private(set) var zustand: Zustand = .laedt
     private(set) var gesamt = 0
+    /// Hinweis, wenn der Server gerade nicht erreichbar ist, aber schon Fotos geladen sind.
+    private(set) var hinweis: String?
 
     @ObservationIgnored private(set) var sections: [GridSection] = []
     @ObservationIgnored var onMonatGeladen: ((Int, Bool) -> Void)?
@@ -53,12 +55,13 @@ final class TimelineStore: TimelineQuelle {
             }
             gesamt = geladen.reduce(0) { $0 + $1.anzahl }
             zustand = geladen.isEmpty ? .leer : .bereit
+            hinweis = nil
             sichtbareMonate = []
             onAllesNeu?()
         } catch ImmichError.sitzungAbgelaufen {
             onSitzungAbgelaufen?()
         } catch {
-            zustand = .fehler(error.localizedDescription)
+            melde(error)
         }
     }
 
@@ -76,12 +79,22 @@ final class TimelineStore: TimelineQuelle {
                 untertitel: "beste Treffer zuerst", anzahl: treffer.count)]
             gesamt = treffer.count
             zustand = treffer.isEmpty ? .leer : .bereit
+            hinweis = nil
             sichtbareMonate = []
             onAllesNeu?()
         } catch ImmichError.sitzungAbgelaufen {
             onSitzungAbgelaufen?()
         } catch {
+            melde(error)
+        }
+    }
+
+    /// Sind schon Fotos da, bleiben sie sichtbar und es gibt nur einen Hinweis. Sonst eine Fehlerseite.
+    private func melde(_ error: any Error) {
+        if sections.isEmpty {
             zustand = .fehler(error.localizedDescription)
+        } else {
+            hinweis = error.localizedDescription
         }
     }
 

@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import Networking
+import TimelineGrid
 
 /// Was alle Ansichten der Bibliothek gemeinsam brauchen: die Verbindung zum Server
 /// und ein Zähler, der sich bei jeder Änderung erhöht, damit andere Ansichten neu laden.
@@ -16,6 +17,8 @@ final class BibliothekKontext {
     private(set) var stand = 0
     @ObservationIgnored private(set) weak var letzteQuelle: AnyObject?
     @ObservationIgnored var onSitzungAbgelaufen: (() -> Void)?
+    /// Das gerade geöffnete Foto. Die Detailansicht liegt über dem ganzen Fenster, nicht nur über einem Bereich.
+    var detail: DetailAnzeige?
 
     init(client: ImmichClient?, papierkorbAktiv: Bool, smartSearch: Bool = false) {
         self.client = client
@@ -32,4 +35,20 @@ final class BibliothekKontext {
     func pruefe(_ error: any Error) {
         if case ImmichError.sitzungAbgelaufen = error { onSitzungAbgelaufen?() }
     }
+}
+
+/// Alles, was die Detailansicht zum Öffnen braucht.
+struct DetailAnzeige: Identifiable {
+    let id = UUID()
+    let quelle: TimelineQuelle
+    let store: TimelineStore?
+    let start: DetailPosition
+    /// Rahmen der angetippten Kachel im Fenster, für den Zoom-Übergang.
+    let rahmen: CGRect
+    let loeschen: ((String) async -> Bool)?
+    let schliessen: (DetailPosition) -> Void
+}
+
+extension DetailAnzeige: Equatable {
+    static func == (a: DetailAnzeige, b: DetailAnzeige) -> Bool { a.id == b.id }
 }

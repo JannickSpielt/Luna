@@ -8,6 +8,7 @@ struct KontoView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
     @State private var frageAbmelden = false
+    @AppStorage(Entsperren.schluessel) private var sperreAn = false
 
     var body: some View {
         NavigationStack {
@@ -42,6 +43,26 @@ struct KontoView: View {
                     Faehigkeit("Karte", an: account.server.capabilities.map)
                     Faehigkeit("Papierkorb", an: account.server.capabilities.trash)
                     Faehigkeit("Texterkennung (OCR)", an: account.server.capabilities.ocr)
+                }
+
+                Section {
+                    Toggle("Mit \(Entsperren.methode) sperren", isOn: Binding(
+                        get: { sperreAn },
+                        set: { neu in
+                            // Beim Einschalten einmal prüfen, dass das Entsperren auch wirklich klappt.
+                            if neu {
+                                Task { if await Entsperren.pruefe(grund: "App-Sperre einschalten") { sperreAn = true } }
+                            } else {
+                                sperreAn = false
+                            }
+                        }))
+                    .disabled(!Entsperren.verfuegbar)
+                } header: {
+                    Text("Sicherheit")
+                } footer: {
+                    Text(Entsperren.verfuegbar
+                         ? "Lilith sperrt sich, sobald du die App verlässt."
+                         : "Richte auf diesem Gerät zuerst einen Code oder \(Entsperren.methode) ein.")
                 }
 
                 Section {

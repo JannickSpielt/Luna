@@ -83,3 +83,12 @@ Der Sprung ist entscheidend, weil Scrubber, „Heute vor X Jahren“ und Sucherg
 - **Quick Look:** Statt Apples Quick-Look-Fenster öffnet die Leertaste die eigene Detailansicht, weil die Fotos auf dem Server liegen und nicht als Datei auf dem Mac.
 
 **Offen:** Die Detailansicht deckt auf dem Mac die Seitenleiste nicht ab, und rechts erscheint ein schwarzer Rand. Fotos in Lilith hineinziehen (Upload) kommt mit dem Backup-Schritt. Pfeiltasten auf dem iPad mit Tastatur.
+
+## 7. Feinschliff (Schritt 9, 12.11.2026)
+
+- **Detailansicht über dem ganzen Fenster:** Sie liegt jetzt eine Ebene über der Tab- bzw. Seitenleiste. Damit deckt sie auf dem Mac auch die Seitenleiste ab, und der schwarze Rand rechts ist weg.
+- **Offline:** Lädt die Bibliothek nicht neu, weil der Server nicht antwortet, bleiben die schon geladenen Fotos sichtbar. Oben erscheint ein Hinweis mit „Erneut“. Eine Fehlerseite kommt nur, wenn noch gar nichts geladen war.
+- **App-Sperre:** In „Konto“ einschaltbar. Lilith sperrt sich beim Verlassen und entsperrt mit Face ID, Touch ID oder dem Gerätecode. Beim Einschalten wird einmal geprüft, ob das Entsperren klappt, damit man sich nicht aussperrt.
+- **Sichtschutz:** Auf iPhone und iPad zeigt der App-Umschalter ein neutrales Bild statt der Fotos (auch ohne App-Sperre).
+- **Bewegung reduzieren:** Ist es in den Bedienungshilfen eingeschaltet, blendet die Detailansicht nur ein statt zu zoomen, und der Mond beim Anmelden springt ohne Animation.
+- **TestFlight vorbereitet:** Berechtigungstexte, Datenschutz-Manifest, Verschlüsselungsangabe, Team-ID über `LILITH_TEAM`. Anleitung in `docs/TESTFLIGHT.md`.

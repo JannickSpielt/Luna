@@ -31,7 +31,6 @@ struct TimelineInhalt: View {
     @State private var zoom: GridZoom = Self.startZoom
     @State private var sprung: SprungAnfrage?
     @State private var scrollAnteil = 0.0
-    @State private var detail: DetailStart?
     @State private var auswahlModus = false
     @State private var auswahl: [String] = []
     @State private var auswahlStand = 0
@@ -40,12 +39,6 @@ struct TimelineInhalt: View {
     @State private var zeigeAlbumWahl = false
     @State private var fehler: String?
 
-    /// Welches Foto geöffnet wurde und wo seine Kachel im Fenster liegt (für den Zoom-Übergang).
-    struct DetailStart: Equatable {
-        let id = UUID()
-        let position: DetailPosition
-        let rahmen: CGRect
-    }
 
     private var filter: TimelineFilter { store?.filter ?? .alle }
 
@@ -62,32 +55,20 @@ struct TimelineInhalt: View {
             .background(LilithColor.hintergrund)
             .navigationTitle(auswahl.isEmpty ? titel : "\(auswahl.count) ausgewählt")
             .toolbar { werkzeuge }
+            .overlay(alignment: .top) {
+                if let hinweis = store?.hinweis {
+                    OfflineHinweis(text: hinweis) { Task { await store?.laden() } }
+                        .padding(.top, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.smooth, value: store?.hinweis)
             .overlay(alignment: .bottom) {
-                if !auswahl.isEmpty && detail == nil {
+                if !auswahl.isEmpty && kontext.detail == nil {
                     aktionsleiste.transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .overlay {
-                GeometryReader { geo in
-                    if let detail {
-                        let flaeche = geo.frame(in: .global)
-                        DetailView(quelle: quelle, store: store, start: detail.position,
-                                   loeschen: kontext.client == nil || filter == .papierkorb ? nil : { await loescheEinzeln($0) }) { ende in
-                            // Das Grid dorthin mitnehmen, wo man beim Blättern gelandet ist.
-                            if ende.section != detail.position.section { sprung = SprungAnfrage(section: ende.section) }
-                            self.detail = nil
-                        }
-                        .transition(.scale(scale: 0.15, anchor: UnitPoint(
-                            x: (detail.rahmen.midX - flaeche.minX) / max(flaeche.width, 1),
-                            y: (detail.rahmen.midY - flaeche.minY) / max(flaeche.height, 1))).combined(with: .opacity))
-                    }
-                }
-            }
-            .animation(.spring(duration: 0.32), value: detail)
             .animation(.spring(duration: 0.25), value: auswahl.isEmpty)
-            #if os(iOS)
-            .toolbarVisibility(detail == nil ? .automatic : .hidden, for: .tabBar, .navigationBar)
-            #endif
             .task {
                 if let store, store.zustand == .laedt { await store.laden() }
                 #if DEBUG
@@ -154,9 +135,7 @@ struct TimelineInhalt: View {
             TimelineGridView(quelle: quelle, zoom: $zoom, sprung: sprung,
                              auswahlModus: auswahlModus, auswahlStand: auswahlStand,
                              onAuswahl: { auswahl = $0 },
-                             onTap: { section, index, rahmen in
-                                 detail = DetailStart(position: DetailPosition(section: section, index: index), rahmen: rahmen)
-                             },
+                             onTap: { section, index, rahmen in oeffne(DetailPosition(section: section, index: index), rahmen) },
                              onScroll: { scrollAnteil = $0 })
                 .ignoresSafeArea(edges: .bottom)
                 .overlay(alignment: .trailing) {
@@ -288,6 +267,18 @@ struct TimelineInhalt: View {
         return loeschtEndgueltig ? "\(was) endgültig löschen?" : "\(was) in den Papierkorb legen?"
     }
 
+    private func oeffne(_ start: DetailPosition, _ rahmen: CGRect) {
+        let k = kontext
+        kontext.detail = DetailAnzeige(
+            quelle: quelle, store: store, start: start, rahmen: rahmen,
+            loeschen: kontext.client == nil || filter == .papierkorb ? nil : { await loescheEinzeln($0) },
+            schliessen: { ende in
+                // Das Grid dorthin mitnehmen, wo man beim Blättern gelandet ist.
+                if ende.section != start.section { sprung = SprungAnfrage(section: ende.section) }
+                k.detail = nil
+            })
+    }
+
     private func beendeAuswahl() {
         auswahlModus = false
         auswahl = []
@@ -326,5 +317,38 @@ struct TimelineInhalt: View {
             kontext.pruefe(error)
             return false
         }
+    }
+}
+
+/// Schmaler Hinweis oben, wenn der Server gerade nicht antwortet. Die geladenen Fotos bleiben sichtbar.
+struct OfflineHinweis: View {
+    let text: String
+    let erneut: () -> Void
+    @State private var zeigeDetails = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "wifi.slash").foregroundStyle(LilithColor.nachtrose)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Server nicht erreichbar").font(.subheadline.weight(.semibold))
+                Text(zeigeDetails ? text : "Du siehst die zuletzt geladenen Fotos.")
+                    .font(.caption)
+                    .foregroundStyle(LilithColor.textLeise)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .onTapGesture { zeigeDetails.toggle() }
+            Spacer(minLength: 8)
+            Button("Erneut", action: erneut)
+                .font(.subheadline.weight(.semibold))
+                .buttonStyle(.bordered)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: 520)
+        .background(.regularMaterial, in: .rect(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
+        .padding(.horizontal, 16)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isStaticText)
     }
 }

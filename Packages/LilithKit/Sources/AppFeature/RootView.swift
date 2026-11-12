@@ -38,6 +38,7 @@ public struct RootView: View {
             }
         }
         .environment(session)
+        .lilithSperre()
         .tint(LilithColor.nachtrose)
         .animation(.smooth, value: session.phase)
         .task { await session.start() }
@@ -62,7 +63,9 @@ struct HauptView: View {
 
     var body: some View {
         if let kontext {
-            tabs.environment(kontext)
+            tabs
+                .environment(kontext)
+                .overlay { DetailEbene(kontext: kontext) }
         } else {
             Color.clear.onAppear(perform: richteEin)
         }
@@ -158,5 +161,25 @@ struct Platzhalter: View {
                 }
             }
         }
+    }
+}
+
+/// Die Detailansicht über dem ganzen Fenster, mit Zoom aus der angetippten Kachel.
+struct DetailEbene: View {
+    let kontext: BibliothekKontext
+    @Environment(\.accessibilityReduceMotion) private var wenigBewegung
+
+    var body: some View {
+        GeometryReader { geo in
+            if let d = kontext.detail {
+                let flaeche = geo.frame(in: .global)
+                DetailView(quelle: d.quelle, store: d.store, start: d.start, loeschen: d.loeschen, schliessen: d.schliessen)
+                    .environment(kontext)
+                    .transition(wenigBewegung ? .opacity : .scale(scale: 0.15, anchor: UnitPoint(
+                        x: (d.rahmen.midX - flaeche.minX) / max(flaeche.width, 1),
+                        y: (d.rahmen.midY - flaeche.minY) / max(flaeche.height, 1))).combined(with: .opacity))
+            }
+        }
+        .animation(wenigBewegung ? .easeInOut(duration: 0.2) : .spring(duration: 0.32), value: kontext.detail)
     }
 }

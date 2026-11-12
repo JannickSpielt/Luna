@@ -18,6 +18,7 @@ struct OnboardingView: View {
     @State private var anmeldend = false
 
     @FocusState private var fokus: Feld?
+    @Environment(\.accessibilityReduceMotion) private var wenigBewegung
     private enum Feld { case adresse, email, passwort, apiKey }
 
     var body: some View {
@@ -37,8 +38,8 @@ struct OnboardingView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background(LilithColor.hintergrund.ignoresSafeArea())
-        .animation(.smooth, value: server)
-        .animation(.smooth, value: fehler)
+        .animation(wenigBewegung ? nil : .smooth, value: server)
+        .animation(wenigBewegung ? nil : .smooth, value: fehler)
         .onAppear {
             if adresse.isEmpty, let letzte = session.letzteAdresse { adresse = letzte }
             #if DEBUG
@@ -57,7 +58,7 @@ struct OnboardingView: View {
         VStack(spacing: 16) {
             MondSymbol(phase: server == nil ? 0.15 : 1)
                 .frame(width: 88, height: 88)
-                .animation(.easeInOut(duration: 0.9), value: server == nil)
+                .animation(wenigBewegung ? nil : .easeInOut(duration: 0.9), value: server == nil)
             Text("Deine Fotos.\nDein Server.")
                 .font(.system(.largeTitle, design: .serif, weight: .semibold))
                 .multilineTextAlignment(.center)
