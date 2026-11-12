@@ -1,4 +1,4 @@
-# Lilith – Gesamtplan
+# Luna (Code-Name Lilith) – Gesamtplan
 
 Stand: 11.11.2026 · Version 2 des Plans · Status: **freigegeben am 11.11.2026** (offene Entscheidungen: jeweils der Vorschlag)
 
@@ -147,10 +147,10 @@ Lilith/
 
 ## 9. Offene Entscheidungen für dich
 
-- [ ] **OAuth-Login schon in 1.0** oder erst in 1.x? (Vorschlag: 1.x. Wenn dein Server über Authentik/Authelia läuft, besser 1.0.)
-- [ ] **iOS 18 / macOS 15** als Minimum okay? (Alternative: iOS 26 / macOS 26, dann wäre Liquid Glass überall nativ, aber weniger Geräte)
-- [ ] **Mac-App gleichzeitig mit 1.0** oder kurz danach? (Vorschlag: gleichzeitig, weil der meiste Code geteilt ist)
-- [ ] **Welche neuen Ideen** sollen rein? (Vorschlag: die vier aus „Vorschlag für 1.0“)
-- [ ] **Upload/Backup erst in 1.x** okay?
-- [ ] **Design-Richtung „Nachtrose“** (Granatrot, Mond, Serif-Titel) okay?
-- [ ] Soll ich nach der Freigabe die README im Repo an diesen Plan anpassen?
+- [x] **OAuth-Login schon in 1.0** oder erst in 1.x? → 1.x (Vorschlag: 1.x. Wenn dein Server über Authentik/Authelia läuft, besser 1.0.)
+- [x] **iOS 18 / macOS 15** als Minimum okay? → ja (Alternative: iOS 26 / macOS 26, dann wäre Liquid Glass überall nativ, aber weniger Geräte)
+- [x] **Mac-App gleichzeitig mit 1.0** oder kurz danach? → gleichzeitig (Vorschlag: gleichzeitig, weil der meiste Code geteilt ist)
+- [x] **Welche neuen Ideen** sollen rein? → die vier aus „Vorschlag für 1.0“ (Vorschlag: die vier aus „Vorschlag für 1.0“)
+- [x] **Upload/Backup erst in 1.x** okay? → ja, inzwischen komplett umgesetzt (docs/BACKUP-PLAN.md)
+- [x] **Design-Richtung „Nachtrose“** (Granatrot, Mond, Serif-Titel) okay? → ja, später überarbeitet (docs/REDESIGN-PLAN.md: SF statt Serife, Kirschrot)
+- [x] Soll ich nach der Freigabe die README im Repo an diesen Plan anpassen? → ja

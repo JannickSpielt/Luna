@@ -66,7 +66,7 @@ extension ImmichClient {
         do {
             let f = Self.abfrage(filter)
             output = try await client.getTimeBuckets(query: .init(
-                albumId: f.album, isFavorite: f.favorit, isTrashed: f.papierkorb, visibility: f.sichtbarkeit))
+                albumId: f.album, isFavorite: f.favorit, isTrashed: f.papierkorb, personId: f.person, visibility: f.sichtbarkeit))
         } catch {
             throw ImmichError.nichtErreichbar(Self.kurzerGrund(error))
         }
@@ -87,7 +87,7 @@ extension ImmichClient {
         do {
             let f = Self.abfrage(filter)
             output = try await client.getTimeBucket(query: .init(
-                albumId: f.album, isFavorite: f.favorit, isTrashed: f.papierkorb,
+                albumId: f.album, isFavorite: f.favorit, isTrashed: f.papierkorb, personId: f.person,
                 timeBucket: monat.schluessel, visibility: f.sichtbarkeit))
         } catch {
             throw ImmichError.nichtErreichbar(Self.kurzerGrund(error))
@@ -105,14 +105,15 @@ extension ImmichClient {
 
     /// Übersetzt den Filter in die Abfrage-Parameter von Immich.
     static func abfrage(_ filter: TimelineFilter)
-        -> (album: String?, favorit: Bool?, papierkorb: Bool?, sichtbarkeit: Components.Schemas.AssetVisibility?) {
+        -> (album: String?, favorit: Bool?, papierkorb: Bool?, sichtbarkeit: Components.Schemas.AssetVisibility?, person: String?) {
         switch filter {
-        case .alle: (nil, nil, nil, .timeline)
-        case .favoriten: (nil, true, nil, .timeline)
-        case .archiv: (nil, nil, nil, .archive)
-        case .papierkorb: (nil, nil, true, nil)
-        case .album(let id): (id, nil, nil, nil)
-        case .suche, .kuerzlich: (nil, nil, nil, .timeline)
+        case .alle: (nil, nil, nil, .timeline, nil)
+        case .favoriten: (nil, true, nil, .timeline, nil)
+        case .archiv: (nil, nil, nil, .archive, nil)
+        case .papierkorb: (nil, nil, true, nil, nil)
+        case .album(let id): (id, nil, nil, nil, nil)
+        case .person(let id): (nil, nil, nil, .timeline, id)
+        case .suche, .kuerzlich, .medienart: (nil, nil, nil, .timeline, nil)
         }
     }
 

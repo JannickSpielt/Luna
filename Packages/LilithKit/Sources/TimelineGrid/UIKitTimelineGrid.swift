@@ -192,6 +192,12 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     private func wendeRichtungAn() {
         collectionView.transform = umgekehrt ? CGAffineTransform(rotationAngle: .pi) : .identity
+        // Der Kanten-Effekt von iOS 26 (Weichzeichnen unter den Leisten) rechnet nicht mit der Drehung
+        // und legt sich sonst als weißer Schleier über alles. Unter den Leisten liegt ohnehin Glas.
+        if #available(iOS 26, *) {
+            collectionView.topEdgeEffect.isHidden = umgekehrt
+            collectionView.bottomEdgeEffect.isHidden = umgekehrt
+        }
     }
 
     private func verbindeQuelle() {

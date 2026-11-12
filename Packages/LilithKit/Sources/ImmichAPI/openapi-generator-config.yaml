@@ -34,5 +34,8 @@ filter:
     # Suche
     - searchSmart
     - searchAssets
+    - getSearchSuggestions
+    # Personen
+    - getAllPeople
     # Upload
     - checkBulkUpload

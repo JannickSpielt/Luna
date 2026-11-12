@@ -8,6 +8,8 @@ import DesignSystem
 struct StartBildschirm: View {
     /// Erst wird der Mond voll, dann geht es hinein.
     var vollmond = false
+    /// Unten „von Jannick Stahn“: erscheint, sobald alles geladen ist (das Zeichen, dass es gleich losgeht).
+    var geladen = false
     var oeffnung: Double = 0
     @State private var phase = 0.35
     /// Steht sofort da, genau wie im Startbild von iOS davor.
@@ -42,7 +44,7 @@ struct StartBildschirm: View {
                     .frame(maxHeight: .infinity, alignment: .bottom)
                     // Über dem Home-Balken.
                     .padding(.bottom, 50)
-                    .opacity(1 - min(oeffnung * 3, 1))
+                    .opacity(geladen ? 1 - min(oeffnung * 3, 1) : 0)
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }

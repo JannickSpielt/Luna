@@ -9,27 +9,52 @@ struct TimelineZiel: Hashable {
     let filter: TimelineFilter
 }
 
-/// Der Alben-Tab: Sammlungen (Favoriten, Archiv, Papierkorb) und alle Alben.
+/// Weitere Ziele aus den Sammlungen (außer gefilterten Timelines).
+enum SammlungsZiel: Hashable {
+    /// Alle eigenen bzw. alle geteilten Alben als Raster.
+    case alben(geteilt: Bool)
+    /// Alle erkannten Personen.
+    case personen
+}
+
+/// Der Tab „Sammlungen“, aufgebaut wie in Apples Fotos-App: eine lange Seite mit Abschnitten,
+/// jeweils eine Überschrift mit „›“ und darunter eine Reihe zum seitlich Wischen oder eine kurze Liste.
 struct AlbenView: View {
     @Environment(BibliothekKontext.self) private var kontext
     @State private var alben: [Album] = []
+    @State private var tage: [HochladeTag] = []
+    @State private var personen: [Person] = []
     @State private var geladen = false
     @State private var fehler: String?
     @State private var neuesAlbum = false
     @State private var neuerName = ""
 
+    private var eigene: [Album] { alben.filter { !$0.geteilt } }
+    private var geteilte: [Album] { alben.filter(\.geteilt) }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    sammlungen
-                    albenBereich
+                VStack(alignment: .leading, spacing: 30) {
+                    if kontext.client == nil {
+                        Text("Sammlungen gibt es nur mit einer Verbindung zum Server.")
+                            .foregroundStyle(LilithColor.textLeise)
+                            .padding(.horizontal, 16)
+                    } else if !geladen {
+                        ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
+                    } else {
+                        if !tage.isEmpty { kuerzlich }
+                        albenReihe(titel: "Alben", liste: eigene, geteilt: false)
+                        if !geteilte.isEmpty { albenReihe(titel: "Geteilte Alben", liste: geteilte, geteilt: true) }
+                        if !personenReihe.isEmpty { personenAbschnitt }
+                        medienarten
+                        weitere
+                    }
                 }
-                .padding(.horizontal, 20)
                 .padding(.vertical, 12)
             }
             .background(LilithColor.hintergrund)
-            .navigationTitle("Alben")
+            .navigationTitle("Sammlungen")
             .toolbar {
                 if kontext.client != nil {
                     ToolbarItem(placement: .primaryAction) {
@@ -40,6 +65,14 @@ struct AlbenView: View {
             }
             .navigationDestination(for: TimelineZiel.self) { ziel in
                 GefilterteTimeline(ziel: ziel)
+            }
+            .navigationDestination(for: SammlungsZiel.self) { ziel in
+                switch ziel {
+                case .alben(let geteilt):
+                    AlbenRaster(titel: geteilt ? "Geteilte Alben" : "Alben", alben: geteilt ? geteilte : eigene)
+                case .personen:
+                    PersonenRaster(personen: personen)
+                }
             }
             .refreshable { await lade() }
             .task(id: kontext.stand) { await lade() }
@@ -54,22 +87,127 @@ struct AlbenView: View {
         }
     }
 
-    private var sammlungen: some View {
-        VStack(spacing: 0) {
-            sammlung("Kürzlich hinzugefügt", "clock.arrow.circlepath", .kuerzlich)
-            Divider().padding(.leading, 52)
-            sammlung("Favoriten", "heart", .favoriten)
-            Divider().padding(.leading, 52)
-            sammlung("Archiv", "archivebox", .archiv)
-            if kontext.papierkorbAktiv {
-                Divider().padding(.leading, 52)
-                sammlung("Papierkorb", "trash", .papierkorb)
+    // MARK: - Abschnitte
+
+    /// Große Karten je Tag, an dem Fotos auf den Server kamen.
+    private var kuerzlich: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Ueberschrift(titel: "Kürzlich hinzugefügt", ziel: TimelineZiel(titel: "Kürzlich hinzugefügt", filter: .kuerzlich))
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 10) {
+                    ForEach(tage) { tag in
+                        NavigationLink(value: TimelineZiel(titel: "Kürzlich hinzugefügt", filter: .kuerzlich)) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                VorschauBild(client: kontext.client, assetId: tag.titelBildId, groesse: .preview)
+                                    .frame(width: 260, height: 180)
+                                    .clipShape(.rect(cornerRadius: 12))
+                                Text(Self.tagName(tag.tag)).font(LilithFont.karte).foregroundStyle(LilithColor.text)
+                                    .padding(.top, 6)
+                                Text(tag.anzahl == 1 ? "1 Objekt" : "\(tag.anzahl.formatted()) Objekte")
+                                    .font(.caption).foregroundStyle(LilithColor.textLeise)
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
             }
+            .scrollIndicators(.hidden)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
         }
-        .background(LilithColor.flaeche, in: .rect(cornerRadius: 12))
     }
 
-    private func sammlung(_ titel: String, _ symbol: String, _ filter: TimelineFilter) -> some View {
+    /// Alben als Reihe zum seitlich Wischen.
+    @ViewBuilder
+    private func albenReihe(titel: String, liste: [Album], geteilt: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Ueberschrift(titel: titel, sammlung: .alben(geteilt: geteilt))
+            if liste.isEmpty {
+                Text("Noch keine Alben. Lege mit dem Plus oben eins an.")
+                    .foregroundStyle(LilithColor.textLeise)
+                    .padding(.horizontal, 16)
+            } else {
+                ScrollView(.horizontal) {
+                    LazyHStack(alignment: .top, spacing: 12) {
+                        ForEach(liste) { album in
+                            NavigationLink(value: TimelineZiel(titel: album.name, filter: .album(album.id))) {
+                                AlbumKarte(album: album, client: kontext.client, zeigeGeteilt: false)
+                                    .frame(width: 168)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .scrollTargetLayout()
+                }
+                .scrollIndicators(.hidden)
+                .contentMargins(.horizontal, 16, for: .scrollContent)
+                .scrollTargetBehavior(.viewAligned)
+            }
+        }
+    }
+
+    /// Benannte Personen zuerst. Hat noch niemand einen Namen, die ersten Gesichter.
+    private var personenReihe: [Person] {
+        let benannt = personen.filter { !$0.name.isEmpty }
+        return Array((benannt.isEmpty ? personen : benannt).prefix(20))
+    }
+
+    private var personenAbschnitt: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Ueberschrift(titel: "Personen", sammlung: .personen)
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 14) {
+                    ForEach(personenReihe) { person in
+                        NavigationLink(value: TimelineZiel(titel: person.name.isEmpty ? "Person" : person.name,
+                                                           filter: .person(person.id))) {
+                            PersonKarte(person: person, client: kontext.client, kante: 84)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollIndicators(.hidden)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+        }
+    }
+
+    private var medienarten: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Medienarten").font(.title2.bold()).padding(.horizontal, 16)
+            VStack(spacing: 0) {
+                ForEach(Array(Medienart.allCases.enumerated()), id: \.element) { i, art in
+                    if i > 0 { Divider().padding(.leading, 52) }
+                    listenEintrag(art.titel, art.symbol, .medienart(art))
+                }
+            }
+            .background(LilithColor.flaeche, in: .rect(cornerRadius: 12))
+            .padding(.horizontal, 16)
+        }
+    }
+
+    /// Weitere Sammlungen als Liste wie in den Einstellungen.
+    private var weitere: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Weitere").font(.title2.bold()).padding(.horizontal, 16)
+            VStack(spacing: 0) {
+                listenEintrag("Favoriten", "heart", .favoriten)
+                Divider().padding(.leading, 52)
+                listenEintrag("Archiv", "archivebox", .archiv)
+                if kontext.papierkorbAktiv {
+                    Divider().padding(.leading, 52)
+                    listenEintrag("Papierkorb", "trash", .papierkorb)
+                }
+            }
+            .background(LilithColor.flaeche, in: .rect(cornerRadius: 12))
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private func listenEintrag(_ titel: String, _ symbol: String, _ filter: TimelineFilter) -> some View {
         NavigationLink(value: TimelineZiel(titel: titel, filter: filter)) {
             HStack(spacing: 14) {
                 Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 24)
@@ -82,40 +220,26 @@ struct AlbenView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .disabled(kontext.client == nil)
     }
 
-    @ViewBuilder
-    private var albenBereich: some View {
-        if kontext.client == nil {
-            Text("Alben gibt es nur mit einer Verbindung zum Server.").foregroundStyle(LilithColor.textLeise)
-        } else if !geladen {
-            ProgressView().frame(maxWidth: .infinity).padding(.top, 30)
-        } else if alben.isEmpty {
-            ContentUnavailableView {
-                Label("Noch keine Alben", systemImage: "rectangle.stack")
-            } description: {
-                Text("Lege mit dem Plus oben ein Album an.")
-            }
-        } else {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Meine Alben").font(.title2.bold())
-                LazyVGrid(columns: [SwiftUI.GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 18) {
-                    ForEach(alben) { album in
-                        NavigationLink(value: TimelineZiel(titel: album.name, filter: .album(album.id))) {
-                            AlbumKarte(album: album, client: kontext.client)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-        }
+    static func tagName(_ tag: Date) -> String {
+        let k = Calendar.current
+        if k.isDateInToday(tag) { return "Heute" }
+        if k.isDateInYesterday(tag) { return "Gestern" }
+        return tag.formatted(.dateTime.weekday(.wide).day().month(.wide))
     }
+
+    // MARK: - Laden
 
     private func lade() async {
         guard let client = kontext.client else { return }
         do {
-            alben = try await client.alben()
+            async let a = client.alben()
+            async let t = client.kuerzlichNachTagen()
+            async let p = client.personen()
+            alben = try await a
+            tage = (try? await t) ?? []
+            personen = (try? await p) ?? []
             geladen = true
         } catch {
             if !geladen { fehler = error.localizedDescription }
@@ -139,10 +263,121 @@ struct AlbenView: View {
     }
 }
 
+/// Überschrift eines Abschnitts mit „›“: führt zu allen Einträgen.
+private struct Ueberschrift: View {
+    let titel: String
+    var ziel: TimelineZiel?
+    var sammlung: SammlungsZiel?
+
+    var body: some View {
+        Group {
+            if let ziel {
+                NavigationLink(value: ziel) { inhalt }
+            } else if let sammlung {
+                NavigationLink(value: sammlung) { inhalt }
+            } else {
+                inhalt
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 16)
+        .accessibilityHint("Alle anzeigen")
+    }
+
+    private var inhalt: some View {
+        HStack(spacing: 4) {
+            Text(titel).font(.title2.bold()).foregroundStyle(LilithColor.text)
+            Image(systemName: "chevron.right").font(.title3.weight(.semibold)).foregroundStyle(LilithColor.textLeise)
+        }
+        .contentShape(.rect)
+    }
+}
+
+/// Eine Person: rundes Gesicht mit Namen darunter.
+struct PersonKarte: View {
+    let person: Person
+    let client: ImmichClient?
+    var kante: CGFloat = 84
+    @State private var bild: PlattformBild?
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Circle()
+                .fill(LilithColor.flaeche)
+                .overlay {
+                    if let bild {
+                        Image(plattform: bild).resizable().scaledToFill()
+                    } else {
+                        Image(systemName: "person.fill").font(.title).foregroundStyle(LilithColor.textLeise)
+                    }
+                }
+                .clipShape(.circle)
+                .frame(width: kante, height: kante)
+            if !person.name.isEmpty {
+                Text(person.name).font(.footnote.weight(.medium)).foregroundStyle(LilithColor.text)
+                    .lineLimit(1).frame(maxWidth: kante + 8)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(person.name.isEmpty ? "Person ohne Namen" : person.name)
+        .task(id: person.id) {
+            guard let client else { return }
+            bild = try? await BilderCache.lade(client.personBildAnfrage(person.id))
+        }
+    }
+}
+
+/// Alle Personen als Raster („Alle anzeigen“).
+struct PersonenRaster: View {
+    let personen: [Person]
+    @Environment(BibliothekKontext.self) private var kontext
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: [SwiftUI.GridItem(.adaptive(minimum: 96), spacing: 12)], spacing: 18) {
+                ForEach(personen) { person in
+                    NavigationLink(value: TimelineZiel(titel: person.name.isEmpty ? "Person" : person.name,
+                                                       filter: .person(person.id))) {
+                        PersonKarte(person: person, client: kontext.client, kante: 92)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(16)
+        }
+        .background(LilithColor.hintergrund)
+        .navigationTitle("Personen")
+    }
+}
+
+/// Alle Alben als Raster („Alle anzeigen“).
+struct AlbenRaster: View {
+    let titel: String
+    let alben: [Album]
+    @Environment(BibliothekKontext.self) private var kontext
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: [SwiftUI.GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 18) {
+                ForEach(alben) { album in
+                    NavigationLink(value: TimelineZiel(titel: album.name, filter: .album(album.id))) {
+                        AlbumKarte(album: album, client: kontext.client)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(16)
+        }
+        .background(LilithColor.hintergrund)
+        .navigationTitle(titel)
+    }
+}
+
 /// Karte eines Albums mit Titelbild, Name und Anzahl.
 struct AlbumKarte: View {
     let album: Album
     let client: ImmichClient?
+    var zeigeGeteilt = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -150,7 +385,7 @@ struct AlbumKarte: View {
                 .aspectRatio(1, contentMode: .fit)
                 .clipShape(.rect(cornerRadius: 10))
                 .overlay(alignment: .topTrailing) {
-                    if album.geteilt {
+                    if album.geteilt && zeigeGeteilt {
                         Text("Geteilt")
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 8)
@@ -174,6 +409,7 @@ struct AlbumKarte: View {
 struct VorschauBild: View {
     let client: ImmichClient?
     let assetId: String?
+    var groesse: VorschauGroesse = .thumbnail
     @State private var bild: PlattformBild?
 
     var body: some View {
@@ -189,7 +425,7 @@ struct VorschauBild: View {
             .clipped()
             .task(id: assetId) {
                 guard let client, let assetId else { bild = nil; return }
-                bild = try? await BilderCache.lade(client.vorschauAnfrage(assetId: assetId, groesse: .thumbnail))
+                bild = try? await BilderCache.lade(client.vorschauAnfrage(assetId: assetId, groesse: groesse))
             }
             .accessibilityHidden(true)
     }

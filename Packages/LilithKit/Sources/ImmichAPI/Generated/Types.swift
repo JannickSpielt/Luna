@@ -90,6 +90,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /auth/validateToken`.
     /// - Remark: Generated from `#/paths//auth/validateToken/post(validateAccessToken)`.
     func validateAccessToken(_ input: Operations.ValidateAccessToken.Input) async throws -> Operations.ValidateAccessToken.Output
+    /// Get all people
+    ///
+    /// Retrieve a list of all people.
+    ///
+    /// - Remark: HTTP `GET /people`.
+    /// - Remark: Generated from `#/paths//people/get(getAllPeople)`.
+    func getAllPeople(_ input: Operations.GetAllPeople.Input) async throws -> Operations.GetAllPeople.Output
     /// Search assets by metadata
     ///
     /// Search for assets based on various metadata criteria.
@@ -104,6 +111,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /search/smart`.
     /// - Remark: Generated from `#/paths//search/smart/post(searchSmart)`.
     func searchSmart(_ input: Operations.SearchSmart.Input) async throws -> Operations.SearchSmart.Output
+    /// Retrieve search suggestions
+    ///
+    /// Retrieve search suggestions based on partial input. This endpoint is used for typeahead search features.
+    ///
+    /// - Remark: HTTP `GET /search/suggestions`.
+    /// - Remark: Generated from `#/paths//search/suggestions/get(getSearchSuggestions)`.
+    func getSearchSuggestions(_ input: Operations.GetSearchSuggestions.Input) async throws -> Operations.GetSearchSuggestions.Output
     /// Get features
     ///
     /// Retrieve available features supported by this server.
@@ -307,6 +321,21 @@ extension APIProtocol {
     public func validateAccessToken(headers: Operations.ValidateAccessToken.Input.Headers = .init()) async throws -> Operations.ValidateAccessToken.Output {
         try await validateAccessToken(Operations.ValidateAccessToken.Input(headers: headers))
     }
+    /// Get all people
+    ///
+    /// Retrieve a list of all people.
+    ///
+    /// - Remark: HTTP `GET /people`.
+    /// - Remark: Generated from `#/paths//people/get(getAllPeople)`.
+    public func getAllPeople(
+        query: Operations.GetAllPeople.Input.Query = .init(),
+        headers: Operations.GetAllPeople.Input.Headers = .init()
+    ) async throws -> Operations.GetAllPeople.Output {
+        try await getAllPeople(Operations.GetAllPeople.Input(
+            query: query,
+            headers: headers
+        ))
+    }
     /// Search assets by metadata
     ///
     /// Search for assets based on various metadata criteria.
@@ -337,6 +366,21 @@ extension APIProtocol {
         try await searchSmart(Operations.SearchSmart.Input(
             headers: headers,
             body: body
+        ))
+    }
+    /// Retrieve search suggestions
+    ///
+    /// Retrieve search suggestions based on partial input. This endpoint is used for typeahead search features.
+    ///
+    /// - Remark: HTTP `GET /search/suggestions`.
+    /// - Remark: Generated from `#/paths//search/suggestions/get(getSearchSuggestions)`.
+    public func getSearchSuggestions(
+        query: Operations.GetSearchSuggestions.Input.Query,
+        headers: Operations.GetSearchSuggestions.Input.Headers = .init()
+    ) async throws -> Operations.GetSearchSuggestions.Output {
+        try await getSearchSuggestions(Operations.GetSearchSuggestions.Input(
+            query: query,
+            headers: headers
         ))
     }
     /// Get features
@@ -2443,6 +2487,49 @@ public enum Components {
                 case notIn
             }
         }
+        /// People response
+        ///
+        /// - Remark: Generated from `#/components/schemas/PeopleResponseDto`.
+        public struct PeopleResponseDto: Codable, Hashable, Sendable {
+            /// Whether there are more pages
+            ///
+            /// - Remark: Generated from `#/components/schemas/PeopleResponseDto/hasNextPage`.
+            public var hasNextPage: Swift.Bool?
+            /// Number of hidden people
+            ///
+            /// - Remark: Generated from `#/components/schemas/PeopleResponseDto/hidden`.
+            public var hidden: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/PeopleResponseDto/people`.
+            public var people: [Components.Schemas.PersonResponseDto]
+            /// Total number of people
+            ///
+            /// - Remark: Generated from `#/components/schemas/PeopleResponseDto/total`.
+            public var total: Swift.Int
+            /// Creates a new `PeopleResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - hasNextPage: Whether there are more pages
+            ///   - hidden: Number of hidden people
+            ///   - people:
+            ///   - total: Total number of people
+            public init(
+                hasNextPage: Swift.Bool? = nil,
+                hidden: Swift.Int,
+                people: [Components.Schemas.PersonResponseDto],
+                total: Swift.Int
+            ) {
+                self.hasNextPage = hasNextPage
+                self.hidden = hidden
+                self.people = people
+                self.total = total
+            }
+            public enum CodingKeys: String, CodingKey {
+                case hasNextPage
+                case hidden
+                case people
+                case total
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto`.
         public struct PeopleUserResponseDto: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/PeopleUserResponseDto/avatarColor`.
@@ -3592,6 +3679,17 @@ public enum Components {
                 case albums
                 case assets
             }
+        }
+        /// Suggestion type
+        ///
+        /// - Remark: Generated from `#/components/schemas/SearchSuggestionType`.
+        @frozen public enum SearchSuggestionType: String, Codable, Hashable, Sendable, CaseIterable {
+            case country = "country"
+            case state = "state"
+            case city = "city"
+            case cameraMake = "camera-make"
+            case cameraModel = "camera-model"
+            case cameraLensModel = "camera-lens-model"
         }
         /// - Remark: Generated from `#/components/schemas/ServerFeaturesDto`.
         public struct ServerFeaturesDto: Codable, Hashable, Sendable {
@@ -6221,6 +6319,203 @@ public enum Operations {
             }
         }
     }
+    /// Get all people
+    ///
+    /// Retrieve a list of all people.
+    ///
+    /// - Remark: HTTP `GET /people`.
+    /// - Remark: Generated from `#/paths//people/get(getAllPeople)`.
+    public enum GetAllPeople {
+        public static let id: Swift.String = "getAllPeople"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/people/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Closest asset ID for similarity search
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/closestAssetId`.
+                public var closestAssetId: Swift.String?
+                /// Closest person ID for similarity search
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/closestPersonId`.
+                public var closestPersonId: Swift.String?
+                /// Filter by favorite status
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/isFavorite`.
+                public var isFavorite: Swift.Bool?
+                /// Filter by hidden status
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/isHidden`.
+                public var isHidden: Swift.Bool?
+                /// Filter by person name
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/name`.
+                public var name: Swift.String?
+                /// Page number for pagination
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/page`.
+                public var page: Swift.Int?
+                /// Only include people to which the user gave access
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/sharedById`.
+                public var sharedById: Swift.String?
+                /// Only include people to which the user was given access
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/sharedWithId`.
+                public var sharedWithId: Swift.String?
+                /// Number of items per page
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/size`.
+                public var size: Swift.Int?
+                /// Include hidden people
+                ///
+                /// - Remark: Generated from `#/paths/people/GET/query/withHidden`.
+                public var withHidden: Swift.Bool?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - closestAssetId: Closest asset ID for similarity search
+                ///   - closestPersonId: Closest person ID for similarity search
+                ///   - isFavorite: Filter by favorite status
+                ///   - isHidden: Filter by hidden status
+                ///   - name: Filter by person name
+                ///   - page: Page number for pagination
+                ///   - sharedById: Only include people to which the user gave access
+                ///   - sharedWithId: Only include people to which the user was given access
+                ///   - size: Number of items per page
+                ///   - withHidden: Include hidden people
+                public init(
+                    closestAssetId: Swift.String? = nil,
+                    closestPersonId: Swift.String? = nil,
+                    isFavorite: Swift.Bool? = nil,
+                    isHidden: Swift.Bool? = nil,
+                    name: Swift.String? = nil,
+                    page: Swift.Int? = nil,
+                    sharedById: Swift.String? = nil,
+                    sharedWithId: Swift.String? = nil,
+                    size: Swift.Int? = nil,
+                    withHidden: Swift.Bool? = nil
+                ) {
+                    self.closestAssetId = closestAssetId
+                    self.closestPersonId = closestPersonId
+                    self.isFavorite = isFavorite
+                    self.isHidden = isHidden
+                    self.name = name
+                    self.page = page
+                    self.sharedById = sharedById
+                    self.sharedWithId = sharedWithId
+                    self.size = size
+                    self.withHidden = withHidden
+                }
+            }
+            public var query: Operations.GetAllPeople.Input.Query
+            /// - Remark: Generated from `#/paths/people/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAllPeople.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAllPeople.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetAllPeople.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetAllPeople.Input.Query = .init(),
+                headers: Operations.GetAllPeople.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/people/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/people/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.PeopleResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.PeopleResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetAllPeople.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetAllPeople.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//people/get(getAllPeople)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetAllPeople.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetAllPeople.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Search assets by metadata
     ///
     /// Search for assets based on various metadata criteria.
@@ -6447,6 +6742,180 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
             public var ok: Operations.SearchSmart.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Retrieve search suggestions
+    ///
+    /// Retrieve search suggestions based on partial input. This endpoint is used for typeahead search features.
+    ///
+    /// - Remark: HTTP `GET /search/suggestions`.
+    /// - Remark: Generated from `#/paths//search/suggestions/get(getSearchSuggestions)`.
+    public enum GetSearchSuggestions {
+        public static let id: Swift.String = "getSearchSuggestions"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/search/suggestions/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Filter by country
+                ///
+                /// - Remark: Generated from `#/paths/search/suggestions/GET/query/country`.
+                public var country: Swift.String?
+                /// Include null values in suggestions
+                ///
+                /// - Remark: Generated from `#/paths/search/suggestions/GET/query/includeNull`.
+                public var includeNull: Swift.Bool?
+                /// Filter by lens model
+                ///
+                /// - Remark: Generated from `#/paths/search/suggestions/GET/query/lensModel`.
+                public var lensModel: Swift.String?
+                /// Filter by camera make
+                ///
+                /// - Remark: Generated from `#/paths/search/suggestions/GET/query/make`.
+                public var make: Swift.String?
+                /// Filter by camera model
+                ///
+                /// - Remark: Generated from `#/paths/search/suggestions/GET/query/model`.
+                public var model: Swift.String?
+                /// Filter by state/province
+                ///
+                /// - Remark: Generated from `#/paths/search/suggestions/GET/query/state`.
+                public var state: Swift.String?
+                /// - Remark: Generated from `#/paths/search/suggestions/GET/query/type`.
+                public var _type: Components.Schemas.SearchSuggestionType
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - country: Filter by country
+                ///   - includeNull: Include null values in suggestions
+                ///   - lensModel: Filter by lens model
+                ///   - make: Filter by camera make
+                ///   - model: Filter by camera model
+                ///   - state: Filter by state/province
+                ///   - _type:
+                public init(
+                    country: Swift.String? = nil,
+                    includeNull: Swift.Bool? = nil,
+                    lensModel: Swift.String? = nil,
+                    make: Swift.String? = nil,
+                    model: Swift.String? = nil,
+                    state: Swift.String? = nil,
+                    _type: Components.Schemas.SearchSuggestionType
+                ) {
+                    self.country = country
+                    self.includeNull = includeNull
+                    self.lensModel = lensModel
+                    self.make = make
+                    self.model = model
+                    self.state = state
+                    self._type = _type
+                }
+            }
+            public var query: Operations.GetSearchSuggestions.Input.Query
+            /// - Remark: Generated from `#/paths/search/suggestions/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSearchSuggestions.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetSearchSuggestions.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetSearchSuggestions.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetSearchSuggestions.Input.Query,
+                headers: Operations.GetSearchSuggestions.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/search/suggestions/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/search/suggestions/GET/responses/200/content/application\/json`.
+                    case json([Swift.String])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Swift.String] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetSearchSuggestions.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetSearchSuggestions.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//search/suggestions/get(getSearchSuggestions)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetSearchSuggestions.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetSearchSuggestions.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):

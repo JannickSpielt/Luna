@@ -197,3 +197,13 @@ Plan: `docs/FEINSCHLIFF-PLAN.md`.
 
 - Sichtbar heißt die App jetzt **Luna**: Name unter dem Symbol, Startbildschirm und Startbild, alle Texte in der App, Live-Aktivität, Hinweise für Fotos, Face ID und lokales Netzwerk.
 - **Intern bleibt „Lilith“** als Code-Name: Bundle-ID `app.lilith.Lilith`, Hintergrund-Aufgaben, Schlüsselbund, Ordner und Datenbank, `LilithKit` und Typnamen sowie das Repo. Sonst gingen Anmeldung, Backup-Stand und laufende Uploads auf dem iPhone verloren.
+
+## 16. Sammlungen (12.11.2026)
+
+Plan: `docs/SAMMLUNGEN-PLAN.md`.
+
+- Der Tab heißt **„Sammlungen“** (wie bei Apple): eine Seite mit Abschnitten, jeweils Überschrift mit „›“ und einer Reihe zum Wischen oder einer kurzen Liste.
+- **Kürzlich hinzugefügt** zeigt Karten je Hochlade-Tag (Suche mit `createdAfter`, nach Tag gruppiert).
+- **Personen:** `getAllPeople` (ohne ausgeblendete), Gesichter über `/people/{id}/thumbnail`. Ein Tipp öffnet die Timeline mit `personId`.
+- **Medienarten** nutzen die einfachen, älteren Suchfelder (`type`, `isMotion`, `lensModel`, `originalFileName`), weil der neue `filter` auf v3.3.5 mit 400 antwortete. Selfies: Objektive mit „front“ aus `getSearchSuggestions`. Bildschirmfotos: PNG-Bilder. RAW: bekannte Endungen. Mehrere Abfragen werden zusammengeführt und nach Datum sortiert.
+- **Start-Animation:** Erst erscheint unten „von Jannick Stahn“ (geladen), dann wird der Mond voll, dann geht es mit wachsender Geschwindigkeit hinein (0,55 s).

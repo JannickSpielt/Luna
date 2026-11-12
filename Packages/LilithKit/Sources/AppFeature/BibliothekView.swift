@@ -282,6 +282,8 @@ struct TimelineInhalt: View {
         case .archiv: ("Archiv ist leer", "Archivierte Fotos verschwinden aus „Fotos“ und liegen hier.", "archivebox")
         case .papierkorb: ("Papierkorb ist leer", "Gelöschte Fotos liegen hier, bis der Server sie endgültig entfernt.", "trash")
         case .kuerzlich: ("Nichts Neues", "In den letzten 30 Tagen wurde nichts hochgeladen.", "clock.arrow.circlepath")
+        case .person: ("Keine Fotos", "Immich hat diese Person noch auf keinem Foto erkannt.", "person.crop.circle")
+        case .medienart(let art): ("Keine \(art.titel)", "In deiner Bibliothek gibt es davon noch nichts.", art.symbol)
         case .suche: ("Nichts gefunden", "Versuch es mit anderen Worten, zum Beispiel einem Ort, einem Tier oder einer Farbe.", "magnifyingglass")
         case .album: ("Album ist leer", "Wähle unter „Fotos“ Bilder aus und füge sie diesem Album hinzu.", "rectangle.stack")
         }

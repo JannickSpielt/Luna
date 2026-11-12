@@ -67,6 +67,7 @@ struct HauptView: View {
     /// 0 = Mond, 1 = App ganz offen.
     @State private var startOeffnung = 0.0
     @State private var startVollmond = false
+    @State private var startGeladen = false
     @Environment(\.accessibilityReduceMotion) private var wenigBewegung
 
     private var quelle: TimelineQuelle? { timeline ?? demo }
@@ -91,23 +92,29 @@ struct HauptView: View {
                 .overlay {
                     if !startVorbei {
                         // Kein Überblenden: Er liegt nahtlos über dem Startbildschirm davor.
-                        StartBildschirm(vollmond: startVollmond, oeffnung: startOeffnung).transition(.identity)
+                        StartBildschirm(vollmond: startVollmond, geladen: startGeladen, oeffnung: startOeffnung).transition(.identity)
                     }
                 }
                 .task {
                     // Höchstens 5 Sekunden: Ist der Server langsam, zeigt die Bibliothek selbst an, dass sie lädt.
                     let start = Date.now
                     while timeline?.zustand == .laedt, Date.now.timeIntervalSince(start) < 5 {
-                        try? await Task.sleep(for: .milliseconds(100))
+                        try? await Task.sleep(for: .milliseconds(40))
                     }
                     if wenigBewegung {
-                        startOeffnung = 1
+                        startGeladen = true; startOeffnung = 1
                         withAnimation(.easeOut(duration: 0.45)) { startVorbei = true }
                     } else {
-                        // Erst wird der Mond voll, dann kommt er näher, und in seiner Mitte öffnet sich die App.
-                        withAnimation(.easeInOut(duration: 0.7)) { startVollmond = true } completion: {
-                            withAnimation(.easeIn(duration: 0.8)) { startOeffnung = 1 } completion: { startVorbei = true }
-                        }
+                        // 1. Unten erscheint „von Jannick Stahn“: alles geladen.
+                        withAnimation(.easeOut(duration: 0.35)) { startGeladen = true }
+                        try? await Task.sleep(for: .milliseconds(550))
+                        // 2. Der Mond wird voll.
+                        withAnimation(.easeInOut(duration: 0.4)) { startVollmond = true }
+                        try? await Task.sleep(for: .milliseconds(380))
+                        // 3. Hinein: erst gemächlich, dann immer schneller („pschuh“).
+                        withAnimation(.timingCurve(0.6, 0, 0.85, 0.35, duration: 0.55)) { startOeffnung = 1 }
+                        try? await Task.sleep(for: .milliseconds(570))
+                        startVorbei = true
                     }
                 }
                 .overlay {
@@ -165,7 +172,7 @@ struct HauptView: View {
                                 account: account, zeigeKonto: $zeigeKonto)
                 }
             }
-            Tab("Alben", systemImage: "rectangle.stack", value: Bereich.alben) {
+            Tab("Sammlungen", systemImage: "rectangle.stack", value: Bereich.alben) {
                 AlbenView()
             }
             Tab("Suchen", systemImage: "magnifyingglass", value: Bereich.suche, role: .search) {
@@ -177,7 +184,7 @@ struct HauptView: View {
             // Unsichtbare Knöpfe nur für Tastenkürzel (Mac, iPad mit Tastatur).
             Group {
                 Button("Fotos") { auswahl = .bibliothek }.keyboardShortcut("1", modifiers: .command)
-                Button("Alben") { auswahl = .alben }.keyboardShortcut("2", modifiers: .command)
+                Button("Sammlungen") { auswahl = .alben }.keyboardShortcut("2", modifiers: .command)
                 Button("Suche") { auswahl = .suche }.keyboardShortcut("3", modifiers: .command)
                 Button("Suchen") { auswahl = .suche }.keyboardShortcut("f", modifiers: .command)
             }

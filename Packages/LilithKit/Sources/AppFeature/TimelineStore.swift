@@ -53,6 +53,10 @@ final class TimelineStore: TimelineQuelle {
             await ladeListe(titel: "Ergebnisse", untertitel: "beste Treffer zuerst") { try await $0.sucheSmart(text) }
             return
         }
+        if case .medienart(let art) = filter {
+            await ladeListe(titel: art.titel, untertitel: "neueste zuerst") { try await $0.medien(art) }
+            return
+        }
         if filter == .kuerzlich {
             await ladeListe(titel: "Zuletzt hochgeladen", untertitel: "letzte 30 Tage, neueste zuerst") {
                 try await $0.kuerzlichHinzugefuegt()

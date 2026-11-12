@@ -13,6 +13,10 @@ public enum TimelineFilter: Hashable, Sendable {
     case suche(String)
     /// Zuletzt auf den Server hochgeladen, neueste zuerst.
     case kuerzlich
+    /// Fotos einer Person (Gesichtserkennung von Immich).
+    case person(String)
+    /// Videos, Live Photos, Selfies, Bildschirmfotos oder RAW.
+    case medienart(Medienart)
 }
 
 /// Ein Album.
