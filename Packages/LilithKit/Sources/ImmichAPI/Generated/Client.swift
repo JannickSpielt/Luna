@@ -374,6 +374,77 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Check bulk upload
+    ///
+    /// Determine which assets have already been uploaded to the server based on their SHA1 checksums.
+    ///
+    /// - Remark: HTTP `POST /assets/bulk-upload-check`.
+    /// - Remark: Generated from `#/paths//assets/bulk-upload-check/post(checkBulkUpload)`.
+    public func checkBulkUpload(_ input: Operations.CheckBulkUpload.Input) async throws -> Operations.CheckBulkUpload.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.CheckBulkUpload.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/assets/bulk-upload-check",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.CheckBulkUpload.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AssetBulkUploadCheckResponseDto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Retrieve an asset
     ///
     /// Retrieve detailed information about a specific asset.

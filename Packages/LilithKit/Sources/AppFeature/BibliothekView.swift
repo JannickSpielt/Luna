@@ -2,6 +2,9 @@ import SwiftUI
 import DesignSystem
 import Networking
 import TimelineGrid
+import Backup
+import PhotosUI
+import UniformTypeIdentifiers
 
 /// Die Bibliothek: alle Fotos und Videos als Timeline mit Scrubber.
 struct BibliothekView: View {
@@ -42,6 +45,25 @@ struct TimelineInhalt: View {
 
     private var filter: TimelineFilter { store?.filter ?? .alle }
 
+    // Hochladen
+    @State private var fotoAuswahl: [PhotosPickerItem] = []
+    @State private var zeigeImport = false
+    @State private var ziehtDarueber = false
+
+    /// Hochladen gibt es in der Bibliothek und in Alben, nicht in Favoriten, Archiv, Papierkorb oder Suche.
+    private var kannHochladen: Bool {
+        guard kontext.uploads != nil else { return false }
+        switch filter {
+        case .alle, .album: return true
+        default: return false
+        }
+    }
+
+    private var zielAlbum: String? {
+        if case .album(let id) = filter { return id }
+        return nil
+    }
+
     private static var startZoom: GridZoom {
         #if os(macOS)
         .mac
@@ -63,6 +85,41 @@ struct TimelineInhalt: View {
                 }
             }
             .animation(.smooth, value: store?.hinweis)
+            .overlay(alignment: .bottom) {
+                if auswahl.isEmpty, kontext.detail == nil, let uploads = kontext.uploads {
+                    UploadAnzeige(uploads: uploads)
+                }
+            }
+            .overlay {
+                if ziehtDarueber {
+                    RoundedRectangle(cornerRadius: 18)
+                        .strokeBorder(LilithColor.nachtrose, lineWidth: 3)
+                        .background(LilithColor.nachtrose.opacity(0.08), in: .rect(cornerRadius: 18))
+                        .overlay {
+                            Label(zielAlbum == nil ? "Zum Hochladen loslassen" : "In dieses Album hochladen",
+                                  systemImage: "arrow.up.circle")
+                                .font(.title3.weight(.semibold))
+                                .padding(.horizontal, 18).padding(.vertical, 10)
+                                .background(.regularMaterial, in: .capsule)
+                        }
+                        .padding(8)
+                        .allowsHitTesting(false)
+                }
+            }
+            .dropDestination(for: URL.self) { urls, _ in
+                guard kannHochladen else { return false }
+                ladeHoch(urls, quelle: "ziehen")
+                return true
+            } isTargeted: { ziehtDarueber = kannHochladen && $0 }
+            .fileImporter(isPresented: $zeigeImport, allowedContentTypes: [.image, .movie, .folder],
+                          allowsMultipleSelection: true) { ergebnis in
+                if case .success(let urls) = ergebnis { ladeHoch(urls, quelle: "import") }
+            }
+            .onChange(of: fotoAuswahl) { _, neu in
+                guard !neu.isEmpty else { return }
+                ladeHochAusAuswahl(neu)
+                fotoAuswahl = []
+            }
             .overlay(alignment: .bottom) {
                 if !auswahl.isEmpty && kontext.detail == nil {
                     aktionsleiste.transition(.move(edge: .bottom).combined(with: .opacity))
@@ -162,6 +219,19 @@ struct TimelineInhalt: View {
     @ToolbarContentBuilder
     private var werkzeuge: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
+            if kannHochladen && !auswahlModus {
+                #if os(iOS)
+                PhotosPicker(selection: $fotoAuswahl, matching: .any(of: [.images, .videos]),
+                             preferredItemEncoding: .current, photoLibrary: .shared()) {
+                    Label("Hochladen", systemImage: "plus")
+                }
+                .accessibilityLabel(zielAlbum == nil ? "Fotos hochladen" : "Fotos in dieses Album hochladen")
+                #else
+                Button("Importieren …", systemImage: "plus") { zeigeImport = true }
+                    .keyboardShortcut("i", modifiers: .command)
+                    .help("Fotos und Videos hochladen (⌘I)")
+                #endif
+            }
             #if os(iOS)
             if kontext.client != nil, store?.zustand == .bereit {
                 Button(auswahlModus ? "Fertig" : "Auswählen") {
@@ -277,6 +347,53 @@ struct TimelineInhalt: View {
                 if ende.section != start.section { sprung = SprungAnfrage(section: ende.section) }
                 k.detail = nil
             })
+    }
+
+    // MARK: - Hochladen
+
+    /// Dateien (Mac: gezogen oder importiert) in die Warteschlange geben.
+    private func ladeHoch(_ urls: [URL], quelle: String) {
+        guard let uploads = kontext.uploads else { return }
+        let album = zielAlbum
+        Task {
+            // Dateien aus „Importieren …“ sind nur mit ausdrücklicher Freigabe lesbar.
+            let freigegeben = urls.filter { $0.startAccessingSecurityScopedResource() }
+            defer { freigegeben.forEach { $0.stopAccessingSecurityScopedResource() } }
+            do {
+                let anzahl = try await uploads.fuegeHinzu(urls, quelle: quelle, albumId: album)
+                if anzahl == 0 { fehler = "Darunter waren keine Fotos oder Videos." }
+            } catch {
+                fehler = error.localizedDescription
+            }
+        }
+    }
+
+    /// Fotos aus Apples Foto-Auswahl: als Original-Datei holen und hochladen.
+    private func ladeHochAusAuswahl(_ eintraege: [PhotosPickerItem]) {
+        guard let uploads = kontext.uploads else { return }
+        let album = zielAlbum
+        Task {
+            var dateien: [URL] = []
+            var fehlgeschlagen = 0
+            for eintrag in eintraege {
+                if let datei = try? await eintrag.loadTransferable(type: AuswahlDatei.self) {
+                    dateien.append(datei.url)
+                } else {
+                    fehlgeschlagen += 1
+                }
+            }
+            do {
+                try await uploads.fuegeHinzu(dateien, quelle: "auswahl", albumId: album)
+            } catch {
+                fehler = error.localizedDescription
+            }
+            // Die Zwischenkopien der Auswahl werden nicht mehr gebraucht (die Warteschlange hat eigene).
+            for datei in dateien { try? FileManager.default.removeItem(at: datei.deletingLastPathComponent()) }
+            if fehlgeschlagen > 0 {
+                fehler = fehlgeschlagen == 1 ? "Ein Objekt konnte nicht geladen werden (vielleicht liegt es nur in iCloud)."
+                                             : "\(fehlgeschlagen) Objekte konnten nicht geladen werden (vielleicht liegen sie nur in iCloud)."
+            }
+        }
     }
 
     private func beendeAuswahl() {

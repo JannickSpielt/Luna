@@ -92,3 +92,17 @@ Der Sprung ist entscheidend, weil Scrubber, „Heute vor X Jahren“ und Sucherg
 - **Sichtschutz:** Auf iPhone und iPad zeigt der App-Umschalter ein neutrales Bild statt der Fotos (auch ohne App-Sperre).
 - **Bewegung reduzieren:** Ist es in den Bedienungshilfen eingeschaltet, blendet die Detailansicht nur ein statt zu zoomen, und der Mond beim Anmelden springt ohne Animation.
 - **TestFlight vorbereitet:** Berechtigungstexte, Datenschutz-Manifest, Verschlüsselungsangabe, Team-ID über `LILITH_TEAM`. Anleitung in `docs/TESTFLIGHT.md`.
+
+## 8. Upload per Hand (Backup-Etappe 1, 12.11.2026)
+
+Plan: `docs/BACKUP-PLAN.md`.
+
+- **Datenbank (GRDB):** Neues Modul `Persistence`. Jeder Upload ist ein Auftrag mit Zustand (wartet, läuft, fertig, Duplikat, Fehler), Prüfsumme, Versuchen und Server-ID. Nach einem Absturz setzt Lilith laufende Aufträge auf „wartet“ zurück und macht weiter.
+- **Kopie statt Verweis:** Ausgewählte Dateien werden nach `Application Support/Lilith/Uploads` kopiert und nach dem Upload gelöscht. So geht der Upload auch nach einem Neustart weiter, obwohl die Foto-Auswahl nur kurz Zugriff gibt.
+- **Duplikate vorab erkennen:** Lilith berechnet SHA1 (Base64) wie die offizielle Immich-App und fragt `bulk-upload-check`, bevor sie hochlädt. Was schon da ist, wird nicht noch einmal gesendet.
+- **Upload aus einer Datei:** Der Multipart-Inhalt wird zuerst als Datei geschrieben und dann mit `URLSession.upload(fromFile:)` gesendet. So bleibt der Speicher klein, der Fortschritt ist sichtbar, und Etappe 3 kann dieselbe Datei im Hintergrund hochladen.
+- **Wo der „+“ erscheint:** In der Bibliothek und in Alben (dort landen die Fotos direkt im Album). Nicht in Favoriten, Archiv und Papierkorb. Auf dem Mac: Fenster als Ablagefläche und „Importieren …“ (⌘I), auch für Ordner.
+- **Fehler:** Abgelaufene Anmeldung und volles Kontingent halten die Warteschlange an. Server nicht erreichbar: Anhalten, bei nächster Gelegenheit neu versuchen, nach 5 Versuchen Fehler. Zu große Datei (413) erklärt den Reverse-Proxy. Gescheiterte Dateien lassen sich erneut versuchen oder verwerfen.
+- **Fotos nur in iCloud:** Die Foto-Auswahl liefert sie ggf. nicht. Lilith meldet dann, wie viele fehlen.
+
+**Offen:** Live Photos werden über die Foto-Auswahl noch als einzelnes Foto hochgeladen (Live-Paar kommt mit Etappe 2). Ablegen auf ein Album in der Mac-Seitenleiste. Live Activity.

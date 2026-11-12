@@ -47,6 +47,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /assets`.
     /// - Remark: Generated from `#/paths//assets/delete(deleteAssets)`.
     func deleteAssets(_ input: Operations.DeleteAssets.Input) async throws -> Operations.DeleteAssets.Output
+    /// Check bulk upload
+    ///
+    /// Determine which assets have already been uploaded to the server based on their SHA1 checksums.
+    ///
+    /// - Remark: HTTP `POST /assets/bulk-upload-check`.
+    /// - Remark: Generated from `#/paths//assets/bulk-upload-check/post(checkBulkUpload)`.
+    func checkBulkUpload(_ input: Operations.CheckBulkUpload.Input) async throws -> Operations.CheckBulkUpload.Output
     /// Retrieve an asset
     ///
     /// Retrieve detailed information about a specific asset.
@@ -209,6 +216,21 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//assets/delete(deleteAssets)`.
     public func deleteAssets(body: Operations.DeleteAssets.Input.Body) async throws -> Operations.DeleteAssets.Output {
         try await deleteAssets(Operations.DeleteAssets.Input(body: body))
+    }
+    /// Check bulk upload
+    ///
+    /// Determine which assets have already been uploaded to the server based on their SHA1 checksums.
+    ///
+    /// - Remark: HTTP `POST /assets/bulk-upload-check`.
+    /// - Remark: Generated from `#/paths//assets/bulk-upload-check/post(checkBulkUpload)`.
+    public func checkBulkUpload(
+        headers: Operations.CheckBulkUpload.Input.Headers = .init(),
+        body: Operations.CheckBulkUpload.Input.Body
+    ) async throws -> Operations.CheckBulkUpload.Output {
+        try await checkBulkUpload(Operations.CheckBulkUpload.Input(
+            headers: headers,
+            body: body
+        ))
     }
     /// Retrieve an asset
     ///
@@ -715,6 +737,114 @@ public enum Components {
                 case visibility
             }
         }
+        /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckDto`.
+        public struct AssetBulkUploadCheckDto: Codable, Hashable, Sendable {
+            /// Assets to check
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckDto/assets`.
+            public var assets: [Components.Schemas.AssetBulkUploadCheckItem]
+            /// Creates a new `AssetBulkUploadCheckDto`.
+            ///
+            /// - Parameters:
+            ///   - assets: Assets to check
+            public init(assets: [Components.Schemas.AssetBulkUploadCheckItem]) {
+                self.assets = assets
+            }
+            public enum CodingKeys: String, CodingKey {
+                case assets
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckItem`.
+        public struct AssetBulkUploadCheckItem: Codable, Hashable, Sendable {
+            /// Base64 or hex encoded SHA1 hash
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckItem/checksum`.
+            public var checksum: Swift.String
+            /// Client-side identifier echoed in the response to match results to inputs (e.g. filename)
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckItem/id`.
+            public var id: Swift.String
+            /// Creates a new `AssetBulkUploadCheckItem`.
+            ///
+            /// - Parameters:
+            ///   - checksum: Base64 or hex encoded SHA1 hash
+            ///   - id: Client-side identifier echoed in the response to match results to inputs (e.g. filename)
+            public init(
+                checksum: Swift.String,
+                id: Swift.String
+            ) {
+                self.checksum = checksum
+                self.id = id
+            }
+            public enum CodingKeys: String, CodingKey {
+                case checksum
+                case id
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckResponseDto`.
+        public struct AssetBulkUploadCheckResponseDto: Codable, Hashable, Sendable {
+            /// Upload check results
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckResponseDto/results`.
+            public var results: [Components.Schemas.AssetBulkUploadCheckResult]
+            /// Creates a new `AssetBulkUploadCheckResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - results: Upload check results
+            public init(results: [Components.Schemas.AssetBulkUploadCheckResult]) {
+                self.results = results
+            }
+            public enum CodingKeys: String, CodingKey {
+                case results
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckResult`.
+        public struct AssetBulkUploadCheckResult: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckResult/action`.
+            public var action: Components.Schemas.AssetUploadAction
+            /// Existing asset ID if duplicate
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckResult/assetId`.
+            public var assetId: Swift.String?
+            /// Client-side identifier echoed from the request to match results to inputs
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckResult/id`.
+            public var id: Swift.String
+            /// Whether existing asset is trashed
+            ///
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckResult/isTrashed`.
+            public var isTrashed: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/AssetBulkUploadCheckResult/reason`.
+            public var reason: Components.Schemas.AssetRejectReason?
+            /// Creates a new `AssetBulkUploadCheckResult`.
+            ///
+            /// - Parameters:
+            ///   - action:
+            ///   - assetId: Existing asset ID if duplicate
+            ///   - id: Client-side identifier echoed from the request to match results to inputs
+            ///   - isTrashed: Whether existing asset is trashed
+            ///   - reason:
+            public init(
+                action: Components.Schemas.AssetUploadAction,
+                assetId: Swift.String? = nil,
+                id: Swift.String,
+                isTrashed: Swift.Bool? = nil,
+                reason: Components.Schemas.AssetRejectReason? = nil
+            ) {
+                self.action = action
+                self.assetId = assetId
+                self.id = id
+                self.isTrashed = isTrashed
+                self.reason = reason
+            }
+            public enum CodingKeys: String, CodingKey {
+                case action
+                case assetId
+                case id
+                case isTrashed
+                case reason
+            }
+        }
         /// Asset sort order
         ///
         /// - Remark: Generated from `#/components/schemas/AssetOrder`.
@@ -728,6 +858,13 @@ public enum Components {
         @frozen public enum AssetOrderBy: String, Codable, Hashable, Sendable, CaseIterable {
             case takenAt = "takenAt"
             case createdAt = "createdAt"
+        }
+        /// Rejection reason if rejected
+        ///
+        /// - Remark: Generated from `#/components/schemas/AssetRejectReason`.
+        @frozen public enum AssetRejectReason: String, Codable, Hashable, Sendable, CaseIterable {
+            case duplicate = "duplicate"
+            case unsupportedFormat = "unsupported-format"
         }
         /// - Remark: Generated from `#/components/schemas/AssetResponseDto`.
         public struct AssetResponseDto: Codable, Hashable, Sendable {
@@ -1043,6 +1180,13 @@ public enum Components {
             case video = "VIDEO"
             case audio = "AUDIO"
             case other = "OTHER"
+        }
+        /// Upload action
+        ///
+        /// - Remark: Generated from `#/components/schemas/AssetUploadAction`.
+        @frozen public enum AssetUploadAction: String, Codable, Hashable, Sendable, CaseIterable {
+            case accept = "accept"
+            case reject = "reject"
         }
         /// Asset visibility
         ///
@@ -4863,6 +5007,129 @@ public enum Operations {
             ///
             /// A response with a code that is not documented in the OpenAPI document.
             case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+    }
+    /// Check bulk upload
+    ///
+    /// Determine which assets have already been uploaded to the server based on their SHA1 checksums.
+    ///
+    /// - Remark: HTTP `POST /assets/bulk-upload-check`.
+    /// - Remark: Generated from `#/paths//assets/bulk-upload-check/post(checkBulkUpload)`.
+    public enum CheckBulkUpload {
+        public static let id: Swift.String = "checkBulkUpload"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/assets/bulk-upload-check/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CheckBulkUpload.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CheckBulkUpload.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CheckBulkUpload.Input.Headers
+            /// - Remark: Generated from `#/paths/assets/bulk-upload-check/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/bulk-upload-check/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.AssetBulkUploadCheckDto)
+            }
+            public var body: Operations.CheckBulkUpload.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CheckBulkUpload.Input.Headers = .init(),
+                body: Operations.CheckBulkUpload.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/assets/bulk-upload-check/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/assets/bulk-upload-check/POST/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AssetBulkUploadCheckResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AssetBulkUploadCheckResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CheckBulkUpload.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CheckBulkUpload.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//assets/bulk-upload-check/post(checkBulkUpload)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.CheckBulkUpload.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.CheckBulkUpload.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
         }
     }
     /// Retrieve an asset

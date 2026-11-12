@@ -11,6 +11,10 @@ public enum ImmichError: Error, Equatable, Sendable, LocalizedError {
     case falscheZugangsdaten
     case sitzungAbgelaufen
     case unerwarteteAntwort(Int)
+    case dateiZuGross
+    case kontingentVoll
+    case formatNichtUnterstuetzt
+    case dateiNichtLesbar(String)
 
     public var errorDescription: String? {
         switch self {
@@ -30,6 +34,14 @@ public enum ImmichError: Error, Equatable, Sendable, LocalizedError {
             "Deine Anmeldung ist abgelaufen. Bitte melde dich neu an."
         case .unerwarteteAntwort(let code):
             "Der Server hat unerwartet geantwortet (Status \(code))."
+        case .dateiZuGross:
+            "Die Datei ist größer, als dein Server annimmt. Meist begrenzt der Reverse-Proxy (z. B. nginx: client_max_body_size) die Größe."
+        case .kontingentVoll:
+            "Dein Speicherkontingent auf dem Server ist voll. Gib Platz frei oder erhöhe das Kontingent."
+        case .formatNichtUnterstuetzt:
+            "Dieses Dateiformat nimmt dein Immich-Server nicht an."
+        case .dateiNichtLesbar(let grund):
+            "Die Datei konnte nicht gelesen werden. (\(grund))"
         }
     }
 }

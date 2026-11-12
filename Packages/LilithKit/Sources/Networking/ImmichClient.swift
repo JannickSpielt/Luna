@@ -24,11 +24,24 @@ public struct ImmichClient: Sendable {
     public let address: ServerAddress
     let credential: Credential?
     let client: ImmichAPI.Client
+    /// Für Uploads, die direkt über `URLSession` laufen (Datei statt Speicher, mit Fortschritt).
+    let uploadSession: URLSession
+
+    /// Standard-Session für Uploads: lange Zeitgrenze, weil große Videos dauern.
+    static let standardUploadSession: URLSession = {
+        let konfiguration = URLSessionConfiguration.default
+        konfiguration.timeoutIntervalForRequest = 600
+        konfiguration.timeoutIntervalForResource = 24 * 3600
+        return URLSession(configuration: konfiguration)
+    }()
 
     /// - Parameter transport: Für Tests austauschbar, sonst `URLSession`.
-    public init(address: ServerAddress, credential: Credential? = nil, transport: (any ClientTransport)? = nil) {
+    /// - Parameter uploadSession: Für Tests austauschbar.
+    public init(address: ServerAddress, credential: Credential? = nil, transport: (any ClientTransport)? = nil,
+                uploadSession: URLSession? = nil) {
         self.address = address
         self.credential = credential
+        self.uploadSession = uploadSession ?? Self.standardUploadSession
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = 15
         self.client = ImmichAPI.Client(

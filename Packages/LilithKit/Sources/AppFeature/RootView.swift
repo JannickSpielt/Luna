@@ -2,6 +2,8 @@ import SwiftUI
 import DesignSystem
 import Networking
 import TimelineGrid
+import Backup
+import Persistence
 
 /// Die Hauptbereiche der App.
 public enum Bereich: Hashable, Sendable {
@@ -113,9 +115,18 @@ struct HauptView: View {
     private func richteEin() {
         guard kontext == nil else { return }
         let sitzung = session
+        // Upload-Warteschlange mit eigener Datenbank. Schlägt das Öffnen fehl, gibt es eben keinen Upload.
+        var uploads: UploadWarteschlange?
+        if let client = session.client, let db = try? Datenbank.standard() {
+            uploads = UploadWarteschlange(client: client, db: db, konto: account.id)
+        }
         let neu = BibliothekKontext(client: session.client, papierkorbAktiv: account.server.capabilities.trash,
-                                    smartSearch: account.server.capabilities.smartSearch)
+                                    smartSearch: account.server.capabilities.smartSearch, uploads: uploads)
         neu.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
+        uploads?.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
+        // Nach dem Hochladen alle Ansichten neu laden, damit die neuen Fotos erscheinen.
+        uploads?.onDurchgangFertig = { [weak neu] in neu?.melde(von: nil) }
+        uploads?.start()
         if let client = session.client {
             let store = TimelineStore(client: client)
             store.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }

@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import Networking
 import TimelineGrid
+import Backup
 
 /// Was alle Ansichten der Bibliothek gemeinsam brauchen: die Verbindung zum Server
 /// und ein Zähler, der sich bei jeder Änderung erhöht, damit andere Ansichten neu laden.
@@ -20,8 +21,12 @@ final class BibliothekKontext {
     /// Das gerade geöffnete Foto. Die Detailansicht liegt über dem ganzen Fenster, nicht nur über einem Bereich.
     var detail: DetailAnzeige?
 
-    init(client: ImmichClient?, papierkorbAktiv: Bool, smartSearch: Bool = false) {
+    /// Hochladen. `nil` im Demo-Modus oder wenn die Datenbank nicht geöffnet werden konnte.
+    let uploads: UploadWarteschlange?
+
+    init(client: ImmichClient?, papierkorbAktiv: Bool, smartSearch: Bool = false, uploads: UploadWarteschlange? = nil) {
         self.client = client
+        self.uploads = uploads
         self.papierkorbAktiv = papierkorbAktiv
         self.smartSearch = smartSearch
     }
