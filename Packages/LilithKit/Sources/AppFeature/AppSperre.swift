@@ -64,11 +64,13 @@ struct SperrSchicht: ViewModifier {
     @Environment(\.scenePhase) private var phase
     @State private var gesperrt: Bool = UserDefaults.standard.bool(forKey: Entsperren.schluessel)
     @State private var prueft = false
+    /// Beim Start ist die App kurz „nicht aktiv“: Da noch nicht verdecken, sonst flackert es.
+    @State private var warAktiv = false
 
     private var verdecken: Bool {
         #if os(iOS)
         // Im App-Umschalter soll niemand die Fotos sehen.
-        return gesperrt || phase != .active
+        return gesperrt || (warAktiv && phase != .active)
         #else
         return gesperrt
         #endif
@@ -83,7 +85,8 @@ struct SperrSchicht: ViewModifier {
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: verdecken)
-            .onChange(of: phase) { _, neu in
+            .onChange(of: phase, initial: true) { _, neu in
+                if neu == .active { warAktiv = true }
                 if neu == .background && sperreAn { gesperrt = true }
                 if neu == .active && gesperrt { entsperre() }
             }

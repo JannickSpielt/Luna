@@ -5,10 +5,10 @@ import Testing
 struct RGBTests {
     @Test("Nachtrose wird korrekt zerlegt")
     func nachtrose() {
-        let c = RGB(hex: 0xB0305A)
-        #expect(c.red == 176.0 / 255)
-        #expect(c.green == 48.0 / 255)
-        #expect(c.blue == 90.0 / 255)
+        let c = RGB(hex: 0xC8102E)
+        #expect(c.red == 200.0 / 255)
+        #expect(c.green == 16.0 / 255)
+        #expect(c.blue == 46.0 / 255)
     }
 
     @Test("Schwarz und Weiß")

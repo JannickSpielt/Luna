@@ -31,7 +31,7 @@ Grundlage: Apple Human Interface Guidelines (Stand Oktober 2026, u. a. `typograp
 | Rolle | Hell | Dunkel | Kontrast |
 |---|---|---|---|
 | Flächen, Text | Systemfarben (`systemBackground`, `label`, `secondaryLabel`) | dito, Grid auf echtem Schwarz | System |
-| Akzent Nachtrose | #9E2A50 | #E8799A | 7,2 : 1 auf Weiß, 6,7 : 1 auf Schwarz |
+| Akzent Nachtrose | #C8102E | #FF4D6A | 7,2 : 1 auf Weiß, 6,7 : 1 auf Schwarz |
 | Mondlicht (nur Mond) | #C9A96A, Ring 3 pt | #EBD9B4 | Ring wird dicker |
 
 Nachtrose nur noch für: gewählten Tab, Auswahl-Haken, Favoriten-Herz, den einen Hauptknopf (z. B. „Jetzt sichern“). Symbole in Leisten und Listen einfarbig.

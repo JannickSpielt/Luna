@@ -158,6 +158,12 @@ extension ImmichClient {
 
     /// Lädt die Originaldatei in einen temporären Ordner, z. B. zum Teilen.
     public func ladeOriginal(assetId: String, dateiname: String) async throws -> URL {
+        let ordner = FileManager.default.temporaryDirectory.appending(path: "lilith-teilen").appending(path: assetId)
+        // Nur der letzte Pfadteil, damit ein Dateiname nie aus dem Ordner herausführt.
+        let name = URL(fileURLWithPath: dateiname).lastPathComponent
+        let ziel = ordner.appending(path: name.isEmpty ? assetId : name)
+        // Schon einmal geladen: wiederverwenden statt neu herunterzuladen.
+        if FileManager.default.fileExists(atPath: ziel.path) { return ziel }
         let (temp, antwort): (URL, URLResponse)
         do {
             (temp, antwort) = try await URLSession.shared.download(for: originalAnfrage(assetId: assetId))
@@ -168,12 +174,8 @@ extension ImmichClient {
         guard status == 200 else {
             throw status == 401 ? ImmichError.sitzungAbgelaufen : ImmichError.unerwarteteAntwort(status)
         }
-        let ordner = FileManager.default.temporaryDirectory.appending(path: "lilith-teilen").appending(path: assetId)
         try? FileManager.default.removeItem(at: ordner)
         try FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
-        // Nur der letzte Pfadteil, damit ein Dateiname nie aus dem Ordner herausführt.
-        let name = URL(fileURLWithPath: dateiname).lastPathComponent
-        let ziel = ordner.appending(path: name.isEmpty ? assetId : name)
         try FileManager.default.moveItem(at: temp, to: ziel)
         return ziel
     }

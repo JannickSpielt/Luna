@@ -21,8 +21,12 @@ public enum BilderCache {
     }
 
     /// Anfrage für eine Kachel mit passender Größe (spart Speicher beim Dekodieren).
+    /// Die Größe wird auf feste Stufen aufgerundet: So treffen Kacheln nach einem Zoom oft noch den Cache.
     static func anfrage(_ urlRequest: URLRequest, pixel: CGFloat) -> ImageRequest {
-        ImageRequest(urlRequest: urlRequest,
-                     processors: [.resize(size: CGSize(width: pixel, height: pixel), contentMode: .aspectFill, crop: true)])
+        let stufe = groessenStufen.first { $0 >= pixel } ?? pixel
+        return ImageRequest(urlRequest: urlRequest,
+                            processors: [.resize(size: CGSize(width: stufe, height: stufe), contentMode: .aspectFill, crop: true)])
     }
+
+    static let groessenStufen: [CGFloat] = [128, 256, 384, 512, 768, 1024, 1440, 2048]
 }

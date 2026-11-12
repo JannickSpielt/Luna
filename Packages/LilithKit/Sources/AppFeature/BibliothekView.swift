@@ -146,6 +146,12 @@ struct TimelineInhalt: View {
                     try? await Task.sleep(for: .seconds(2))
                     sprung = SprungAnfrage(section: quelle.sections.count - 1)
                 }
+                // Zum Testen: „-LilithSprungMonat 12“ springt zum 12. Monat (0 = neuester).
+                let monat = UserDefaults.standard.integer(forKey: "LilithSprungMonat")
+                if monat > 0, monat < quelle.sections.count {
+                    try? await Task.sleep(for: .seconds(2))
+                    sprung = SprungAnfrage(section: monat)
+                }
                 #endif
             }
             .onChange(of: kontext.stand) { _, _ in
@@ -208,7 +214,7 @@ struct TimelineInhalt: View {
             GeometryReader { geo in
                 let rand = geo.safeAreaInsets
                 // Abstand zur Statusleiste: Der Titel steht in derselben Reihe wie die Leiste rechts.
-                let fenster = VollerPlayer.fensterRand().top
+                let fenster = VideoSeite.fensterRand().top
                 raster
                     .ignoresSafeArea()
                     .overlay(alignment: .top) {

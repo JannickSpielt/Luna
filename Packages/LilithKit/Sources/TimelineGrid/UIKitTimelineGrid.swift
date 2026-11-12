@@ -153,9 +153,8 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     public override func viewDidLoad() {
         super.viewDidLoad()
-        let layout = UICollectionViewCompositionalLayout { [weak self] _, umgebung in
-            self?.section(breite: umgebung.container.effectiveContentSize.width)
-        }
+        // Die Monate laufen ohne Umbruch ineinander, wie in Apples Fotos-App.
+        let layout = FliessLayout(spalten: zoom.spalten)
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: layout)
         collectionView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         collectionView.backgroundColor = .clear
@@ -225,8 +224,9 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         if anzahlGeaendert {
             UIView.performWithoutAnimation { collectionView.reloadSections([section]) }
         } else {
-            let sichtbar = collectionView.indexPathsForVisibleItems.filter { $0.section == section }
-            if !sichtbar.isEmpty { collectionView.reconfigureItems(at: sichtbar) }
+            // Alle Kacheln des Monats, auch die schon vorbereiteten, die noch nicht sichtbar sind.
+            let anzahl = collectionView.numberOfItems(inSection: section)
+            if anzahl > 0 { collectionView.reconfigureItems(at: (0..<anzahl).map { IndexPath(item: $0, section: section) }) }
             if let kopf = collectionView.supplementaryView(forElementKind: UICollectionView.elementKindSectionHeader,
                                                           at: IndexPath(item: 0, section: section)) as? MonatsKopf {
                 kopf.zeige(quelle.sections[section])
@@ -390,23 +390,6 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         return (breite / CGFloat(zoom.spalten)) * (view.window?.screen.scale ?? 3)
     }
 
-    private func section(breite: CGFloat) -> NSCollectionLayoutSection {
-        let spalten = CGFloat(zoom.spalten)
-        let abstand: CGFloat = zoom.spalten == 1 ? 8 : 2
-        let kante = ((breite - abstand * (spalten - 1)) / spalten).rounded(.down)
-        let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .absolute(kante), heightDimension: .absolute(kante)))
-        let gruppe = NSCollectionLayoutGroup.horizontal(
-            layoutSize: .init(widthDimension: .fractionalWidth(1), heightDimension: .absolute(kante)),
-            repeatingSubitem: item, count: zoom.spalten)
-        gruppe.interItemSpacing = .fixed(abstand)
-        let section = NSCollectionLayoutSection(group: gruppe)
-        section.interGroupSpacing = abstand
-        // Keine Monats-Bänder mehr: Monate gehen mit derselben Fuge ineinander über.
-        // Welcher Monat gerade oben steht, zeigt ein Etikett aus Glas über den Fotos.
-        section.contentInsets = .init(top: 0, leading: 0, bottom: abstand, trailing: 0)
-        return section
-    }
-
     // MARK: - Daten
 
     public func numberOfSections(in collectionView: UICollectionView) -> Int { quelle.sections.count }
@@ -417,6 +400,11 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let zelle = collectionView.dequeueReusableCell(withReuseIdentifier: GridZelle.id, for: indexPath) as! GridZelle
+        konfiguriere(zelle, at: indexPath)
+        return zelle
+    }
+
+    private func konfiguriere(_ zelle: GridZelle, at indexPath: IndexPath) {
         zelle.contentView.transform = umgekehrt ? CGAffineTransform(rotationAngle: .pi) : .identity
         if let item = quelle.item(section: indexPath.section, index: indexPath.item) {
             let pixel = kantePixel
@@ -430,7 +418,26 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
             zelle.zeigePlatzhalter()
             quelle.ladeMonat(indexPath.section)
         }
-        return zelle
+    }
+
+    /// iOS baut Kacheln, bevor sie ins Bild kommen. Wurde der Monat inzwischen geladen,
+    /// trägt eine vorbereitete Kachel noch den Platzhalter: hier nachholen, sonst bleiben Lücken.
+    public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell,
+                               forItemAt indexPath: IndexPath) {
+        guard let zelle = cell as? GridZelle, zelle.zeigtPlatzhalter else { return }
+        konfiguriere(zelle, at: indexPath)
+    }
+
+    /// Beim Stehenbleiben: Monate, deren Laden beim schnellen Überfliegen abgebrochen wurde, jetzt laden.
+    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) { ladeFehlende() }
+    public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { ladeFehlende() }
+    }
+
+    private func ladeFehlende() {
+        for pfad in collectionView.indexPathsForVisibleItems where quelle.item(section: pfad.section, index: pfad.item) == nil {
+            quelle.ladeMonat(pfad.section)
+        }
     }
 
     public func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String,
@@ -464,24 +471,102 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     // MARK: - Pinch-Zoom
 
+    /// Laufender Zoom mit den Fingern: Die Kacheln wachsen und schrumpfen live mit (wie in Apples Fotos-App).
+    private struct ZoomLauf {
+        let ziel: GridZoom
+        let uebergang: UICollectionViewTransitionLayout
+        let neu: FliessLayout
+        let alt: FliessLayout
+        let anker: IndexPath
+        /// Abstand der Ankerkachel-Mitte zur Oberkante des Sichtbaren, bleibt konstant.
+        let ankerAbstand: CGFloat
+        /// Wie stark man pinchen muss, bis der neue Zoom ganz erreicht ist.
+        let verhaeltnis: CGFloat
+        let groesser: Bool
+    }
+    private var zoomLauf: ZoomLauf?
+
     @objc private func pinch(_ geste: UIPinchGestureRecognizer) {
         switch geste.state {
         case .began:
             pinchSchonGestuft = false
-        case .changed where !pinchSchonGestuft:
-            var neu = zoom
-            let geaendert = geste.scale > 1.25 ? neu.groesser() : (geste.scale < 0.8 ? neu.kleiner() : false)
-            guard geaendert else { return }
-            pinchSchonGestuft = true
-            let anker = collectionView.indexPathForItem(at: geste.location(in: collectionView))
-            wechsleZoom(zu: neu, anker: anker, animiert: true)
-            UISelectionFeedbackGenerator().selectionChanged()
+        case .changed:
+            if zoomLauf == nil, !pinchSchonGestuft, abs(geste.scale - 1) > 0.03 {
+                starteZoomLauf(groesser: geste.scale > 1, ort: geste.location(in: collectionView))
+            }
+            guard let lauf = zoomLauf else { return }
+            let s = lauf.groesser ? geste.scale : 1 / max(geste.scale, 0.01)
+            let fortschritt = min(max((s - 1) / (lauf.verhaeltnis - 1), 0), 1)
+            lauf.uebergang.transitionProgress = fortschritt
+            halteAnker(lauf, in: lauf.uebergang)
+        case .ended, .cancelled, .failed:
+            guard let lauf = zoomLauf else { return }
+            // Weit genug gezogen oder in Zielrichtung losgelassen: fertig zoomen, sonst zurück.
+            let tempo = lauf.groesser ? geste.velocity : -geste.velocity
+            let fertig = geste.state == .ended && (lauf.uebergang.transitionProgress > 0.4 || tempo > 0.5)
+            let ziel = fertig ? lauf.neu : lauf.alt
+            ziel.zielOffset = ankerOffset(lauf, rahmen: ziel.rahmen(fuer: lauf.anker), layout: ziel)
+            if fertig {
+                collectionView.finishInteractiveTransition()
+            } else {
+                collectionView.cancelInteractiveTransition()
+            }
         default:
             break
         }
     }
 
-    /// Ändert die Spaltenzahl und hält das Foto unter den Fingern an seinem Platz.
+    private func starteZoomLauf(groesser: Bool, ort: CGPoint) {
+        var ziel = zoom
+        guard groesser ? ziel.groesser() : ziel.kleiner() else { return }
+        guard let alt = collectionView.collectionViewLayout as? FliessLayout else { return }
+        let anker = collectionView.indexPathForItem(at: ort)
+            ?? collectionView.indexPathsForVisibleItems.sorted().dropFirst(collectionView.indexPathsForVisibleItems.count / 2).first
+        guard let anker, let rahmen = alt.rahmen(fuer: anker) else { return }
+        pinchSchonGestuft = true
+        vorlader.stopPrefetching()
+        let neu = FliessLayout(spalten: ziel.spalten)
+        let altSpalten = CGFloat(zoom.spalten), neuSpalten = CGFloat(ziel.spalten)
+        // Erster Wert: Übergang abgeschlossen (nicht abgebrochen), zweiter: Animation zu Ende.
+        let uebergang = collectionView.startInteractiveTransition(to: neu) { [weak self] fertig, _ in
+            guard let self else { return }
+            let lauf = self.zoomLauf
+            self.zoomLauf = nil
+            alt.zielOffset = nil
+            neu.zielOffset = nil
+            guard fertig, let lauf else { return }
+            let alteSpalten = self.zoom.spalten
+            self.zoom = lauf.ziel
+            self.onZoomChange?(lauf.ziel)
+            UISelectionFeedbackGenerator().selectionChanged()
+            // Größere Kacheln brauchen schärfere Bilder (erst nach der Bewegung).
+            if lauf.ziel.spalten < alteSpalten {
+                self.collectionView.reconfigureItems(at: self.collectionView.indexPathsForVisibleItems)
+            }
+        }
+        zoomLauf = ZoomLauf(ziel: ziel, uebergang: uebergang, neu: neu, alt: alt, anker: anker,
+                            ankerAbstand: rahmen.midY - collectionView.contentOffset.y,
+                            verhaeltnis: max(groesser ? altSpalten / neuSpalten : neuSpalten / altSpalten, 1.05),
+                            groesser: groesser)
+    }
+
+    /// Scrollt so, dass die Ankerkachel an derselben Stelle auf dem Bildschirm bleibt.
+    private func halteAnker(_ lauf: ZoomLauf, in layout: UICollectionViewLayout) {
+        guard let rahmen = layout.layoutAttributesForItem(at: lauf.anker)?.frame,
+              let y = ankerOffset(lauf, rahmen: rahmen, layout: layout)?.y else { return }
+        collectionView.contentOffset.y = y
+    }
+
+    private func ankerOffset(_ lauf: ZoomLauf, rahmen: CGRect?, layout: UICollectionViewLayout) -> CGPoint? {
+        guard let rahmen else { return nil }
+        let hoehe = layout.collectionViewContentSize.height
+        let unten = max(hoehe, rahmen.maxY) - collectionView.bounds.height + collectionView.adjustedContentInset.bottom
+        let y = min(max(rahmen.midY - lauf.ankerAbstand, -collectionView.adjustedContentInset.top),
+                    max(unten, -collectionView.adjustedContentInset.top))
+        return CGPoint(x: 0, y: y)
+    }
+
+    /// Ändert die Spaltenzahl ohne Finger (Menü, Tastatur) und hält die Mitte an ihrem Platz.
     private func wechsleZoom(zu neu: GridZoom, anker: IndexPath?, animiert: Bool) {
         let sichtbar = collectionView.indexPathsForVisibleItems.sorted()
         let anker = anker ?? sichtbar.dropFirst(sichtbar.count / 2).first
@@ -490,22 +575,22 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         let alteSpalten = zoom.spalten
         zoom = neu
         onZoomChange?(neu)
+        let layout = FliessLayout(spalten: neu.spalten)
         let aenderung = {
-            self.collectionView.collectionViewLayout.invalidateLayout()
+            self.collectionView.setCollectionViewLayout(layout, animated: false)
             self.collectionView.layoutIfNeeded()
-            if let anker, let ankerY, let rahmen = self.collectionView.layoutAttributesForItem(at: anker)?.frame {
-                let maxY = max(0, self.collectionView.contentSize.height - self.collectionView.bounds.height
+            if let anker, let ankerY, let rahmen = layout.rahmen(fuer: anker) {
+                let oben = -self.collectionView.adjustedContentInset.top
+                let maxY = max(oben, self.collectionView.contentSize.height - self.collectionView.bounds.height
                                + self.collectionView.adjustedContentInset.bottom)
-                self.collectionView.contentOffset.y = min(max(rahmen.midY - ankerY, -self.collectionView.adjustedContentInset.top), maxY)
+                self.collectionView.contentOffset.y = min(max(rahmen.midY - ankerY, oben), maxY)
             }
         }
         if animiert {
-            UIView.animate(withDuration: 0.32, delay: 0, usingSpringWithDamping: 0.9, initialSpringVelocity: 0,
-                           options: [.allowUserInteraction], animations: aenderung)
+            UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut, .allowUserInteraction], animations: aenderung)
         } else {
             aenderung()
         }
-        // Größere Kacheln brauchen schärfere Bilder.
         if neu.spalten < alteSpalten {
             collectionView.reconfigureItems(at: collectionView.indexPathsForVisibleItems)
         }
@@ -535,6 +620,9 @@ final class GridZelle: UICollectionViewCell {
     private var lokalAufgabe: Task<Void, Never>?
     private let lader = StufenLader()
     private(set) var hatBild = false
+    /// Zeigt noch den grauen Platzhalter (Monat nicht geladen).
+    private(set) var zeigtPlatzhalter = false
+    private var aktuelleId: String?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -598,6 +686,7 @@ final class GridZelle: UICollectionViewCell {
         lokalAufgabe = nil
         bild.image = nil
         hatBild = false
+        aktuelleId = nil
     }
 
     /// Vorschau vom Gerät laden (für Fotos, die noch nicht auf dem Server sind).
@@ -614,8 +703,11 @@ final class GridZelle: UICollectionViewCell {
         lader.abbrechen()
         lokalAufgabe?.cancel()
         bild.image = nil
+        aktuelleId = nil
         lokalSymbol.isHidden = true
-        contentView.backgroundColor = UIColor.secondarySystemFill
+        // Deckend und hell genug, damit es auf Schwarz nicht wie ein Loch aussieht.
+        contentView.backgroundColor = UIColor.systemGray5
+        zeigtPlatzhalter = true
         badge.isHidden = true
         herz.isHidden = true
         live.isHidden = true
@@ -623,10 +715,15 @@ final class GridZelle: UICollectionViewCell {
     }
 
     func zeige(_ item: GridItem, anfragen: [ImageRequest]) {
+        zeigtPlatzhalter = false
         let c = item.rgb
         contentView.backgroundColor = UIColor(red: c.r, green: c.g, blue: c.b, alpha: 1)
-        bild.image = nil
-        hatBild = false
+        // Dasselbe Foto (z. B. nach einem Zoom): altes Bild stehen lassen, bis das schärfere da ist.
+        if item.id != aktuelleId {
+            bild.image = nil
+            hatBild = false
+        }
+        aktuelleId = item.id
         let ansicht = bild
         lader.lade(anfragen) { [weak self] neu, sofort in
             self?.hatBild = true

@@ -16,6 +16,8 @@ public enum Bereich: Hashable, Sendable {
 /// Wurzel der App: zuerst Anmeldung, danach Tab Bar (iPhone) bzw. Sidebar (iPad, Mac).
 public struct RootView: View {
     @State private var session = SessionStore()
+    /// Noch im allerersten Startbildschirm.
+    @State private var warStart = true
 
     public init() {}
 
@@ -41,7 +43,9 @@ public struct RootView: View {
         .environment(session)
         .lilithSperre()
         .tint(LilithColor.nachtrose)
-        .animation(.smooth, value: session.phase)
+        // Vom Startbildschirm aus ohne Überblenden: Zwei halb durchsichtige Ebenen ergäben ein graues Bild.
+        .animation(warStart ? nil : .smooth, value: session.phase)
+        .onChange(of: session.phase) { _, _ in warStart = false }
         .task { await session.start() }
     }
 }
@@ -60,6 +64,10 @@ struct HauptView: View {
     @State private var zeigeVollmond = false
     /// Der Ladebildschirm bleibt, bis die Bibliothek das erste Mal geladen ist.
     @State private var startVorbei = false
+    /// 0 = Mond, 1 = App ganz offen.
+    @State private var startOeffnung = 0.0
+    @State private var startVollmond = false
+    @Environment(\.accessibilityReduceMotion) private var wenigBewegung
 
     private var quelle: TimelineQuelle? { timeline ?? demo }
 
@@ -67,13 +75,23 @@ struct HauptView: View {
     private let zeigeErinnerungen = false
 
     var body: some View {
+        inhalt
+            // Unter allem der Nachthimmel, solange gestartet wird: kein graues Bild beim Wechsel.
+            .background { if !startVorbei { StartBildschirm.nacht.ignoresSafeArea() } }
+    }
+
+    @ViewBuilder
+    private var inhalt: some View {
         if let kontext {
             tabs
                 .environment(kontext)
                 .overlay { DetailEbene(kontext: kontext) }
+                // Die App kommt aus dem Mond leicht auf einen zu.
+                .scaleEffect(1 + 0.08 * (1 - startOeffnung))
                 .overlay {
                     if !startVorbei {
-                        StartBildschirm().transition(.opacity)
+                        // Kein Überblenden: Er liegt nahtlos über dem Startbildschirm davor.
+                        StartBildschirm(vollmond: startVollmond, oeffnung: startOeffnung).transition(.identity)
                     }
                 }
                 .task {
@@ -82,7 +100,15 @@ struct HauptView: View {
                     while timeline?.zustand == .laedt, Date.now.timeIntervalSince(start) < 5 {
                         try? await Task.sleep(for: .milliseconds(100))
                     }
-                    withAnimation(.easeOut(duration: 0.45)) { startVorbei = true }
+                    if wenigBewegung {
+                        startOeffnung = 1
+                        withAnimation(.easeOut(duration: 0.45)) { startVorbei = true }
+                    } else {
+                        // Erst wird der Mond voll, dann kommt er näher, und in seiner Mitte öffnet sich die App.
+                        withAnimation(.easeInOut(duration: 0.7)) { startVollmond = true } completion: {
+                            withAnimation(.easeIn(duration: 0.8)) { startOeffnung = 1 } completion: { startVorbei = true }
+                        }
+                    }
                 }
                 .overlay {
                     if zeigeVollmond {
@@ -99,16 +125,12 @@ struct HauptView: View {
                     #endif
                 }
                 #endif
-                #if os(iOS)
-                .onChange(of: kontext.uploads?.stand) { _, neu in
-                    if let neu { UploadLiveSteuerung.shared.aktualisiere(neu) }
-                }
-                #endif
-                .onChange(of: kontext.backup?.allesGesichert ?? false) { _, fertig in
-                    // Nur einmal: nach dem ersten kompletten Backup.
-                    guard fertig, let backup = kontext.backup, !backup.vollmondGezeigt else { return }
-                    backup.vollmondGezeigt = true
-                    withAnimation(.easeOut(duration: 0.4)) { zeigeVollmond = true }
+                // In einer eigenen kleinen Ansicht: Der Upload-Fortschritt tickt oft und soll nicht
+                // jedes Mal die ganze App samt Leisten und Menüs neu berechnen.
+                .background {
+                    FortschrittBeobachter(kontext: kontext) {
+                        withAnimation(.easeOut(duration: 0.4)) { zeigeVollmond = true }
+                    }
                 }
                 .onChange(of: szene) { _, neu in
                     switch neu {
@@ -123,7 +145,8 @@ struct HauptView: View {
                     }
                 }
         } else {
-            Color.clear.onAppear(perform: richteEin)
+            // Derselbe Nachthimmel wie davor, damit beim Wechsel nichts grau aufblitzt.
+            StartBildschirm().onAppear(perform: richteEin)
         }
     }
 
@@ -326,5 +349,27 @@ private struct TabStil: ViewModifier {
         #else
         content.tabViewStyle(.sidebarAdaptable)
         #endif
+    }
+}
+
+/// Beobachtet Upload-Fortschritt und Backup-Stand, ohne dass `HauptView` davon abhängt.
+private struct FortschrittBeobachter: View {
+    let kontext: BibliothekKontext
+    let vollmond: () -> Void
+
+    var body: some View {
+        Color.clear
+            #if os(iOS)
+            .onChange(of: kontext.uploads?.stand) { _, neu in
+                if let neu { UploadLiveSteuerung.shared.aktualisiere(neu) }
+            }
+            #endif
+            .onChange(of: kontext.backup?.allesGesichert ?? false) { _, fertig in
+                // Nur einmal: nach dem ersten kompletten Backup.
+                guard fertig, let backup = kontext.backup, !backup.vollmondGezeigt else { return }
+                backup.vollmondGezeigt = true
+                vollmond()
+            }
+            .accessibilityHidden(true)
     }
 }

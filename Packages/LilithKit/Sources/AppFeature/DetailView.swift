@@ -94,7 +94,8 @@ struct DetailView: View {
             LazyHStack(spacing: 0) {
                 ForEach(seiten, id: \.self) { position in
                     DetailSeite(position: position, quelle: quelle, store: store, istAktuell: position == aktuell,
-                                gezoomt: $gezoomt) {
+                                gezoomt: $gezoomt, zeigeBedienung: zeigeBedienung && !zugAktiv,
+                                verberge: { withAnimation(.easeInOut(duration: 0.3)) { zeigeBedienung = false } }) {
                         withAnimation(.easeInOut(duration: 0.2)) { zeigeBedienung.toggle() }
                     }
                     .containerRelativeFrame([.horizontal, .vertical])
@@ -293,6 +294,11 @@ struct DetailView: View {
         let symbol = Image(systemName: "square.and.arrow.up").frame(width: 52, height: 44)
         if let item, let client = store?.client {
             let name = info?.dateiname
+            #if os(iOS)
+            // Das Teilen-Menü öffnet sofort, das Original lädt erst, wenn ein Ziel es braucht.
+            Button { TeilenBlatt.zeige(client: client, assetId: item.id, dateiname: name, istVideo: item.art == .video) } label: { symbol }
+                .accessibilityLabel("Teilen")
+            #else
             if item.art == .video {
                 ShareLink(item: VideoDatei(client: client, assetId: item.id, dateiname: name),
                           preview: SharePreview(name ?? "Video")) { symbol }
@@ -302,6 +308,7 @@ struct DetailView: View {
                           preview: SharePreview(name ?? "Foto")) { symbol }
                     .accessibilityLabel("Teilen")
             }
+            #endif
         } else {
             symbol.opacity(0.4).accessibilityHidden(true)
         }
@@ -351,6 +358,50 @@ private func originalDatei(_ client: ImmichClient, _ assetId: String, _ dateinam
     if name == nil { name = try? await client.assetInfo(id: assetId).dateiname }
     return SentTransferredFile(try await client.ladeOriginal(assetId: assetId, dateiname: name ?? assetId))
 }
+
+#if os(iOS)
+/// Reicht Rückruf und Fortschritt an die Lade-Aufgabe weiter (beide sind threadsicher gedacht).
+private final class Uebergabe: @unchecked Sendable {
+    let fertig: (URL?, Bool, (any Error)?) -> Void
+    let fortschritt: Progress
+    init(fertig: @escaping (URL?, Bool, (any Error)?) -> Void, fortschritt: Progress) {
+        self.fertig = fertig; self.fortschritt = fortschritt
+    }
+}
+
+/// Teilen-Menü ohne Warten: `NSItemProvider` lädt das Original erst, wenn ein Ziel gewählt ist,
+/// und iOS zeigt dabei selbst den Fortschritt.
+@MainActor
+enum TeilenBlatt {
+    static func zeige(client: ImmichClient, assetId: String, dateiname: String?, istVideo: Bool) {
+        let typ: UTType = istVideo ? .movie : .image
+        let anbieter = NSItemProvider()
+        anbieter.suggestedName = dateiname
+        anbieter.registerFileRepresentation(for: typ, visibility: .all, openInPlace: false) { fertig in
+            let fortschritt = Progress(totalUnitCount: 1)
+            let uebergabe = Uebergabe(fertig: fertig, fortschritt: fortschritt)
+            Task.detached {
+                do {
+                    let datei = try await originalDatei(client, assetId, dateiname).file
+                    uebergabe.fortschritt.completedUnitCount = 1
+                    uebergabe.fertig(datei, false, nil)
+                } catch {
+                    uebergabe.fertig(nil, false, error)
+                }
+            }
+            return fortschritt
+        }
+        let blatt = UIActivityViewController(activityItemsConfiguration: UIActivityItemsConfiguration(itemProviders: [anbieter]))
+        guard let szene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
+              let fenster = szene.keyWindow, var oben = fenster.rootViewController else { return }
+        while let weiter = oben.presentedViewController { oben = weiter }
+        // iPad: als Popover unten mittig, wo der Knopf sitzt.
+        blatt.popoverPresentationController?.sourceView = fenster
+        blatt.popoverPresentationController?.sourceRect = CGRect(x: fenster.bounds.midX, y: fenster.bounds.maxY - 60, width: 1, height: 1)
+        oben.present(blatt, animated: true)
+    }
+}
+#endif
 
 struct FotoDatei: Transferable {
     let client: ImmichClient

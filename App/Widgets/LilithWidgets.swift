@@ -12,7 +12,8 @@ struct LilithWidgets: WidgetBundle {
 
 /// Fortschritt großer Uploads auf dem Sperrbildschirm und in der Dynamic Island.
 struct UploadLiveActivity: Widget {
-    private let nachtrose = Color(red: 0.69, green: 0.19, blue: 0.35)
+    /// Kirschrot (dunkle Variante #FF4D6A), die Live-Aktivität liegt auf dunklem Grund.
+    private let nachtrose = Color(red: 1.0, green: 0x4D / 255.0, blue: 0x6A / 255.0)
     private let mondlicht = Color(red: 0.92, green: 0.85, blue: 0.71)
 
     var body: some WidgetConfiguration {

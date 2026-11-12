@@ -24,10 +24,10 @@ public struct RGB: Equatable, Sendable {
 /// gewählter Tab, Auswahl, Favorit, ein Hauptknopf. Mondlicht gehört nur dem Mond (Backup).
 public enum LilithColor {
     /// Akzent für Buttons, Auswahl und Favoriten.
-    /// Hell 7,2 : 1 auf Weiß, dunkel 7,6 : 1 auf Schwarz.
-    public static let nachtrose = Color.lilith(light: 0x9E2A50, dark: 0xE8799A)
+    /// Kirschrot. Hell 5,9 : 1 auf Weiß, dunkel 6,5 : 1 auf Schwarz.
+    public static let nachtrose = Color.lilith(light: 0xC8102E, dark: 0xFF4D6A)
     /// Akzent als Fläche (Button-Hintergrund), in beiden Modi gleich.
-    public static let nachtroseFill = Color.lilith(light: 0x9E2A50, dark: 0x9E2A50)
+    public static let nachtroseFill = Color.lilith(light: 0xC8102E, dark: 0xC8102E)
     /// Nur für den Mond (Backup-Ring, Statuskarte, Start). Hell 3,5 : 1 auf Weiß.
     public static let mondlicht = Color.lilith(light: 0xA8843E, dark: 0xEBD9B4)
     /// Grundfläche der App.

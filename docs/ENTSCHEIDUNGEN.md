@@ -170,7 +170,7 @@ Plan: `docs/BACKUP-PLAN.md`.
 Plan: `docs/REDESIGN-PLAN.md`. Vorbild: Apples Fotos-App mit Liquid Glass, ohne es zu überladen.
 
 - **Schrift:** nur noch SF mit den Textstilen des Systems. Die Serife (New York) bei Monaten, Alben, Suche und Anmeldung ist weg.
-- **Farbe:** Flächen und Text kommen vom System. Nachtrose (hell #9E2A50, dunkel #E8799A) nur noch für gewählten Tab, Auswahl, Favorit und Hauptknopf. Symbole in Leisten sind einfarbig, Listen-Symbole grau, Schalter grün wie im System. Mondlicht nur für den Mond, auf Weiß kräftiger (#A8843E, 3,5 : 1).
+- **Farbe:** Flächen und Text kommen vom System. Nachtrose (hell #C8102E, dunkel #FF4D6A) nur noch für gewählten Tab, Auswahl, Favorit und Hauptknopf. Symbole in Leisten sind einfarbig, Listen-Symbole grau, Schalter grün wie im System. Mondlicht nur für den Mond, auf Weiß kräftiger (#A8843E, 3,5 : 1).
 - **„Fotos“ statt „Bibliothek“:** Der Tab heißt „Fotos“. Ein großer Titel fehlt bewusst: Der Tab sagt schon, wo man ist. Oben links steht stattdessen, was man sieht: Monat, Ort und Anzahl als Glas-Kapsel in derselben Reihe wie die Leiste rechts (im Auswahl-Modus die Anzahl der ausgewählten Fotos).
 - **Fotos unter den Leisten:** Das Raster beginnt ganz oben und läuft unter Statusleiste, Leiste und Tab-Leiste durch. Ein weicher Verlauf oben hält die Leiste lesbar. Die grauen Monats-Bänder sind weg, Monate gehen mit derselben 2-pt-Fuge ineinander über.
 - **Liquid Glass (ab iOS 26, sonst Material):** Leiste, Tab-Leiste, Monats-Kapsel, Knöpfe der Fotoansicht (klares Glas), Upload-Anzeige, Auswahl-Leiste, Offline-Hinweis. Bewusst ohne Glas: Scrubber, Listen, Karten, Album-Kacheln.
@@ -179,3 +179,16 @@ Plan: `docs/REDESIGN-PLAN.md`. Vorbild: Apples Fotos-App mit Liquid Glass, ohne 
 - **Pille oben links:** nur das Datum des Fotos am Rand (Tag, Monat, Jahr, z. B. „10. November 2026“), kein Ort, keine Anzahl. Exakt so hoch (44 pt) und auf derselben Höhe wie die Leiste rechts. Ganz unten zeigt sie die Gesamtzahl („3.571 Objekte“).
 - **Tab-Leiste (iPhone):** wie in Apples Fotos-App: „Fotos“ und „Alben“ zusammen links, die Suche als eigener runder Knopf rechts (`tabViewSearchActivation(.searchTabSelection)`). In „Fotos“ verschwindet sie beim Scrollen in beide Richtungen und kommt nach 3 Sekunden Stillstand wieder. iPad und Mac behalten die Seitenleiste.
 - **Ansicht-Menü** mit Apples Filtersymbol (`line.3.horizontal.decrease`) statt drei Punkten.
+
+## 14. Feinschliff nach dem ersten Test am iPhone (12.11.2026)
+
+Plan: `docs/FEINSCHLIFF-PLAN.md`.
+
+- **Akzent Kirschrot:** hell #C8102E (5,9 : 1 auf Weiß), dunkel #FF4D6A (6,5 : 1 auf Schwarz), auch im AccentColor-Asset und in der Live-Aktivität.
+- **Ton:** Videos schalten beim Abspielen auf `AVAudioSession.playback` (spielt auch im Stummmodus) und danach zurück, damit Musik weiterläuft. Live Photos bleiben im Stummmodus stumm.
+- **Raster ohne Lücken:** eigenes `FliessLayout` statt Compositional Layout. Die Monate bleiben Sections, laufen aber ohne Umbruch ineinander (wie in Apples Fotos-App). Vorbereitete Kacheln werden beim Anzeigen nachgeladen, abgebrochene Monate beim Stehenbleiben. Der Platzhalter ist deckend grau.
+- **Kachel-Zoom:** interaktiver Layout-Übergang (`startInteractiveTransition`) mit dem Pinch als Fortschritt. Die Kachel unter den Fingern bleibt stehen. Bildgrößen werden auf feste Stufen gerundet, und Kacheln behalten ihr Bild, bis das schärfere da ist.
+- **Zoom im Foto:** UIKit-Pinch (`UIGestureRecognizerRepresentable`), weil SwiftUIs `MagnifyGesture` die Fingerposition nicht laufend liefert. Gezoomt wird um die Finger, Verschieben geht gleichzeitig. Doppeltippen zoomt auf die Stelle.
+- **Teilen:** Das Teilen-Blatt öffnet sofort, `NSItemProvider` lädt das Original erst bei Bedarf. Originale werden je Foto wiederverwendet. Der Upload-Fortschritt wird in einer kleinen eigenen Ansicht beobachtet, damit nicht jedes Mal die ganze App neu rechnet.
+- **Eigener Videoplayer (iOS):** `AVPlayerLayer` und eine Glas-Leiste (Abspielen, Zeitleiste, Ton, Bild-in-Bild, AirPlay). Sie blendet sich nach 3 s beim Abspielen aus. Hintergrundmodus „audio“ für Bild-in-Bild. Der Mac behält Apples `VideoPlayer`.
+- **Start:** Die Mondsichel wird zum Vollmond (0,7 s), dann kommt der Mond näher und die App öffnet sich in seiner Mitte (0,8 s, Loch per gerade-ungerade gefülltem Pfad). Mit „Bewegung reduzieren“ wird nur überblendet. Der Sichtschutz für den App-Umschalter erscheint erst, wenn die App schon aktiv war (sonst flackerte es beim Start grau).
