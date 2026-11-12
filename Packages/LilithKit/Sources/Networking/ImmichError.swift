@@ -25,7 +25,7 @@ public enum ImmichError: Error, Equatable, Sendable, LocalizedError {
         case .keinImmichServer:
             "Unter dieser Adresse antwortet kein Immich-Server."
         case .versionZuAlt(let v):
-            "Dein Server läuft mit Immich \(v). Lilith braucht mindestens \(ServerVersion.minimum)."
+            "Dein Server läuft mit Immich \(v). Luna braucht mindestens \(ServerVersion.minimum)."
         case .passwortLoginAus:
             "Auf diesem Server ist die Anmeldung mit Passwort ausgeschaltet. Nutze einen API-Key."
         case .falscheZugangsdaten:

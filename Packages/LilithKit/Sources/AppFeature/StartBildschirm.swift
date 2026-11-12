@@ -29,7 +29,7 @@ struct StartBildschirm: View {
                     .frame(width: 120, height: 120)
                     .scaleEffect(1 + 7 * oeffnung)
                     .opacity(1 - max((oeffnung - 0.5) / 0.5, 0))
-                Text("Lilith")
+                Text("Luna")
                     .font(.system(size: 34, weight: .semibold))
                     .foregroundStyle(Self.creme)
                     // Wie im Startbild von iOS: 110 pt unter der Mitte.
@@ -50,7 +50,7 @@ struct StartBildschirm: View {
         .allowsHitTesting(oeffnung == 0)
         .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Lilith wird geladen")
+        .accessibilityLabel("Luna wird geladen")
         .task {
             guard !wenigBewegung else { return }
             withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) { phase = 0.8 }

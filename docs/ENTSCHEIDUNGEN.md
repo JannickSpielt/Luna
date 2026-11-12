@@ -192,3 +192,8 @@ Plan: `docs/FEINSCHLIFF-PLAN.md`.
 - **Teilen:** Das Teilen-Blatt öffnet sofort, `NSItemProvider` lädt das Original erst bei Bedarf. Originale werden je Foto wiederverwendet. Der Upload-Fortschritt wird in einer kleinen eigenen Ansicht beobachtet, damit nicht jedes Mal die ganze App neu rechnet.
 - **Eigener Videoplayer (iOS):** `AVPlayerLayer` und eine Glas-Leiste (Abspielen, Zeitleiste, Ton, Bild-in-Bild, AirPlay). Sie blendet sich nach 3 s beim Abspielen aus. Hintergrundmodus „audio“ für Bild-in-Bild. Der Mac behält Apples `VideoPlayer`.
 - **Start:** Die Mondsichel wird zum Vollmond (0,7 s), dann kommt der Mond näher und die App öffnet sich in seiner Mitte (0,8 s, Loch per gerade-ungerade gefülltem Pfad). Mit „Bewegung reduzieren“ wird nur überblendet. Der Sichtschutz für den App-Umschalter erscheint erst, wenn die App schon aktiv war (sonst flackerte es beim Start grau).
+
+## 15. Die App heißt Luna (12.11.2026)
+
+- Sichtbar heißt die App jetzt **Luna**: Name unter dem Symbol, Startbildschirm und Startbild, alle Texte in der App, Live-Aktivität, Hinweise für Fotos, Face ID und lokales Netzwerk.
+- **Intern bleibt „Lilith“** als Code-Name: Bundle-ID `app.lilith.Lilith`, Hintergrund-Aufgaben, Schlüsselbund, Ordner und Datenbank, `LilithKit` und Typnamen sowie das Repo. Sonst gingen Anmeldung, Backup-Stand und laufende Uploads auf dem iPhone verloren.

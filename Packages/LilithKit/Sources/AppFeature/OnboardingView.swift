@@ -63,7 +63,7 @@ struct OnboardingView: View {
                 .font(.largeTitle.bold())
                 .multilineTextAlignment(.center)
                 .foregroundStyle(LilithColor.text)
-            Text("Verbinde Lilith mit deiner Immich-Instanz. Deine Fotos bleiben bei dir.")
+            Text("Verbinde Luna mit deiner Immich-Instanz. Deine Fotos bleiben bei dir.")
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(LilithColor.textLeise)

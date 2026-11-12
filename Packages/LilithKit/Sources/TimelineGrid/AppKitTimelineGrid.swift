@@ -515,7 +515,7 @@ final class OriginalVersprechen: NSFilePromiseProvider, NSFilePromiseProviderDel
 
     func filePromiseProvider(_ provider: NSFilePromiseProvider, fileNameForType fileType: String) -> String {
         // Der echte Name steht erst nach dem Laden fest. Ist er schon da, wird er genommen.
-        ergebnis.sofort?.lastPathComponent ?? "Lilith-\(item.id.prefix(8)).\(item.art == .video ? "mov" : "jpg")"
+        ergebnis.sofort?.lastPathComponent ?? "Luna-\(item.id.prefix(8)).\(item.art == .video ? "mov" : "jpg")"
     }
 
     /// Läuft auf der eigenen Warteschlange, darf also warten.

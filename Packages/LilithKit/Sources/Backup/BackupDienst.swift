@@ -113,7 +113,7 @@ public final class BackupDienst {
     public func einschalten() async -> Bool {
         zugriff = await mediathek.frageZugriff()
         guard zugriff == .voll || zugriff == .eingeschraenkt else {
-            phase = .halt("Lilith hat keinen Zugriff auf deine Fotos. Erlaube ihn in den Einstellungen.")
+            phase = .halt("Luna hat keinen Zugriff auf deine Fotos. Erlaube ihn in den Einstellungen.")
             return false
         }
         aktiv = true
@@ -267,7 +267,7 @@ public final class BackupDienst {
         guard aktiv, let client, let db, let uploads else { return }
         zugriff = mediathek.zugriff()
         guard zugriff == .voll || zugriff == .eingeschraenkt else {
-            phase = .halt("Lilith hat keinen Zugriff mehr auf deine Fotos. Erlaube ihn in den Einstellungen.")
+            phase = .halt("Luna hat keinen Zugriff mehr auf deine Fotos. Erlaube ihn in den Einstellungen.")
             return
         }
         do {

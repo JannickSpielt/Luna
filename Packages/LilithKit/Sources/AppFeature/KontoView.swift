@@ -67,7 +67,7 @@ struct KontoView: View {
                     Text("Sicherheit")
                 } footer: {
                     Text(Entsperren.verfuegbar
-                         ? "Lilith sperrt sich, sobald du die App verlässt."
+                         ? "Luna sperrt sich, sobald du die App verlässt."
                          : "Richte auf diesem Gerät zuerst einen Code oder \(Entsperren.methode) ein.")
                 }
 

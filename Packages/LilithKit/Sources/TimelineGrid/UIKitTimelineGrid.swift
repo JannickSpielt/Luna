@@ -89,7 +89,7 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
                                at indexPath: IndexPath) -> [UIDragItem] {
         guard let item = quelle.item(section: indexPath.section, index: indexPath.item), item.lokal == nil else { return [] }
         let anbieter = NSItemProvider()
-        anbieter.suggestedName = "Lilith-\(item.id.prefix(8))"
+        anbieter.suggestedName = "Luna-\(item.id.prefix(8))"
         let typ = item.art == .video ? UTType.movie : UTType.image
         let quelle = UnsicherGesendet(quelle)
         anbieter.registerFileRepresentation(for: typ, visibility: .all, openInPlace: false) { fertig in

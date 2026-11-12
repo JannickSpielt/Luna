@@ -362,7 +362,7 @@ public final class UploadWarteschlange {
             if a.versuche < maxVersuche {
                 a.zustand = .wartet
                 try? db.aktualisiere(a)
-                halt = "Server nicht erreichbar. Lilith versucht es erneut, wenn du wieder hochlädst oder die App öffnest."
+                halt = "Server nicht erreichbar. Luna versucht es erneut, wenn du wieder hochlädst oder die App öffnest."
                 return false
             }
             a.zustand = .fehler

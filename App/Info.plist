@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<!-- Wird mit den automatisch erzeugten Einträgen aus project.yml zusammengeführt. -->
-	<!-- Startbildschirm: Nachthimmel mit dem Lilith-Mond (die App übernimmt nahtlos dasselbe Bild). -->
+	<!-- Startbildschirm: Nachthimmel mit dem Luna-Mond (die App übernimmt nahtlos dasselbe Bild). -->
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

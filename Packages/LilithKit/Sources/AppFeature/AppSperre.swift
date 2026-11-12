@@ -24,7 +24,7 @@ enum Entsperren {
     }
 
     /// Fragt Face ID / Touch ID ab, mit Gerätecode als Ausweg.
-    static func pruefe(grund: String = "Lilith entsperren") async -> Bool {
+    static func pruefe(grund: String = "Luna entsperren") async -> Bool {
         let context = LAContext()
         context.localizedCancelTitle = "Abbrechen"
         return (try? await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: grund)) ?? false
@@ -41,7 +41,7 @@ struct SperrBildschirm: View {
             LilithColor.hintergrund.ignoresSafeArea()
             VStack(spacing: 18) {
                 MondSymbol(phase: gesperrt ? 0.15 : 0.6).frame(width: 72, height: 72)
-                Text("Lilith").font(.largeTitle.bold())
+                Text("Luna").font(.largeTitle.bold())
                 if gesperrt {
                     Text("Deine Fotos sind gesperrt.").foregroundStyle(LilithColor.textLeise)
                     Button(action: entsperren) {

@@ -108,8 +108,8 @@ struct BackupKarte: View {
             Text("Backup")
         } footer: {
             Text(backup.aktiv
-                 ? "Lilith sichert beim Öffnen der App und im Hintergrund, meist nachts am Ladekabel im WLAN. Wann genau, entscheidet iOS."
-                 : "Deine Fotos gehen nur an deinen eigenen Server. Fotos, die schon dort sind (auch von der Immich-App), erkennt Lilith und lädt sie nicht noch einmal hoch.")
+                 ? "Luna sichert beim Öffnen der App und im Hintergrund, meist nachts am Ladekabel im WLAN. Wann genau, entscheidet iOS."
+                 : "Deine Fotos gehen nur an deinen eigenen Server. Fotos, die schon dort sind (auch von der Immich-App), erkennt Luna und lädt sie nicht noch einmal hoch.")
         }
     }
 
@@ -150,7 +150,7 @@ struct BackupKarte: View {
 
         if backup.zugriff == .eingeschraenkt {
             VStack(alignment: .leading, spacing: 6) {
-                Label("Nur ausgewählte Fotos sind freigegeben. Lilith sichert nur diese.", systemImage: "photo.badge.checkmark")
+                Label("Nur ausgewählte Fotos sind freigegeben. Luna sichert nur diese.", systemImage: "photo.badge.checkmark")
                     .font(.subheadline)
                 Button("Auswahl ändern") { aendereAuswahl() }
             }
@@ -321,9 +321,9 @@ struct BackupEinstellungenView: View {
     }
 
     private static let erklaerung = [
-        "Beim Öffnen der App holt Lilith immer nach, was fehlt. Das ist der zuverlässigste Weg.",
-        "Verlässt du die App, übergibt Lilith die nächsten Uploads an iOS. Sie laufen weiter, auch wenn die App geschlossen ist.",
-        "Nachts am Ladekabel im WLAN darf Lilith länger arbeiten, auch für große Videos und iCloud-Originale.",
+        "Beim Öffnen der App holt Luna immer nach, was fehlt. Das ist der zuverlässigste Weg.",
+        "Verlässt du die App, übergibt Luna die nächsten Uploads an iOS. Sie laufen weiter, auch wenn die App geschlossen ist.",
+        "Nachts am Ladekabel im WLAN darf Luna länger arbeiten, auch für große Videos und iCloud-Originale.",
         "Einen festen Takt gibt es nicht: iOS entscheidet. Stromsparmodus und Beenden der App im App-Umschalter pausieren das Backup.",
         "Das erste Backup einer großen Mediathek kann mehrere Nächte dauern.",
     ]
@@ -336,7 +336,7 @@ struct BackupEinstellungenView: View {
                 Toggle("Nur beim Laden", isOn: $e.nurBeimLaden)
                     .tint(LilithColor.schalter)
             } footer: {
-                Text("Ohne WLAN vergleicht Lilith nur mit dem Server (wenige Daten) und lädt erst im WLAN hoch.")
+                Text("Ohne WLAN vergleicht Luna nur mit dem Server (wenige Daten) und lädt erst im WLAN hoch.")
             }
             Section {
                 Toggle("Videos sichern", isOn: $e.videos)
@@ -344,7 +344,7 @@ struct BackupEinstellungenView: View {
                 Toggle("Originale aus iCloud laden", isOn: $e.iCloud)
                     .tint(LilithColor.schalter)
             } footer: {
-                Text("Bei „iPhone-Speicher optimieren“ liegen manche Originale nur in iCloud. Lilith lädt sie dann einzeln und sichert sie. Ist weniger als 1 GB frei, hält das Backup an.")
+                Text("Bei „iPhone-Speicher optimieren“ liegen manche Originale nur in iCloud. Luna lädt sie dann einzeln und sichert sie. Ist weniger als 1 GB frei, hält das Backup an.")
             }
             Section("So funktioniert das Backup") {
                 ForEach(Self.erklaerung, id: \.self) { satz in

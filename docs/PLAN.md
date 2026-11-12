@@ -17,7 +17,7 @@ Lilith ist eine native SwiftUI-App für **iPhone, iPad und Mac**, die auf einen 
 | Plattform | iOS / iPadOS **18+** und **macOS 15+**, eine echte Mac-App (kein „iPad-App auf dem Mac“) |
 | Sprache | Swift 6 mit strikter Concurrency von Anfang an |
 | Immich-Server | **nur v3.x**. Dein Server läuft mit **v3.3.5**, damit wird entwickelt und getestet. Ältere Server bekommen beim Verbinden den Hinweis „Server zu alt“. |
-| Repo | JannickSpielt/Lilith, wird lokal geklont, sobald der Plan freigegeben ist |
+| Repo | JannickSpielt/Luna, wird lokal geklont, sobald der Plan freigegeben ist |
 
 ## 2. Funktionen
 

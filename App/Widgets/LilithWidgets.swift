@@ -24,7 +24,7 @@ struct UploadLiveActivity: Widget {
                     .font(.title2)
                     .foregroundStyle(mondlicht)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(kontext.state.fertig ? "Hochgeladen" : "Lilith lädt hoch")
+                    Text(kontext.state.fertig ? "Hochgeladen" : "Luna lädt hoch")
                         .font(.headline)
                     ProgressView(value: kontext.state.anteil)
                         .tint(nachtrose)

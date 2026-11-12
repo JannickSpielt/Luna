@@ -1,9 +1,10 @@
-<!-- Lilith | Project README -->
+<!-- Luna | Project README -->
 
 <div align="center">
-  <img src="assets/lilith-icon.png" alt="Lilith App-Icon: Mondsichel mit Kamerablende" width="150" />
+  <img src="assets/lilith-icon.png" alt="Luna App-Icon: Mondsichel mit Kamerablende" width="150" />
 
-  <h1>Lilith</h1>
+  <h1>Luna</h1>
+  <p><sub>Code-Name im Projekt: Lilith</sub></p>
   <p><strong>Deine Immich-Fotobibliothek. Nativ auf Apple-Geräten.</strong></p>
   <p>Eine native SwiftUI-App für den Zugriff auf den eigenen Immich-Server – mit Fokus auf eine moderne, flüssige Fotoerfahrung.</p>
 
@@ -25,11 +26,11 @@
 
 ## Die Idee
 
-**Lilith** soll eine native Begleit-App für selbst gehostete [Immich](https://immich.app/)-Instanzen werden. Die Fotos und Videos bleiben auf deinem eigenen Server. Lilith stellt dafür eine Oberfläche bereit, die sich auf iPhone und iPad zu Hause fühlt.
+**Luna** soll eine native Begleit-App für selbst gehostete [Immich](https://immich.app/)-Instanzen werden. Die Fotos und Videos bleiben auf deinem eigenen Server. Luna stellt dafür eine Oberfläche bereit, die sich auf iPhone und iPad zu Hause fühlt.
 
 Das Projekt baut keine eigene Cloud und ersetzt keinen Immich-Server. Es soll dessen vorhandene Schnittstellen nutzen und den Zugriff auf die persönliche Medienbibliothek angenehmer machen.
 
-> Lilith ist ein unabhängiges Community-Projekt und steht in keiner offiziellen Verbindung zum Immich-Team.
+> Luna ist ein unabhängiges Community-Projekt und steht in keiner offiziellen Verbindung zum Immich-Team.
 
 ## Geplante Funktionen
 
@@ -47,7 +48,7 @@ Alle Punkte sind Entwicklungsziele. Sie sind noch keine bestätigten oder verfü
 
 ## Technischer Ansatz
 
-Lilith ist als native Apple-App für iPhone, iPad und Mac geplant:
+Luna ist als native Apple-App für iPhone, iPad und Mac geplant:
 
 - **Swift** als Programmiersprache
 - **SwiftUI** für die Benutzeroberfläche
@@ -73,7 +74,7 @@ Die Entwicklung soll in überschaubaren Schritten erfolgen:
 
 <badge>Konzeptphase</badge>
 
-Lilith befindet sich noch am Anfang der Entwicklung. Es gibt derzeit keine veröffentlichte, installierbare Version. Sobald ein erster funktionsfähiger Stand existiert, werden hier Screenshots, Einrichtungshinweise und weitere technische Informationen ergänzt.
+Luna befindet sich noch am Anfang der Entwicklung. Es gibt derzeit keine veröffentlichte, installierbare Version. Sobald ein erster funktionsfähiger Stand existiert, werden hier Screenshots, Einrichtungshinweise und weitere technische Informationen ergänzt.
 
 ## Voraussetzungen
 
@@ -88,7 +89,7 @@ Für dieses Repository wurde derzeit **keine Lizenz** hinterlegt. Es gelten dahe
 ---
 
 <div align="center">
-  <sub>Lilith – ein unabhängiges SwiftUI-Projekt für die eigene Immich-Bibliothek.</sub>
+  <sub>Luna – ein unabhängiges SwiftUI-Projekt für die eigene Immich-Bibliothek.</sub>
 </div>
 
 ## Entwicklung
