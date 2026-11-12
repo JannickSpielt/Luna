@@ -20,7 +20,7 @@ public struct RGB: Equatable, Sendable {
 }
 
 /// Die Farbpalette „Nachtrose“. Dark Mode ist das Herzstück,
-/// der Light Mode wirkt warm wie Papier.
+/// der Light Mode ist schlicht weiß.
 public enum LilithColor {
     /// Akzent für Buttons, Auswahl und Favoriten.
     public static let nachtrose = Color.lilith(light: 0xB0305A, dark: 0xE46A8C)
@@ -29,13 +29,13 @@ public enum LilithColor {
     /// Warmer Mondlicht-Ton für Highlights und den Mond.
     public static let mondlicht = Color.lilith(light: 0xC9A96A, dark: 0xEBD9B4)
     /// Grundfläche der App.
-    public static let hintergrund = Color.lilith(light: 0xFAF5EE, dark: 0x120E10)
+    public static let hintergrund = Color.lilith(light: 0xFFFFFF, dark: 0x120E10)
     /// Flächen wie Sidebar, Karten und Sheets.
-    public static let flaeche = Color.lilith(light: 0xF1E9DE, dark: 0x1A1517)
+    public static let flaeche = Color.lilith(light: 0xF2F2F7, dark: 0x1A1517)
     /// Haupttext.
-    public static let text = Color.lilith(light: 0x1E1719, dark: 0xF4EDE4)
+    public static let text = Color.lilith(light: 0x1C1C1E, dark: 0xF4EDE4)
     /// Nebentext.
-    public static let textLeise = Color.lilith(light: 0x6B5F59, dark: 0xB8ADA6)
+    public static let textLeise = Color.lilith(light: 0x6C6C70, dark: 0xB8ADA6)
     /// Hintergrund in der Vollbild-Fotoansicht (echtes Schwarz).
     public static let betrachter = Color.black
 }
