@@ -19,6 +19,8 @@ public enum TimelineFilter: Hashable, Sendable {
     case medienart(Medienart)
     /// Fotos aus einer Stadt (Kartenpunkte von Immich).
     case ort(stadt: String, land: String?)
+    /// Fotos direkt in einem Ordner auf dem Server.
+    case ordner(String)
 }
 
 /// Ein Album.

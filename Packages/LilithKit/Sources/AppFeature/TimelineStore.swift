@@ -63,6 +63,11 @@ final class TimelineStore: TimelineQuelle {
             await ladeListe(titel: "Ergebnisse", untertitel: "beste Treffer zuerst") { try await $0.sucheSmart(text) }
             return
         }
+        if case .ordner(let pfad) = filter {
+            let name = pfad.split(separator: "/").last.map(String.init) ?? pfad
+            await ladeListe(titel: name, untertitel: "neueste zuerst") { try await $0.fotos(imOrdner: pfad) }
+            return
+        }
         if case .ort(let stadt, let land) = filter {
             await ladeListe(titel: stadt, untertitel: "neueste zuerst") { try await $0.fotos(inStadt: stadt, land: land) }
             return

@@ -225,3 +225,8 @@ Plan: `docs/LADEN-PLAN.md`.
 - **Sofortstart:** Statt der im Plan genannten Datenbank-Tabellen eine JSON-Datei im Caches-Ordner (einfacher, gleiche Wirkung): Monatsliste und Inhalt der 3 neuesten Monate. Beim Start sofort zeigen, danach gespeicherte Monate einmal frisch holen. Beim Abmelden wird alles gelöscht.
 - **Sammlungen** werden genauso gespeichert und sofort gezeigt; neu geladen wird erst nach 2 Minuten oder bei einer Änderung (Ziehen zum Aktualisieren erzwingt es).
 - **Messen:** `LadeMessung` schreibt Signposts und Zeilen ins Log (Subsystem `app.lilith`, Kategorie `Laden`).
+
+## 19. Doppelte Fotos und Ordner (13.11.2026)
+
+- **Doppelte Fotos:** `getAssetDuplicates`; je Gruppe die Fotos nebeneinander mit Auflösung, Dateigröße und Datum, Immichs Vorschlag (`suggestedKeepAssetIds`) ist vorausgewählt. „Auswahl behalten“ ruft `resolveDuplicates` auf: Die übrigen kommen in den Papierkorb und sind dort wiederherstellbar.
+- **Ordner:** `getUniqueOriginalPaths` als Baum, beginnend beim gemeinsamen Anfang aller Pfade (statt fünf leeren Ebenen wie `/usr/src/app/upload/…`). „Fotos in diesem Ordner“ nutzt `getAssetsByOriginalPath`. Symbole in der Liste grau.

@@ -18,6 +18,10 @@ enum SammlungsZiel: Hashable {
     case personen
     /// Karte mit allen Orten.
     case orte
+    /// Gruppen doppelter Fotos.
+    case duplikate
+    /// Ordner auf dem Server (`""` = oberste Ebene).
+    case ordner(String)
 }
 
 /// Der Tab „Sammlungen“, aufgebaut wie in Apples Fotos-App: eine lange Seite mit Abschnitten,
@@ -81,6 +85,10 @@ struct AlbenView: View {
                     PersonenRaster(personen: personen)
                 case .orte:
                     OrteKarte(orte: orte)
+                case .duplikate:
+                    DuplikateView()
+                case .ordner(let pfad):
+                    OrdnerView(pfad: pfad)
                 }
             }
             .refreshable { await lade(erzwingen: true) }
@@ -255,6 +263,10 @@ struct AlbenView: View {
             VStack(spacing: 0) {
                 listenEintrag("Favoriten", "heart", .favoriten)
                 Divider().padding(.leading, 52)
+                sammlungsEintrag("Doppelte Fotos", "square.on.square", .duplikate)
+                Divider().padding(.leading, 52)
+                sammlungsEintrag("Ordner", "folder", .ordner(""))
+                Divider().padding(.leading, 52)
                 listenEintrag("Archiv", "archivebox", .archiv)
                 if kontext.papierkorbAktiv {
                     Divider().padding(.leading, 52)
@@ -267,7 +279,15 @@ struct AlbenView: View {
     }
 
     private func listenEintrag(_ titel: String, _ symbol: String, _ filter: TimelineFilter) -> some View {
-        NavigationLink(value: TimelineZiel(titel: titel, filter: filter)) {
+        listenZeile(titel, symbol, TimelineZiel(titel: titel, filter: filter))
+    }
+
+    private func sammlungsEintrag(_ titel: String, _ symbol: String, _ ziel: SammlungsZiel) -> some View {
+        listenZeile(titel, symbol, ziel)
+    }
+
+    private func listenZeile<Z: Hashable>(_ titel: String, _ symbol: String, _ ziel: Z) -> some View {
+        NavigationLink(value: ziel) {
             HStack(spacing: 14) {
                 Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 24)
                 Text(titel).foregroundStyle(LilithColor.text)

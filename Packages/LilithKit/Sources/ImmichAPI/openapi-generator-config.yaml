@@ -39,5 +39,11 @@ filter:
     - getAllPeople
     # Karte
     - getMapMarkers
+    # Doppelte Fotos
+    - getAssetDuplicates
+    - resolveDuplicates
+    # Ordner
+    - getUniqueOriginalPaths
+    - getAssetsByOriginalPath
     # Upload
     - checkBulkUpload

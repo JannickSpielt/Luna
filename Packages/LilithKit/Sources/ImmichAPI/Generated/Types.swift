@@ -90,6 +90,20 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /auth/validateToken`.
     /// - Remark: Generated from `#/paths//auth/validateToken/post(validateAccessToken)`.
     func validateAccessToken(_ input: Operations.ValidateAccessToken.Input) async throws -> Operations.ValidateAccessToken.Output
+    /// Retrieve duplicates
+    ///
+    /// Retrieve a list of duplicate assets available to the authenticated user.
+    ///
+    /// - Remark: HTTP `GET /duplicates`.
+    /// - Remark: Generated from `#/paths//duplicates/get(getAssetDuplicates)`.
+    func getAssetDuplicates(_ input: Operations.GetAssetDuplicates.Input) async throws -> Operations.GetAssetDuplicates.Output
+    /// Resolve duplicate groups
+    ///
+    /// Resolve duplicate groups by synchronizing metadata across assets and deleting/trashing duplicates.
+    ///
+    /// - Remark: HTTP `POST /duplicates/resolve`.
+    /// - Remark: Generated from `#/paths//duplicates/resolve/post(resolveDuplicates)`.
+    func resolveDuplicates(_ input: Operations.ResolveDuplicates.Input) async throws -> Operations.ResolveDuplicates.Output
     /// Retrieve map markers
     ///
     /// Retrieve a list of latitude and longitude coordinates for every asset with location data.
@@ -175,6 +189,20 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /users/me`.
     /// - Remark: Generated from `#/paths//users/me/get(getMyUser)`.
     func getMyUser(_ input: Operations.GetMyUser.Input) async throws -> Operations.GetMyUser.Output
+    /// Retrieve assets by original path
+    ///
+    /// Retrieve assets that are children of a specific folder.
+    ///
+    /// - Remark: HTTP `GET /view/folder`.
+    /// - Remark: Generated from `#/paths//view/folder/get(getAssetsByOriginalPath)`.
+    func getAssetsByOriginalPath(_ input: Operations.GetAssetsByOriginalPath.Input) async throws -> Operations.GetAssetsByOriginalPath.Output
+    /// Retrieve unique paths
+    ///
+    /// Retrieve a list of unique folder paths from asset original paths.
+    ///
+    /// - Remark: HTTP `GET /view/folder/unique-paths`.
+    /// - Remark: Generated from `#/paths//view/folder/unique-paths/get(getUniqueOriginalPaths)`.
+    func getUniqueOriginalPaths(_ input: Operations.GetUniqueOriginalPaths.Input) async throws -> Operations.GetUniqueOriginalPaths.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -327,6 +355,30 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//auth/validateToken/post(validateAccessToken)`.
     public func validateAccessToken(headers: Operations.ValidateAccessToken.Input.Headers = .init()) async throws -> Operations.ValidateAccessToken.Output {
         try await validateAccessToken(Operations.ValidateAccessToken.Input(headers: headers))
+    }
+    /// Retrieve duplicates
+    ///
+    /// Retrieve a list of duplicate assets available to the authenticated user.
+    ///
+    /// - Remark: HTTP `GET /duplicates`.
+    /// - Remark: Generated from `#/paths//duplicates/get(getAssetDuplicates)`.
+    public func getAssetDuplicates(headers: Operations.GetAssetDuplicates.Input.Headers = .init()) async throws -> Operations.GetAssetDuplicates.Output {
+        try await getAssetDuplicates(Operations.GetAssetDuplicates.Input(headers: headers))
+    }
+    /// Resolve duplicate groups
+    ///
+    /// Resolve duplicate groups by synchronizing metadata across assets and deleting/trashing duplicates.
+    ///
+    /// - Remark: HTTP `POST /duplicates/resolve`.
+    /// - Remark: Generated from `#/paths//duplicates/resolve/post(resolveDuplicates)`.
+    public func resolveDuplicates(
+        headers: Operations.ResolveDuplicates.Input.Headers = .init(),
+        body: Operations.ResolveDuplicates.Input.Body
+    ) async throws -> Operations.ResolveDuplicates.Output {
+        try await resolveDuplicates(Operations.ResolveDuplicates.Input(
+            headers: headers,
+            body: body
+        ))
     }
     /// Retrieve map markers
     ///
@@ -486,6 +538,30 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//users/me/get(getMyUser)`.
     public func getMyUser(headers: Operations.GetMyUser.Input.Headers = .init()) async throws -> Operations.GetMyUser.Output {
         try await getMyUser(Operations.GetMyUser.Input(headers: headers))
+    }
+    /// Retrieve assets by original path
+    ///
+    /// Retrieve assets that are children of a specific folder.
+    ///
+    /// - Remark: HTTP `GET /view/folder`.
+    /// - Remark: Generated from `#/paths//view/folder/get(getAssetsByOriginalPath)`.
+    public func getAssetsByOriginalPath(
+        query: Operations.GetAssetsByOriginalPath.Input.Query,
+        headers: Operations.GetAssetsByOriginalPath.Input.Headers = .init()
+    ) async throws -> Operations.GetAssetsByOriginalPath.Output {
+        try await getAssetsByOriginalPath(Operations.GetAssetsByOriginalPath.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Retrieve unique paths
+    ///
+    /// Retrieve a list of unique folder paths from asset original paths.
+    ///
+    /// - Remark: HTTP `GET /view/folder/unique-paths`.
+    /// - Remark: Generated from `#/paths//view/folder/unique-paths/get(getUniqueOriginalPaths)`.
+    public func getUniqueOriginalPaths(headers: Operations.GetUniqueOriginalPaths.Input.Headers = .init()) async throws -> Operations.GetUniqueOriginalPaths.Output {
+        try await getUniqueOriginalPaths(Operations.GetUniqueOriginalPaths.Input(headers: headers))
     }
 }
 
@@ -1530,6 +1606,91 @@ public enum Components {
                 case lt
                 case lte
                 case ne
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DuplicateResolveDto`.
+        public struct DuplicateResolveDto: Codable, Hashable, Sendable {
+            /// List of duplicate groups to resolve
+            ///
+            /// - Remark: Generated from `#/components/schemas/DuplicateResolveDto/groups`.
+            public var groups: [Components.Schemas.DuplicateResolveGroupDto]
+            /// Creates a new `DuplicateResolveDto`.
+            ///
+            /// - Parameters:
+            ///   - groups: List of duplicate groups to resolve
+            public init(groups: [Components.Schemas.DuplicateResolveGroupDto]) {
+                self.groups = groups
+            }
+            public enum CodingKeys: String, CodingKey {
+                case groups
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DuplicateResolveGroupDto`.
+        public struct DuplicateResolveGroupDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/DuplicateResolveGroupDto/duplicateId`.
+            public var duplicateId: Swift.String
+            /// Asset IDs to keep
+            ///
+            /// - Remark: Generated from `#/components/schemas/DuplicateResolveGroupDto/keepAssetIds`.
+            public var keepAssetIds: [Swift.String]
+            /// Asset IDs to trash or delete
+            ///
+            /// - Remark: Generated from `#/components/schemas/DuplicateResolveGroupDto/trashAssetIds`.
+            public var trashAssetIds: [Swift.String]
+            /// Creates a new `DuplicateResolveGroupDto`.
+            ///
+            /// - Parameters:
+            ///   - duplicateId:
+            ///   - keepAssetIds: Asset IDs to keep
+            ///   - trashAssetIds: Asset IDs to trash or delete
+            public init(
+                duplicateId: Swift.String,
+                keepAssetIds: [Swift.String],
+                trashAssetIds: [Swift.String]
+            ) {
+                self.duplicateId = duplicateId
+                self.keepAssetIds = keepAssetIds
+                self.trashAssetIds = trashAssetIds
+            }
+            public enum CodingKeys: String, CodingKey {
+                case duplicateId
+                case keepAssetIds
+                case trashAssetIds
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/DuplicateResponseDto`.
+        public struct DuplicateResponseDto: Codable, Hashable, Sendable {
+            /// Duplicate assets
+            ///
+            /// - Remark: Generated from `#/components/schemas/DuplicateResponseDto/assets`.
+            public var assets: [Components.Schemas.AssetResponseDto]
+            /// Duplicate group ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/DuplicateResponseDto/duplicateId`.
+            public var duplicateId: Swift.String
+            /// Suggested asset IDs to keep based on file size and EXIF data
+            ///
+            /// - Remark: Generated from `#/components/schemas/DuplicateResponseDto/suggestedKeepAssetIds`.
+            public var suggestedKeepAssetIds: [Swift.String]
+            /// Creates a new `DuplicateResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - assets: Duplicate assets
+            ///   - duplicateId: Duplicate group ID
+            ///   - suggestedKeepAssetIds: Suggested asset IDs to keep based on file size and EXIF data
+            public init(
+                assets: [Components.Schemas.AssetResponseDto],
+                duplicateId: Swift.String,
+                suggestedKeepAssetIds: [Swift.String]
+            ) {
+                self.assets = assets
+                self.duplicateId = duplicateId
+                self.suggestedKeepAssetIds = suggestedKeepAssetIds
+            }
+            public enum CodingKeys: String, CodingKey {
+                case assets
+                case duplicateId
+                case suggestedKeepAssetIds
             }
         }
         /// - Remark: Generated from `#/components/schemas/EnumFilterAssetType`.
@@ -6400,6 +6561,241 @@ public enum Operations {
             }
         }
     }
+    /// Retrieve duplicates
+    ///
+    /// Retrieve a list of duplicate assets available to the authenticated user.
+    ///
+    /// - Remark: HTTP `GET /duplicates`.
+    /// - Remark: Generated from `#/paths//duplicates/get(getAssetDuplicates)`.
+    public enum GetAssetDuplicates {
+        public static let id: Swift.String = "getAssetDuplicates"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/duplicates/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAssetDuplicates.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAssetDuplicates.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetAssetDuplicates.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetAssetDuplicates.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/duplicates/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/duplicates/GET/responses/200/content/application\/json`.
+                    case json([Components.Schemas.DuplicateResponseDto])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Components.Schemas.DuplicateResponseDto] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetAssetDuplicates.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetAssetDuplicates.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//duplicates/get(getAssetDuplicates)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetAssetDuplicates.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetAssetDuplicates.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Resolve duplicate groups
+    ///
+    /// Resolve duplicate groups by synchronizing metadata across assets and deleting/trashing duplicates.
+    ///
+    /// - Remark: HTTP `POST /duplicates/resolve`.
+    /// - Remark: Generated from `#/paths//duplicates/resolve/post(resolveDuplicates)`.
+    public enum ResolveDuplicates {
+        public static let id: Swift.String = "resolveDuplicates"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/duplicates/resolve/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveDuplicates.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.ResolveDuplicates.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.ResolveDuplicates.Input.Headers
+            /// - Remark: Generated from `#/paths/duplicates/resolve/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/duplicates/resolve/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.DuplicateResolveDto)
+            }
+            public var body: Operations.ResolveDuplicates.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.ResolveDuplicates.Input.Headers = .init(),
+                body: Operations.ResolveDuplicates.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/duplicates/resolve/POST/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/duplicates/resolve/POST/responses/200/content/application\/json`.
+                    case json([Components.Schemas.BulkIdResponseDto])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Components.Schemas.BulkIdResponseDto] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.ResolveDuplicates.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.ResolveDuplicates.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//duplicates/resolve/post(resolveDuplicates)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.ResolveDuplicates.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.ResolveDuplicates.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
     /// Retrieve map markers
     ///
     /// Retrieve a list of latitude and longitude coordinates for every asset with location data.
@@ -8200,6 +8596,248 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
             public var ok: Operations.GetMyUser.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Retrieve assets by original path
+    ///
+    /// Retrieve assets that are children of a specific folder.
+    ///
+    /// - Remark: HTTP `GET /view/folder`.
+    /// - Remark: Generated from `#/paths//view/folder/get(getAssetsByOriginalPath)`.
+    public enum GetAssetsByOriginalPath {
+        public static let id: Swift.String = "getAssetsByOriginalPath"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/view/folder/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/view/folder/GET/query/path`.
+                public var path: Swift.String
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - path:
+                public init(path: Swift.String) {
+                    self.path = path
+                }
+            }
+            public var query: Operations.GetAssetsByOriginalPath.Input.Query
+            /// - Remark: Generated from `#/paths/view/folder/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAssetsByOriginalPath.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAssetsByOriginalPath.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetAssetsByOriginalPath.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetAssetsByOriginalPath.Input.Query,
+                headers: Operations.GetAssetsByOriginalPath.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/view/folder/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/view/folder/GET/responses/200/content/application\/json`.
+                    case json([Components.Schemas.AssetResponseDto])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Components.Schemas.AssetResponseDto] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetAssetsByOriginalPath.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetAssetsByOriginalPath.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//view/folder/get(getAssetsByOriginalPath)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetAssetsByOriginalPath.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetAssetsByOriginalPath.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Retrieve unique paths
+    ///
+    /// Retrieve a list of unique folder paths from asset original paths.
+    ///
+    /// - Remark: HTTP `GET /view/folder/unique-paths`.
+    /// - Remark: Generated from `#/paths//view/folder/unique-paths/get(getUniqueOriginalPaths)`.
+    public enum GetUniqueOriginalPaths {
+        public static let id: Swift.String = "getUniqueOriginalPaths"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/view/folder/unique-paths/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetUniqueOriginalPaths.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetUniqueOriginalPaths.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetUniqueOriginalPaths.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetUniqueOriginalPaths.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/view/folder/unique-paths/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/view/folder/unique-paths/GET/responses/200/content/application\/json`.
+                    case json([Swift.String])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Swift.String] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetUniqueOriginalPaths.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetUniqueOriginalPaths.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//view/folder/unique-paths/get(getUniqueOriginalPaths)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetUniqueOriginalPaths.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetUniqueOriginalPaths.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):

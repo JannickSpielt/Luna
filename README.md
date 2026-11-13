@@ -39,7 +39,7 @@ Luna baut keine eigene Cloud und ersetzt keinen Immich-Server. Die App nutzt des
 | **Anmeldung** | Serveradresse, Anmeldung mit Immich-Konto oder API-Schlüssel, Sitzung sicher im Schlüsselbund, App-Sperre mit Face ID |
 | **Fotos** | Timeline wie in Apples Fotos-App: Neuestes unten, Raster ohne Lücken, flüssiges Zoomen von 1 bis 11 Spalten, Scrubber, Datum oben links |
 | **Fotoansicht** | Zoomen dort, wo die Finger sind, Live Photos, eigener Videoplayer mit Bild-in-Bild und AirPlay, Infos mit Karte, Teilen ohne Warten |
-| **Sammlungen** | Kürzlich hinzugefügt, Alben, geteilte Alben, Personen, Medienarten (Videos, Live Photos, Selfies, Bildschirmfotos, RAW), Favoriten, Archiv, Papierkorb |
+| **Sammlungen** | Kürzlich hinzugefügt, Alben, geteilte Alben, Personen, Orte mit Karte, Medienarten (Videos, Live Photos, Selfies, Bildschirmfotos, RAW), Favoriten, doppelte Fotos, Ordner, Archiv, Papierkorb |
 | **Suche** | Smart Search: Fotos über ihren Inhalt finden („Hund am Strand“) |
 | **Bearbeiten** | Mehrfachauswahl per Wischen, Favoriten, Archivieren, Löschen und Wiederherstellen, Alben anlegen und füllen |
 | **Hochladen** | Per Hand aus der Mediathek (iPhone) oder per Drag & Drop (Mac), ohne Duplikate |
@@ -72,8 +72,9 @@ Neue Versionen findet Luna selbst: Einstellungen → „Über Luna“ → „Nac
 - [x] Automatisches Backup mit Hintergrund-Uploads und Live-Aktivität
 - [x] Redesign im Stil von Apples Fotos-App mit Liquid Glass
 - [x] Sammlungen: Personen und Medienarten
-- [ ] Sammlungen: Orte mit Karte
-- [ ] Sammlungen: doppelte Fotos und Ordner
+- [x] Sammlungen: Orte mit Karte
+- [x] Sammlungen: doppelte Fotos und Ordner
+- [x] Schnelleres, gleichmäßiges Laden mit Sofortstart
 - [ ] Teilen-Links, einfache Bearbeitung, Rückblicke, Widget, Offline-Ansicht
 - [ ] TestFlight
 
