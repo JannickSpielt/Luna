@@ -38,7 +38,15 @@ public final class BackupDienst {
     public private(set) var aktiv: Bool
     public private(set) var zugriff: MediathekZugriff
     public private(set) var phase: Phase
-    public private(set) var uebersicht = Uebersicht()
+    public private(set) var uebersicht = Uebersicht() {
+        didSet {
+            // Beginn eines neuen „Stapels“: Ab jetzt zählt der Text nur die neuen Fotos („1 von 3“).
+            if uebersicht.offen > 0, stapelStart == nil { stapelStart = uebersicht.gesichert }
+            if uebersicht.offen == 0 { stapelStart = nil }
+        }
+    }
+    /// Wie viele Fotos gesichert waren, als die gerade offenen dazukamen.
+    @ObservationIgnored private var stapelStart: Int?
     public private(set) var letzterAbschluss: Date?
     /// Welche Alben gesichert werden.
     public private(set) var auswahl: AlbenAuswahl
@@ -477,9 +485,13 @@ public final class BackupDienst {
         }
     }
 
-    /// „8.412 von 9.030 gesichert“
+    /// „Alles gesichert“, sonst nur die neuen Fotos: „1 von 3 gesichert“.
     public var zaehlerText: String {
-        "\(uebersicht.gesichert.formatted(.number)) von \(uebersicht.gesamt.formatted(.number)) gesichert"
+        let u = uebersicht
+        if u.offen == 0 && u.fehler == 0 { return u.gesamt == 0 ? "Noch keine Fotos" : "Alles gesichert" }
+        let start = stapelStart ?? u.gesichert
+        let erledigt = max(0, u.gesichert - start)
+        return "\(erledigt.formatted(.number)) von \((erledigt + u.offen).formatted(.number)) gesichert"
     }
 
     /// Alles gesichert, nichts offen, keine Fehler (für den Vollmond-Moment).

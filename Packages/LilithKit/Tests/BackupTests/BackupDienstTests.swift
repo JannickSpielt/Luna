@@ -216,3 +216,18 @@ final class TestUmgebung: Umgebung {
     var amStrom = true
     var freierSpeicher: Int64 = 100_000_000_000
 }
+
+extension WarteschlangeTests {
+    @Test("Zählertext: alles gesichert, sonst nur die neuen Fotos")
+    func zaehler() async throws {
+        let mediathek = TestMediathek(["a", "b", "c", "d"])
+        UploadAttrappe.sperre.withLock {
+            UploadAttrappe.antwort = (201, #"{"id":"neu-1","status":"created"}"#)
+            UploadAttrappe.anfragen = []
+        }
+        let db = try Datenbank.imSpeicher()
+        let (dienst, _) = dienst(mediathek, db: db, transport: Self.backupServer())
+        await dienst.lauf()
+        #expect(dienst.zaehlerText == "Alles gesichert")
+    }
+}

@@ -50,6 +50,8 @@ struct DetailView: View {
                 bedienung.transition(.opacity)
             }
         }
+        // Obere und untere Leiste blenden immer weich ein und aus, auch beim Wegziehen.
+        .animation(.smooth(duration: 0.3), value: zeigeBedienung && !zugAktiv)
         .environment(\.colorScheme, .dark)
         .focusable()
         .focusEffectDisabled()
@@ -115,21 +117,23 @@ struct DetailView: View {
 
     /// Nach unten ziehen schließt die Ansicht.
     private var zumSchliessenZiehen: some Gesture {
-        DragGesture(minimumDistance: 20)
+        DragGesture(minimumDistance: 10)
             .onChanged { wert in
                 if !zugAktiv {
-                    // Nur starten, wenn die Bewegung klar nach unten geht (sonst ist es Blättern).
-                    guard wert.translation.height > abs(wert.translation.width) * 1.5 else { return }
+                    // Starten, sobald die Bewegung eher nach unten als zur Seite geht (sonst ist es Blättern).
+                    guard wert.translation.height > abs(wert.translation.width) else { return }
                     zugAktiv = true
                 }
+                // Folgt dem Finger direkt, ohne Widerstand.
                 zug = max(0, wert.translation.height)
             }
             .onEnded { wert in
                 guard zugAktiv else { return }
-                if zug > 110 || wert.predictedEndTranslation.height > 400 {
+                // Schon ein kurzer Zug mit etwas Schwung schließt.
+                if zug > 80 || wert.predictedEndTranslation.height > 220 {
                     schliesse()
                 } else {
-                    withAnimation(.spring(duration: 0.3)) { zug = 0 }
+                    withAnimation(.smooth(duration: 0.3)) { zug = 0 }
                     zugAktiv = false
                 }
             }

@@ -32,7 +32,9 @@ struct UploadAnzeige: View {
         Group {
             if s.laeuft {
                 inhalt {
-                    MondSymbol(phase: s.gesamtAnteil).frame(width: 22, height: 22)
+                    // Nimmt mit dem Fortschritt zu (nie ganz leer, damit man ihn sieht).
+                    MondSymbol(phase: 0.2 + 0.8 * s.gesamtAnteil).frame(width: 22, height: 22)
+                        .animation(.smooth, value: s.gesamtAnteil)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Lädt hoch · \(min(s.erledigt + 1, s.gesamt)) von \(s.gesamt)")
                             .font(.subheadline.weight(.semibold))

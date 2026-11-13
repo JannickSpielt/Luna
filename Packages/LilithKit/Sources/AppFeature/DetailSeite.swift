@@ -9,7 +9,12 @@ import TimelineGrid
 /// Andere Apps (Musik) werden erst beim Abspielen unterbrochen und laufen danach weiter.
 @MainActor
 enum VideoTon {
+    /// Wie viele Videos gerade Ton wollen. Erst wenn keins mehr läuft, wird abgeschaltet –
+    /// sonst schaltet eine Nachbarseite, die beim Drehen neu aufgebaut wird, den Ton des laufenden Videos ab.
+    private static var aktiv = 0
+
     static func an() {
+        aktiv += 1
         #if os(iOS)
         let sitzung = AVAudioSession.sharedInstance()
         try? sitzung.setCategory(.playback, mode: .moviePlayback)
@@ -18,6 +23,8 @@ enum VideoTon {
     }
 
     static func aus() {
+        aktiv = max(0, aktiv - 1)
+        guard aktiv == 0 else { return }
         #if os(iOS)
         let sitzung = AVAudioSession.sharedInstance()
         try? sitzung.setActive(false, options: .notifyOthersOnDeactivation)
@@ -373,6 +380,11 @@ struct VideoSeite: View {
     }
 
     private func starte() {
+        #if os(iOS)
+        if modell != nil { return }
+        #else
+        if player != nil { return }
+        #endif
         let neu = AVPlayer(playerItem: AVPlayerItem(asset: videoAsset(client.videoAnfrage(assetId: item.id), client: client)))
         VideoTon.an()
         #if os(iOS)
@@ -387,11 +399,14 @@ struct VideoSeite: View {
 
     private func stoppe() {
         #if os(iOS)
+        // Nur wer gestartet hat, hält an und gibt den Ton frei.
+        guard let laufend = modell else { return }
         // Läuft das Video gerade als Bild-in-Bild weiter, nicht anhalten.
-        if modell?.pip?.isPictureInPictureActive == true { return }
-        modell?.aufraeumen()
+        if laufend.pip?.isPictureInPictureActive == true { return }
+        laufend.aufraeumen()
         modell = nil
         #else
+        guard player != nil else { return }
         player?.pause()
         player = nil
         #endif

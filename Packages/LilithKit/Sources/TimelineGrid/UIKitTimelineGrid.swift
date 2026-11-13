@@ -47,7 +47,12 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     /// Ganz ans Ende (die neuesten Fotos), sofern umgekehrt und noch nicht selbst gescrollt.
     private func zumNeuesten() {
-        guard umgekehrt, !nutzerHatGescrollt, let collectionView else { return }
+        guard !nutzerHatGescrollt, let collectionView else { return }
+        if !umgekehrt {
+            // Neuestes steht oben: an den Anfang, unter die Leiste.
+            collectionView.contentOffset.y = -collectionView.adjustedContentInset.top
+            return
+        }
         collectionView.layoutIfNeeded()
         collectionView.contentOffset.y = -collectionView.adjustedContentInset.top
         meldeSichtbare()
@@ -180,8 +185,9 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         // Unten Platz für die Tab-Leiste, oben keiner: Die erste Reihe liegt unter dem Glas.
         let unten = (view.window?.safeAreaInsets.bottom ?? 0) + 64
         // Umgekehrt liegt die sichtbare Unterkante am Anfang der Sammlung.
+        // Von oben nach unten (Sammlungen, Alben): Die erste Reihe beginnt unter der Leiste, scrollt aber darunter.
         let neu = umgekehrt ? UIEdgeInsets(top: unten, left: 0, bottom: 0, right: 0)
-                            : UIEdgeInsets(top: 0, left: 0, bottom: unten, right: 0)
+                            : UIEdgeInsets(top: oben, left: 0, bottom: unten, right: 0)
         if collectionView.contentInset != neu {
             collectionView.contentInset = neu
             // Beim ersten Mal ganz ans Ende (die neuesten Fotos), nicht unter die Tab-Leiste.

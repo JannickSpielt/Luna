@@ -35,8 +35,6 @@ struct TimelineInhalt: View {
     @State private var sprung: SprungAnfrage?
     /// Eigenes Objekt, damit beim Scrollen nur der Scrubber neu gezeichnet wird, nicht die ganze Ansicht.
     @State private var scroll = ScrollStand()
-    /// Tab-Leiste unten: verschwindet beim Scrollen in ältere Fotos.
-    @State private var leisteSichtbar = true
     @AppStorage(NichtGesicherte.schluessel) private var zeigeNichtGesicherte = true
     @State private var auswahlModus = false
     @State private var auswahl: [String] = []
@@ -86,9 +84,6 @@ struct TimelineInhalt: View {
             // Kein großer Titel über weißem Grund: Die Fotos beginnen ganz oben.
             .navigationBarTitleDisplayMode(.inline)
             .modifier(TitelAusblenden(aktiv: konto != nil && store?.zustand == .bereit))
-            #if os(iOS)
-            .toolbarVisibility(leisteSichtbar ? .visible : .hidden, for: .tabBar)
-            #endif
             #endif
             .toolbar { werkzeuge }
             // Beim Auswählen nicht versehentlich zurückwischen: „Zurück“ (und damit die Wischgeste) ist aus,
@@ -284,7 +279,6 @@ struct TimelineInhalt: View {
                          onMonat: { [scroll] in scroll.monat = $0 },
                          onEnde: { [scroll] in scroll.amEnde = $0 },
                          onDatum: { [scroll] in scroll.datum = $0 },
-                         onLeiste: { zeigen in withAnimation(.easeOut(duration: 0.25)) { leisteSichtbar = zeigen } },
                          umgekehrt: umgekehrt)
     }
 
@@ -292,8 +286,8 @@ struct TimelineInhalt: View {
     /// Suchergebnisse bleiben von oben nach unten, weil sie nach Relevanz sortiert sind.
     private var umgekehrt: Bool {
         #if os(iOS)
-        if case .suche = filter { return false }
-        return true
+        // Nur „Fotos“ wie in Apples Fotos-App (Neuestes unten). Sammlungen, Alben und Suche: Neuestes oben.
+        return konto != nil && filter == .alle
         #else
         return false
         #endif
