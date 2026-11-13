@@ -447,9 +447,10 @@ struct LadeMond: View {
     }
 }
 
-/// Video-Quelle mit Anmelde-Headern.
+/// Video-Quelle. Der Zugang steht zusätzlich im Link, damit auch AirPlay-Geräte das Video laden können
+/// (sie holen es selbst vom Server und bekommen Lunas Header nicht mit).
 func videoAsset(_ anfrage: URLRequest, client: ImmichClient) -> AVURLAsset {
-    AVURLAsset(url: anfrage.url!, options: ["AVURLAssetHTTPHeaderFieldsKey": client.anmeldeHeader])
+    AVURLAsset(url: client.mitZugangImLink(anfrage.url!), options: ["AVURLAssetHTTPHeaderFieldsKey": client.anmeldeHeader])
 }
 
 /// Reine Videofläche ohne Bedienelemente (für Live Photos).

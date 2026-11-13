@@ -139,6 +139,16 @@ extension ImmichClient {
     }
 
     /// Anmelde-Header, z. B. für den Videoplayer.
+    /// Hängt den Zugang als Parameter an den Link (Immich: `sessionKey` bzw. `apiKey`).
+    /// Nötig für AirPlay: Das Apple TV lädt das Video selbst und kennt Lunas Header nicht.
+    public func mitZugangImLink(_ url: URL) -> URL {
+        switch credential {
+        case .accessToken(let token): url.appending(queryItems: [URLQueryItem(name: "sessionKey", value: token)])
+        case .apiKey(let key): url.appending(queryItems: [URLQueryItem(name: "apiKey", value: key)])
+        case nil: url
+        }
+    }
+
     public var anmeldeHeader: [String: String] {
         switch credential {
         case .accessToken(let token): ["Authorization": "Bearer \(token)"]

@@ -1,0 +1,25 @@
+feature,area,priority,original,clone,notes
+Light background in photo view (black when tapped away),fotoansicht,must,yes,yes,dark mode stays dark
+Share as its own button bottom left,fotoansicht,must,yes,yes,
+Trash as its own button bottom right,fotoansicht,must,yes,yes,
+Middle pill heart / info,fotoansicht,must,yes,yes,edit button only with idea 5
+"…" button top right in photo,fotoansicht,must,yes,yes,
+"…" menu: top row Kopieren / Ausblenden,fotoansicht,should,yes,yes,Ausblenden = locked area; Duplizieren skip
+"…" menu: Add to album / cover / archive / link,fotoansicht,must,yes,yes,
+"…" menu: slideshow,fotoansicht,could,yes,no,
+Preview strip under the photo,fotoansicht,must,yes,yes,since 5bea447
+Info under the photo instead of a sheet,info,must,yes,no,
+Info: description field (Immich description),info,should,yes,no,writes to the server, only after confirmation
+Info: camera + format badge + exposure row,info,should,yes,no,
+Info: map with the photo as a pin,info,should,yes,no,
+Library: large title + count underneath,mediathek,should,yes,no,
+Library: "Auswählen" as a visible button,mediathek,should,yes,no,
+≡ menu: sort added / taken,mediathek,could,yes,no,Immich sorts by date taken
+≡ menu: filters (favourites / not in album / media types),mediathek,should,yes,no,
+Sammlungen: collapsible sections,sammlungen,should,yes,no,
+Sammlungen: "Weitere" as a 2-column tile grid with lock,sammlungen,should,yes,no,
+Sammlungen: profile + "…" top right,sammlungen,could,yes,no,profile currently in Fotos
+Sammlungen: pinned and editable,sammlungen,could,yes,no,
+Search: field at the bottom with recents,suche,could,yes,no,
+Memory films / wallpaper suggestions,sammlungen,could,yes,skip,Apple's own features
+Full photo editor,fotoansicht,could,yes,skip,separately as idea 5

@@ -29,6 +29,9 @@ struct DetailView: View {
     @State private var frageLoeschen = false
     @State private var loescht = false
     @FocusState private var fokus: Bool
+    @Environment(\.colorScheme) private var umgebung
+    @State private var zeigeAlbumWahl = false
+    @State private var freigabe: FreigabeZiel?
     @Environment(BibliothekKontext.self) private var kontext
 
     init(quelle: TimelineQuelle, store: TimelineStore?, start: DetailPosition,
@@ -44,7 +47,10 @@ struct DetailView: View {
 
     var body: some View {
         ZStack {
-            Color.black.opacity(1 - min(zug / 400, 0.7)).ignoresSafeArea()
+            // Wie Apple: hell mit Bedienelementen (im hellen Modus), schwarz zum reinen Ansehen.
+            (hell ? LilithColor.hintergrund : Color.black)
+                .opacity(1 - min(zug / 400, 0.7))
+                .ignoresSafeArea()
             blaetterer
                 .offset(y: zug)
                 .scaleEffect(1 - min(zug / 1500, 0.2))
@@ -64,7 +70,8 @@ struct DetailView: View {
         }
         // Obere und untere Leiste blenden immer weich ein und aus, auch beim Wegziehen.
         .animation(.smooth(duration: 0.3), value: zeigeBedienung && !zugAktiv)
-        .environment(\.colorScheme, .dark)
+        .animation(.smooth(duration: 0.3), value: hell)
+        .environment(\.colorScheme, hell ? umgebung : .dark)
         .focusable()
         .focusEffectDisabled()
         .focused($fokus)
@@ -90,6 +97,18 @@ struct DetailView: View {
             guard let id = item?.id, item?.lokal == nil, let client = store?.client else { return }
             info = try? await client.assetInfo(id: id)
         }
+        .sheet(isPresented: $zeigeAlbumWahl) {
+            AlbumWahl(anzahl: 1) { ziel in
+                guard let id = item?.id else { return }
+                fuehreAus("Zum Album hinzugefügt") { client in
+                    switch ziel {
+                    case .vorhanden(let album): _ = try await client.fuegeZuAlbum(albumId: album.id, assetIds: [id])
+                    case .neu(let name): _ = try await client.erstelleAlbum(name: name, assetIds: [id])
+                    }
+                }
+            }
+        }
+        .sheet(item: $freigabe) { FreigabeBlatt(ziel: $0) }
         .sheet(isPresented: $zeigeInfo) {
             InfoPanel(info: info, monat: aktuell.map { quelle.sections[$0.section].titel } ?? "")
                 .presentationDetents([.medium, .large])
@@ -211,6 +230,7 @@ struct DetailView: View {
                 .lilithGlas(in: .circle, klar: true)
                 .accessibilityLabel("Zurück")
                 .keyboardShortcut(.cancelAction)
+                if item?.art == .video { Color.clear.frame(width: 52, height: 44) }
                 Spacer()
                 VStack(spacing: 1) {
                     Text(titel).font(.subheadline.weight(.semibold))
@@ -221,23 +241,22 @@ struct DetailView: View {
                 .lilithGlas(in: .capsule, klar: true)
                 .accessibilityElement(children: .combine)
                 Spacer()
-                #if os(iOS)
-                if item?.art == .video {
-                    // AirPlay oben rechts, gegenüber von „Zurück“.
-                    AirPlayKnopf()
-                        .frame(width: 44, height: 44)
-                        .lilithGlas(in: .circle, klar: true)
-                        .accessibilityLabel("AirPlay")
-                } else {
-                    Color.clear.frame(width: 44, height: 44)
+                HStack(spacing: 8) {
+                    #if os(iOS)
+                    if item?.art == .video {
+                        AirPlayKnopf()
+                            .frame(width: 44, height: 44)
+                            .lilithGlas(in: .circle, klar: true)
+                            .accessibilityLabel("AirPlay")
+                    }
+                    #endif
+                    mehrMenue
                 }
-                #else
-                Color.clear.frame(width: 44, height: 44)
-                #endif
             }
             .padding(.horizontal, 16)
             Spacer()
-            if seiten.count > 1 {
+            // Bei Videos sitzt dort die Zeitleiste (wie bei Apple).
+            if seiten.count > 1, item?.art != .video {
                 VorschauLeiste(seiten: seiten, aktuell: aktuell, quelle: quelle) { ziel in
                     var t = Transaction()
                     t.disablesAnimations = true
@@ -283,15 +302,20 @@ struct DetailView: View {
         .padding(.bottom, 12)
     }
 
+    /// Wie bei Apple: Teilen links für sich, Favorit und Info in der Mitte, Löschen rechts für sich.
     private var serverLeiste: some View {
+        HStack {
+            teilenKnopf
+                .frame(width: 52, height: 52)
+                .lilithGlas(in: .circle, klar: true)
+            Spacer()
             HStack(spacing: 4) {
-                teilenKnopf
                 Button {
                     wechsleFavorit()
                 } label: {
                     Image(systemName: item?.favorit == true ? "heart.fill" : "heart")
                         .foregroundStyle(item?.favorit == true ? LilithColor.nachtrose : .primary)
-                        .frame(width: 52, height: 44)
+                        .frame(width: 56, height: 44)
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .accessibilityLabel(item?.favorit == true ? "Favorit entfernen" : "Als Favorit markieren")
@@ -300,57 +324,154 @@ struct DetailView: View {
                 Button {
                     zeigeInfo = true
                 } label: {
-                    Image(systemName: "info.circle").frame(width: 52, height: 44)
+                    Image(systemName: "info.circle").frame(width: 56, height: 44)
                 }
                 .accessibilityLabel("Informationen")
                 .keyboardShortcut("i", modifiers: .command)
-                titelbildMenue
-                if loeschen != nil {
-                    Button {
-                        frageLoeschen = true
-                    } label: {
-                        Image(systemName: "trash").frame(width: 52, height: 44)
-                    }
-                    .accessibilityLabel("Löschen")
-                    .keyboardShortcut(.delete, modifiers: [])
-                    .disabled(item == nil || loescht)
-                    .confirmationDialog("Dieses Objekt löschen?", isPresented: $frageLoeschen, titleVisibility: .visible) {
-                        Button("Löschen", role: .destructive) { loesche() }
-                    }
-                }
             }
-            .font(.title3)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 6)
             .padding(.vertical, 4)
             .lilithGlas(in: .capsule, klar: true)
-            .padding(.bottom, 12)
+            Spacer()
+            if loeschen != nil {
+                Button {
+                    frageLoeschen = true
+                } label: {
+                    Image(systemName: "trash").frame(width: 52, height: 52)
+                }
+                .lilithGlas(in: .circle, klar: true)
+                .accessibilityLabel("Löschen")
+                .keyboardShortcut(.delete, modifiers: [])
+                .disabled(item == nil || loescht)
+                .confirmationDialog("Dieses Objekt löschen?", isPresented: $frageLoeschen, titleVisibility: .visible) {
+                    Button("Löschen", role: .destructive) { loesche() }
+                }
+            } else {
+                Color.clear.frame(width: 52, height: 52)
+            }
+        }
+        .font(.title3)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+    }
+
+    /// „…“ oben rechts: seltenere Aktionen, wie in Apple Fotos.
+    @ViewBuilder
+    private var mehrMenue: some View {
+        if let item, item.lokal == nil, store?.client != nil {
+            Menu {
+                ControlGroup {
+                    Button("Kopieren", systemImage: "doc.on.doc") { kopiere() }
+                    if store?.filter == .gesperrt {
+                        Button("Einblenden", systemImage: "eye") { verschiebe(gesperrt: false) }
+                    } else {
+                        Button("Ausblenden", systemImage: "eye.slash") { verschiebe(gesperrt: true) }
+                    }
+                }
+                Section {
+                    Button("Zu Album hinzufügen", systemImage: "rectangle.stack.badge.plus") { zeigeAlbumWahl = true }
+                    titelbildEintrag
+                    Button("Link teilen …", systemImage: "link") { freigabe = FreigabeZiel(art: .fotos([item.id])) }
+                }
+                Section {
+                    if store?.filter == .archiv {
+                        Button("Aus dem Archiv holen", systemImage: "archivebox") { archiviere(false) }
+                    } else {
+                        Button("Archivieren", systemImage: "archivebox") { archiviere(true) }
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis").font(.body.weight(.semibold)).frame(width: 44, height: 44)
+            }
+            // Einträge schwarz bzw. weiß wie bei Apple, nicht in Kirschrot.
+            .tint(.primary)
+            .lilithGlas(in: .circle, klar: true)
+            .accessibilityLabel("Weitere Aktionen")
+        } else {
+            Color.clear.frame(width: 44, height: 44)
+        }
     }
 
     /// Im Album oder bei einer Person: dieses Foto als Titelbild verwenden.
     @ViewBuilder
-    private var titelbildMenue: some View {
-        if let item, item.lokal == nil, let client = store?.client {
+    private var titelbildEintrag: some View {
+        if let item, let client = store?.client {
             switch store?.filter {
             case .album(let album):
-                Button {
+                Button("Als Titelbild verwenden", systemImage: "photo.badge.checkmark") {
                     setzeTitelbild { try await client.setzeAlbumTitelbild(album: album, foto: item.id) }
-                } label: {
-                    Image(systemName: "photo.badge.checkmark").frame(width: 52, height: 44)
                 }
-                .accessibilityLabel("Als Albumtitelbild verwenden")
             case .person(let person):
-                Button {
+                Button("Als Bild für diese Person", systemImage: "person.crop.circle.badge.checkmark") {
                     setzeTitelbild {
                         try await client.setzePersonBild(person: person, foto: item.id)
                         BilderCache.vergiss(client.personBildAnfrage(person))
                     }
-                } label: {
-                    Image(systemName: "person.crop.circle.badge.checkmark").frame(width: 52, height: 44)
                 }
-                .accessibilityLabel("Als Bild für diese Person verwenden")
             default:
                 EmptyView()
             }
+        }
+    }
+
+    /// Bild in die Zwischenablage (die große Vorschau, nicht das Original).
+    private func kopiere() {
+        guard let id = item?.id, let client = store?.client else { return }
+        Task {
+            do {
+                let bild = try await BilderCache.lade(client.vorschauAnfrage(assetId: id, groesse: .preview))
+                #if os(iOS)
+                UIPasteboard.general.image = bild
+                #else
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.writeObjects([bild])
+                #endif
+                zeigeMeldung("Kopiert")
+            } catch {
+                fehler = error.localizedDescription
+            }
+        }
+    }
+
+    /// Ausblenden = in den gesperrten Bereich (und zurück). Das Foto verschwindet hier, darum schließen.
+    private func verschiebe(gesperrt: Bool) {
+        guard let id = item?.id else { return }
+        fuehreAus(gesperrt ? "Ausgeblendet" : "Eingeblendet", schliessen: true) {
+            try await $0.verschiebe(assetIds: [id], gesperrt: gesperrt)
+        }
+    }
+
+    private func archiviere(_ an: Bool) {
+        guard let id = item?.id else { return }
+        fuehreAus(an ? "Archiviert" : "Aus dem Archiv geholt", schliessen: true) {
+            try await $0.aendere(assetIds: [id], archiviert: an)
+        }
+    }
+
+    private func fuehreAus(_ text: String, schliessen zu: Bool = false, _ tun: @escaping (ImmichClient) async throws -> Void) {
+        guard let client = store?.client else { return }
+        Task {
+            do {
+                try await tun(client)
+                kontext.melde(von: nil)
+                if zu {
+                    await store?.laden()
+                    schliesse()
+                } else {
+                    zeigeMeldung(text)
+                }
+            } catch {
+                fehler = error.localizedDescription
+                kontext.pruefe(error)
+            }
+        }
+    }
+
+    private func zeigeMeldung(_ text: String) {
+        Task {
+            withAnimation(.smooth) { meldung = text }
+            try? await Task.sleep(for: .seconds(2))
+            withAnimation(.smooth) { meldung = nil }
         }
     }
 
@@ -393,6 +514,9 @@ struct DetailView: View {
             symbol.opacity(0.4).accessibilityHidden(true)
         }
     }
+
+    /// Heller Hintergrund, solange die Bedienelemente zu sehen sind.
+    private var hell: Bool { zeigeBedienung && !zugAktiv }
 
     private var titel: String {
         if let info { return InfoPanel.datum(info.aufgenommenLokal) }

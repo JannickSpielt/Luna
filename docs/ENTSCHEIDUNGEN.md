@@ -254,3 +254,9 @@ Plan: `docs/LADEN-PLAN.md`.
 - **Teilen-Erweiterung** (`App/Teilen`, nur iPhone/iPad): erscheint im Teilen-Menü bei Fotos und Videos (bis 50). Optional Album wählen, dann hochladen; Duplikate erkennt der Server.
 - **Anmeldung:** `GeteiltesKonto` legt Konto und Zugang in einen gemeinsamen Schlüsselbund-Bereich (`keychain-access-groups`, erste Gruppe = Standard). Luna zieht die Anmeldung beim Start selbst um, kein neues Anmelden. Entitlements nur für iOS, weil der Mac ohne Profil sonst nicht startet.
 - **Vorschau-Leiste** in der Fotoansicht wie bei Apple: kleine Bilder der Nachbarn, das aktuelle breiter, Antippen springt hin.
+
+## 24. Fotoansicht wie Apple Fotos, AirPlay (13.11.2026)
+
+- **Vorlage:** Apple Fotos (iOS 26), untersucht mit Replica (`replica/recon.md`, `replica/features.csv`). Nur Aufbau und Abläufe, keine Apple-Symbole oder -Texte; Luna behält Namen, Kirschrot und Mond.
+- **Etappe 1:** Hintergrund hell mit Bedienelementen (heller Modus), schwarz zum Ansehen; unten Teilen links und Löschen rechts als eigene Knöpfe, Favorit und Info in der Mitte; „…“ oben rechts mit Kopieren, Ausblenden (gesperrter Bereich), Zu Album, Titelbild, Link teilen, Archivieren. Vorschau-Leiste bei Videos aus (dort sitzt die Zeitleiste).
+- **AirPlay:** Das Apple TV lädt Videos selbst und bekam Lunas Anmelde-Header nicht. Jetzt steht der Zugang zusätzlich im Video-Link (`sessionKey` bzw. `apiKey`), Immich akzeptiert das.
