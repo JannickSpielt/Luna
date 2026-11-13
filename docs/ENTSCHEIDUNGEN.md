@@ -248,3 +248,9 @@ Plan: `docs/LADEN-PLAN.md`.
 - **Ansicht-Menü wie bei Apple:** oben die Aktionen (Auswählen, Titelbild wählen …, Link teilen …), darunter die Abschnitte „Ansicht“ und „Springen“, ganz unten „Neu laden“.
 - **Titelbild wählen:** im Album bzw. bei Personen über das Menü. Ein Foto antippen, „Übernehmen“. Zusätzlich weiterhin in der Fotoansicht.
 - **Auswahl-Leiste:** Favorit, Zu Album, Link, Löschen bleiben sichtbar. Seltenes (Titelbild, Archivieren, Sperren) liegt unter „Mehr“, damit die Leiste nicht überläuft.
+
+## 23. „In Luna hochladen“ und Vorschau-Leiste (13.11.2026)
+
+- **Teilen-Erweiterung** (`App/Teilen`, nur iPhone/iPad): erscheint im Teilen-Menü bei Fotos und Videos (bis 50). Optional Album wählen, dann hochladen; Duplikate erkennt der Server.
+- **Anmeldung:** `GeteiltesKonto` legt Konto und Zugang in einen gemeinsamen Schlüsselbund-Bereich (`keychain-access-groups`, erste Gruppe = Standard). Luna zieht die Anmeldung beim Start selbst um, kein neues Anmelden. Entitlements nur für iOS, weil der Mac ohne Profil sonst nicht startet.
+- **Vorschau-Leiste** in der Fotoansicht wie bei Apple: kleine Bilder der Nachbarn, das aktuelle breiter, Antippen springt hin.

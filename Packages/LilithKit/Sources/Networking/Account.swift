@@ -48,10 +48,12 @@ public struct AccountStore: Sendable {
         var list = accounts().filter { $0.id != account.id }
         list.insert(account, at: 0)
         defaults.set(try JSONEncoder().encode(list), forKey: key)
+        GeteiltesKonto.speichere(account, credential: credential)
     }
 
     public func remove(_ account: Account) {
         keychain.delete(account: account.id)
+        GeteiltesKonto.loesche()
         let list = accounts().filter { $0.id != account.id }
         defaults.set(try? JSONEncoder().encode(list), forKey: key)
     }

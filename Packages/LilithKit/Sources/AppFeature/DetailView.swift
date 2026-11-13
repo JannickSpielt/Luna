@@ -237,6 +237,14 @@ struct DetailView: View {
             }
             .padding(.horizontal, 16)
             Spacer()
+            if seiten.count > 1 {
+                VorschauLeiste(seiten: seiten, aktuell: aktuell, quelle: quelle) { ziel in
+                    var t = Transaction()
+                    t.disablesAnimations = true
+                    withTransaction(t) { aktuell = ziel }
+                }
+                .padding(.bottom, 6)
+            }
             if let lokal = item?.lokal {
                 lokaleLeiste(lokal)
             } else {

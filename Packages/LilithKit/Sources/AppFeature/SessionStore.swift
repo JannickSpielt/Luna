@@ -61,6 +61,8 @@ public final class SessionStore {
         }
         let client = ImmichClient(address: account.server.address, credential: credential)
         self.client = client
+        // Bestehende Anmeldung auch dem Teilen-Menü bekannt machen (ohne neu anmelden).
+        GeteiltesKonto.speichere(account, credential: credential)
         // Sofort anzeigen, auch offline. Die Prüfung läuft danach.
         phase = .angemeldet(account)
 

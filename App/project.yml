@@ -32,6 +32,9 @@ targets:
       # Live Activity (nur iPhone/iPad)
       - target: LilithWidgets
         destinationFilters: [iOS]
+      # „In Luna hochladen“ im Teilen-Menü (nur iPhone/iPad)
+      - target: LilithTeilen
+        destinationFilters: [iOS]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.lilith.Lilith
@@ -53,6 +56,9 @@ targets:
         ENABLE_APP_SANDBOX: YES
         ENABLE_OUTGOING_NETWORK_CONNECTIONS: YES
         ENABLE_USER_SELECTED_FILES: readwrite
+        # Schlüsselbund mit der Teilen-Erweiterung teilen. Nur iOS: auf dem Mac ohne Profil würde das den Start verhindern.
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]": Lilith.entitlements
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": Lilith.entitlements
   LilithWidgets:
     type: app-extension
     platform: iOS
@@ -71,6 +77,27 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Widgets/Info.plist
         INFOPLIST_KEY_CFBundleDisplayName: Luna
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SKIP_INSTALL: YES
+  LilithTeilen:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Teilen
+        excludes: [Info.plist, Teilen.entitlements]
+    dependencies:
+      - package: LilithKit
+        product: Networking
+      - package: LilithKit
+        product: DesignSystem
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.lilith.Lilith.Teilen
+        PRODUCT_NAME: LilithTeilen
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Teilen/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Luna
+        CODE_SIGN_ENTITLEMENTS: Teilen/Teilen.entitlements
         TARGETED_DEVICE_FAMILY: "1,2"
         SKIP_INSTALL: YES
 schemes:
