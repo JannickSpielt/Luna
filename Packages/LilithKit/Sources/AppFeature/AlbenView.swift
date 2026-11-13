@@ -70,6 +70,16 @@ struct AlbenView: View {
             }
             .background(LilithColor.hintergrund)
             .navigationTitle("Sammlungen")
+            .background(alignment: .top) {
+                // Weihnachtszeit: ein Hauch Schnee oben über den Sammlungen.
+                if Weihnachten.aktiv {
+                    Schneefall(anzahl: 26)
+                        .colorMultiply(LilithColor.textLeise)
+                        .frame(height: 220)
+                        .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
+                        .ignoresSafeArea(edges: .top)
+                }
+            }
             .toolbar {
                 if kontext.client != nil {
                     ToolbarItem(placement: .primaryAction) {

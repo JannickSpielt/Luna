@@ -12,6 +12,7 @@ struct StartBildschirm: View {
     var geladen = false
     var oeffnung: Double = 0
     @State private var phase = 0.35
+    private let weihnachten = Weihnachten.aktiv
     /// Steht sofort da, genau wie im Startbild von iOS davor.
     @State private var nameSichtbar = true
     @Environment(\.accessibilityReduceMotion) private var wenigBewegung
@@ -26,6 +27,16 @@ struct StartBildschirm: View {
                 // Nachthimmel mit einem Loch in der Mitte. Das Loch sitzt im Mond und wächst mit ihm.
                 NachtMitLoch(loch: 120 * (1 + 7 * oeffnung) * oeffnung * 1.15)
                     .fill(Self.nacht, style: FillStyle(eoFill: true))
+                if weihnachten {
+                    // Weihnachtszeit: leiser Schnee vor dem Nachthimmel und ein Stern am Mond.
+                    Schneefall(anzahl: 70)
+                        .opacity(1 - min(oeffnung * 2, 1))
+                    WeihnachtsStern()
+                        .font(.system(size: 22))
+                        .offset(x: 58, y: -62)
+                        .scaleEffect(1 + 7 * oeffnung)
+                        .opacity(geladen ? 1 - min(oeffnung * 3, 1) : 0)
+                }
                 // Mitte des ganzen Bildschirms, 120 pt groß: genau wie das Bild im Startbildschirm.
                 MondSymbol(phase: vollmond || oeffnung > 0 ? 1 : phase)
                     .frame(width: 120, height: 120)
@@ -37,6 +48,13 @@ struct StartBildschirm: View {
                     // Wie im Startbild von iOS: 110 pt unter der Mitte.
                     .offset(y: 110 + 200 * oeffnung)
                     .opacity(nameSichtbar ? 1 - min(oeffnung * 3, 1) : 0)
+                if weihnachten {
+                    Text("Frohe Weihnachten")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(LilithColor.mondlicht)
+                        .offset(y: 146 + 200 * oeffnung)
+                        .opacity(geladen ? 1 - min(oeffnung * 3, 1) : 0)
+                }
                 // Ganz unten, wie bei vielen Apps der Hinweis, von wem sie ist.
                 Text("von Jannick Stahn")
                     .font(.subheadline)
