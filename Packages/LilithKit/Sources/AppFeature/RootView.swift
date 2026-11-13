@@ -173,7 +173,7 @@ struct HauptView: View {
                 }
             }
             Tab("Sammlungen", systemImage: "rectangle.stack", value: Bereich.alben) {
-                AlbenView()
+                AlbenView(konto: (String(account.user.name.prefix(1)).uppercased(), { zeigeKonto = true }))
             }
             Tab("Suchen", systemImage: "magnifyingglass", value: Bereich.suche, role: .search) {
                 SucheView()

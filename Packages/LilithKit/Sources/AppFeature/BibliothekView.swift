@@ -14,10 +14,36 @@ struct BibliothekView: View {
     @Binding var zeigeKonto: Bool
     let kontoBuchstabe: String
 
+    @Environment(BibliothekKontext.self) private var kontext
+    /// Filter aus dem ≡-Menü (wie Apple: direkt in „Fotos“, ohne neue Seite).
+    @State private var hauptFilter: TimelineFilter = .alle
+    @State private var gefiltert: TimelineStore?
+
     var body: some View {
         NavigationStack {
-            TimelineInhalt(titel: "Fotos", quelle: quelle, store: store,
-                           konto: (kontoBuchstabe, { zeigeKonto = true }))
+            if hauptFilter != .alle, let gefiltert {
+                TimelineInhalt(titel: Self.titel(hauptFilter), quelle: gefiltert, store: gefiltert,
+                               konto: (kontoBuchstabe, { zeigeKonto = true }), hauptFilter: $hauptFilter)
+                    .id(hauptFilter)
+            } else {
+                TimelineInhalt(titel: "Fotos", quelle: quelle, store: store,
+                               konto: (kontoBuchstabe, { zeigeKonto = true }), hauptFilter: $hauptFilter)
+            }
+        }
+        .onChange(of: hauptFilter) { _, neu in
+            guard neu != .alle, let client = kontext.client else { gefiltert = nil; return }
+            let neuerStore = TimelineStore(client: client, filter: neu)
+            let k = kontext
+            neuerStore.onSitzungAbgelaufen = { [weak k] in k?.onSitzungAbgelaufen?() }
+            gefiltert = neuerStore
+        }
+    }
+
+    static func titel(_ f: TimelineFilter) -> String {
+        switch f {
+        case .favoriten: "Favoriten"
+        case .medienart(let art): art.titel
+        default: "Fotos"
         }
     }
 }
@@ -29,6 +55,9 @@ struct TimelineInhalt: View {
     let quelle: TimelineQuelle
     let store: TimelineStore?
     var konto: (buchstabe: String, oeffnen: () -> Void)?
+    /// Nur in „Fotos“: der Filter aus dem ≡-Menü.
+    var hauptFilter: Binding<TimelineFilter>?
+    @State private var zeigeFotoWahl = false
 
     @Environment(BibliothekKontext.self) private var kontext
     @State private var zoom: GridZoom = Self.startZoom
@@ -148,6 +177,10 @@ struct TimelineInhalt: View {
                           allowsMultipleSelection: true) { ergebnis in
                 if case .success(let urls) = ergebnis { ladeHoch(urls, quelle: "import") }
             }
+            #if os(iOS)
+            .photosPicker(isPresented: $zeigeFotoWahl, selection: $fotoAuswahl, matching: .any(of: [.images, .videos]),
+                          preferredItemEncoding: .current, photoLibrary: .shared())
+            #endif
             .onChange(of: zeigeNichtGesicherte) { _, _ in Task { await store?.laden() } }
             .onChange(of: fotoAuswahl) { _, neu in
                 guard !neu.isEmpty else { return }
@@ -271,8 +304,12 @@ struct TimelineInhalt: View {
                     .ignoresSafeArea()
                     .overlay(alignment: .top) {
                         // Weicher Verlauf, damit Titel und Leiste über hellen Fotos lesbar bleiben.
-                        LinearGradient(colors: [.black.opacity(0.38), .black.opacity(0)], startPoint: .top, endPoint: .bottom)
-                            .frame(height: fenster + 90)
+                        // Wie Apple: im hellen Modus ein heller Schleier, im dunklen ein dunkler.
+                        LinearGradient(stops: [.init(color: LilithColor.hintergrund.opacity(0.95), location: 0),
+                                               .init(color: LilithColor.hintergrund.opacity(0.75), location: 0.55),
+                                               .init(color: LilithColor.hintergrund.opacity(0), location: 1)],
+                                       startPoint: .top, endPoint: .bottom)
+                            .frame(height: fenster + (konto != nil ? 150 : 90))
                             .ignoresSafeArea()
                             .allowsHitTesting(false)
                     }
@@ -281,7 +318,7 @@ struct TimelineInhalt: View {
                         // Monat, Ort und Anzahl, in derselben Reihe wie die Leiste rechts (bzw. die Auswahl).
                         // Nur in „Fotos“. In Sammlungen (Alben, Videos …) steht oben schon der Titel.
                         if konto != nil {
-                            MonatsEtikett(quelle: quelle, scroll: scroll,
+                            MonatsEtikett(quelle: quelle, scroll: scroll, titel: titel, umgekehrt: umgekehrt,
                                           auswahlText: auswahl.isEmpty ? nil : "\(auswahl.count) ausgewählt")
                                 // Nie unter die Leiste rechts: lange Ortsnamen werden gekürzt.
                                 .frame(maxWidth: max(geo.size.width - 200, 120), alignment: .leading)
@@ -352,7 +389,8 @@ struct TimelineInhalt: View {
     @ToolbarContentBuilder
     private var werkzeuge: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
-            if kannHochladen && !auswahlModus {
+            // In „Fotos“ steckt Hochladen im ≡-Menü (wie Apple: oben rechts nur Filter und Auswählen).
+            if kannHochladen && !auswahlModus && hauptFilter == nil {
                 #if os(iOS)
                 PhotosPicker(selection: $fotoAuswahl, matching: .any(of: [.images, .videos]),
                              preferredItemEncoding: .current, photoLibrary: .shared()) {
@@ -366,76 +404,112 @@ struct TimelineInhalt: View {
                     .help("Fotos und Videos hochladen (⌘I)")
                 #endif
             }
+            if !auswahlModus { ansichtMenue }
             #if os(iOS)
-            if kontext.client != nil, store?.zustand == .bereit {
-                // „Auswählen“ steckt im Menü, damit die Leiste kompakt bleibt. „Fertig“ bleibt sichtbar.
-                if auswahlModus {
-                    Button("Fertig") { beendeAuswahl() }
-                }
+            if auswahlModus, kontext.client != nil {
+                Button("Fertig") { beendeAuswahl() }
             }
             #endif
-            if !auswahlModus {
-            Menu {
-                // Aufgebaut wie bei Apple: oben die Aktionen, darunter Abschnitte für Ansicht und Springen.
-                Section {
-                    #if os(iOS)
-                    if kontext.client != nil, store?.zustand == .bereit {
-                        Button("Auswählen", systemImage: "checkmark.circle") { auswahlModus = true }
-                    }
-                    #endif
-                    if case .album(let id) = filter, kontext.client != nil {
-                        #if os(iOS)
-                        Button("Titelbild wählen …", systemImage: "photo.badge.checkmark") {
-                            titelbildWahl = true
-                            auswahlModus = true
-                        }
-                        #endif
-                        Button("Link zum Album teilen …", systemImage: "link") {
-                            freigabe = FreigabeZiel(art: .album(id: id, name: titel))
-                        }
-                    }
-                    #if os(iOS)
-                    if case .person = filter, kontext.client != nil {
-                        Button("Bild für Person wählen …", systemImage: "person.crop.circle.badge.checkmark") {
-                            titelbildWahl = true
-                            auswahlModus = true
-                        }
-                    }
-                    #endif
-                }
-                Section("Ansicht") {
-                    Button("Größer", systemImage: "plus.magnifyingglass") { zoom.groesser() }
-                        .keyboardShortcut("+", modifiers: .command)
-                    Button("Kleiner", systemImage: "minus.magnifyingglass") { zoom.kleiner() }
-                        .keyboardShortcut("-", modifiers: .command)
-                    #if os(iOS)
-                    if filter == .alle, kontext.backup?.aktiv == true {
-                        Toggle("Nicht gesicherte zeigen", systemImage: "icloud.slash", isOn: $zeigeNichtGesicherte)
-                    }
-                    #endif
-                }
-                Section("Springen") {
-                    Button("Zum neuesten Foto", systemImage: "arrow.up.to.line") { sprung = SprungAnfrage(section: 0) }
-                    Button("Zum ältesten Foto", systemImage: "arrow.down.to.line") {
-                        sprung = SprungAnfrage(section: max(quelle.sections.count - 1, 0))
-                    }
-                }
-                if let store {
-                    Section {
-                        Button("Neu laden", systemImage: "arrow.clockwise") { Task { await store.laden() } }
-                            .keyboardShortcut("r", modifiers: .command)
-                    }
-                }
-            } label: {
-                Label("Ansicht", systemImage: "line.3.horizontal.decrease")
-            }
-            .tint(.primary)
-            }
-            if let konto, !auswahlModus {
-                KontoKnopf(buchstabe: konto.buchstabe, backup: kontext.backup, client: kontext.client,
-                           nutzerId: kontext.nutzerId, oeffnen: konto.oeffnen)
+        }
+        #if os(iOS)
+        if #available(iOS 26.0, *) {
+            ToolbarSpacer(.fixed, placement: .primaryAction)
+        }
+        ToolbarItem(placement: .primaryAction) {
+            // Wie Apple: „Auswählen“ als eigener Knopf neben dem Filter, in Schwarz.
+            if hauptFilter != nil, !auswahlModus, kontext.client != nil, store?.zustand == .bereit {
+                Button("Auswählen") { auswahlModus = true }
+                    .tint(.primary)
             }
         }
+        #endif
+    }
+
+    /// Das ≡-Menü: Hochladen, Filter, Darstellung, Springen.
+    private var ansichtMenue: some View {
+        Menu {
+            Section {
+                #if os(iOS)
+                if hauptFilter == nil, kontext.client != nil, store?.zustand == .bereit {
+                    Button("Auswählen", systemImage: "checkmark.circle") { auswahlModus = true }
+                }
+                if hauptFilter != nil, kontext.uploads != nil {
+                    Button("Hochladen …", systemImage: "plus") { zeigeFotoWahl = true }
+                }
+                #else
+                if hauptFilter != nil, kontext.uploads != nil {
+                    Button("Importieren …", systemImage: "plus") { zeigeImport = true }
+                        .keyboardShortcut("i", modifiers: .command)
+                }
+                #endif
+                if case .album(let id) = filter, kontext.client != nil {
+                    #if os(iOS)
+                    Button("Titelbild wählen …", systemImage: "photo.badge.checkmark") {
+                        titelbildWahl = true
+                        auswahlModus = true
+                    }
+                    #endif
+                    Button("Link zum Album teilen …", systemImage: "link") {
+                        freigabe = FreigabeZiel(art: .album(id: id, name: titel))
+                    }
+                }
+                #if os(iOS)
+                if case .person = filter, kontext.client != nil {
+                    Button("Bild für Person wählen …", systemImage: "person.crop.circle.badge.checkmark") {
+                        titelbildWahl = true
+                        auswahlModus = true
+                    }
+                }
+                #endif
+            }
+            if let hauptFilter, kontext.client != nil {
+                Section("Filter") {
+                    Picker("Filter", selection: hauptFilter) {
+                        Label("Alle Objekte", systemImage: "square.grid.3x3").tag(TimelineFilter.alle)
+                        Label("Favoriten", systemImage: "heart").tag(TimelineFilter.favoriten)
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                    Menu {
+                        Picker("Medienarten", selection: hauptFilter) {
+                            ForEach(Medienart.allCases, id: \.self) { art in
+                                Text(art.titel).tag(TimelineFilter.medienart(art))
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .labelsHidden()
+                    } label: {
+                        Label("Medienarten", systemImage: "photo.stack")
+                    }
+                }
+            }
+            Section("Darstellung") {
+                Button("Größer", systemImage: "plus.magnifyingglass") { zoom.groesser() }
+                    .keyboardShortcut("+", modifiers: .command)
+                Button("Kleiner", systemImage: "minus.magnifyingglass") { zoom.kleiner() }
+                    .keyboardShortcut("-", modifiers: .command)
+                #if os(iOS)
+                if filter == .alle, kontext.backup?.aktiv == true {
+                    Toggle("Nicht gesicherte zeigen", systemImage: "icloud.slash", isOn: $zeigeNichtGesicherte)
+                }
+                #endif
+            }
+            Section("Springen") {
+                Button("Zum neuesten Foto", systemImage: "arrow.up.to.line") { sprung = SprungAnfrage(section: 0) }
+                Button("Zum ältesten Foto", systemImage: "arrow.down.to.line") {
+                    sprung = SprungAnfrage(section: max(quelle.sections.count - 1, 0))
+                }
+            }
+            if let store {
+                Section {
+                    Button("Neu laden", systemImage: "arrow.clockwise") { Task { await store.laden() } }
+                        .keyboardShortcut("r", modifiers: .command)
+                }
+            }
+        } label: {
+            Label("Ansicht", systemImage: "line.3.horizontal.decrease")
+        }
+        .tint(.primary)
     }
 
     /// Leiste mit Aktionen für die ausgewählten Fotos.
@@ -726,41 +800,42 @@ final class ScrollStand {
 private struct MonatsEtikett: View {
     let quelle: TimelineQuelle
     let scroll: ScrollStand
+    /// „Fotos“ oder der gewählte Filter.
+    let titel: String
+    /// Neueste unten (Fotos) oder oben (Filter): Der große Titel steht dort, wo die Liste anfängt.
+    let umgekehrt: Bool
     /// Im Auswahl-Modus steht hier die Anzahl statt des Monats.
     var auswahlText: String?
 
+    /// Wie Apple: großer, fetter Titel ohne Kapsel, darunter grau die Anzahl bzw. der Ort.
     var body: some View {
-        if let auswahlText {
-            Text(auswahlText)
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 16)
-                .frame(height: 44)
-                .lilithGlas(in: .capsule)
-        } else if scroll.amEnde {
-            // Wie in Apples Fotos-App: ganz unten steht, wie viele Objekte es sind.
-            let gesamt = quelle.sections.reduce(0) { $0 + $1.anzahl }
-            Text("\(gesamt.formatted()) Objekte")
-                .font(.subheadline.weight(.semibold))
-                .monospacedDigit()
-                .padding(.horizontal, 16)
-                .frame(height: 44)
-                .lilithGlas(in: .capsule)
-        } else if scroll.monat < quelle.sections.count {
-            // Zwei getrennte Pillen auf derselben Höhe: links nur das Datum (Tag, Monat, Jahr),
-            // rechts die Leiste. Gleiche Höhe (44 pt), gleiche Oberkante.
-            Text(scroll.datum.map { $0.formatted(.dateTime.day().month(.wide).year()) }
-                 ?? quelle.sections[scroll.monat].titel)
-            .font(.subheadline.weight(.semibold))
-            .monospacedDigit()
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .padding(.horizontal, 14)
-            .frame(height: 44)
-            .lilithGlas(in: .capsule)
-            .contentTransition(.opacity)
-            .animation(.easeOut(duration: 0.2), value: scroll.datum)
-            .accessibilityElement(children: .combine)
+        VStack(alignment: .leading, spacing: 0) {
+            if let auswahlText {
+                Text(auswahlText).font(.title.bold())
+            } else if umgekehrt ? scroll.amEnde : scroll.anteil < 0.002 {
+                let gesamt = quelle.sections.reduce(0) { $0 + $1.anzahl }
+                Text(titel).font(.largeTitle.bold())
+                Text(gesamt == 1 ? "1 Objekt" : "\(gesamt.formatted()) Objekte")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            } else if scroll.monat < quelle.sections.count {
+                let abschnitt = quelle.sections[scroll.monat]
+                Text(scroll.datum.map { $0.formatted(.dateTime.day().month(.abbreviated).year()) } ?? abschnitt.titel)
+                    .font(.title.bold())
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .animation(.easeOut(duration: 0.2), value: scroll.datum)
+                if !abschnitt.untertitel.isEmpty {
+                    Text(abschnitt.untertitel)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
+        .lineLimit(1)
+        .truncationMode(.tail)
+        .accessibilityElement(children: .combine)
     }
 }
 

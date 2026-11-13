@@ -29,6 +29,8 @@ enum SammlungsZiel: Hashable {
 /// Der Tab „Sammlungen“, aufgebaut wie in Apples Fotos-App: eine lange Seite mit Abschnitten,
 /// jeweils eine Überschrift mit „›“ und darunter eine Reihe zum seitlich Wischen oder eine kurze Liste.
 struct AlbenView: View {
+    /// Profil oben rechts (wie Apple in den Sammlungen).
+    var konto: (buchstabe: String, oeffnen: () -> Void)?
     @Environment(BibliothekKontext.self) private var kontext
     @State private var alben: [Album] = []
     @State private var tage: [HochladeTag] = []
@@ -72,6 +74,7 @@ struct AlbenView: View {
             }
             .background(LilithColor.hintergrund)
             .navigationTitle("Sammlungen")
+            .modifier(GrosserTitelInDerLeiste())
             .background(alignment: .top) {
                 // Weihnachtszeit: ein Hauch Schnee oben über den Sammlungen.
                 if Weihnachten.aktiv {
@@ -85,8 +88,22 @@ struct AlbenView: View {
             .toolbar {
                 if kontext.client != nil {
                     ToolbarItem(placement: .primaryAction) {
-                        Button("Neues Album", systemImage: "plus") { neuerName = ""; neuesAlbum = true }
-                            .tint(.primary)
+                        // Wie Apple: „…“ mit dem Anlegen neuer Sammlungen.
+                        Menu {
+                            Button("Neues Album", systemImage: "rectangle.stack.badge.plus") { neuerName = ""; neuesAlbum = true }
+                        } label: {
+                            Label("Weitere Aktionen", systemImage: "ellipsis")
+                        }
+                        .tint(.primary)
+                    }
+                }
+                if let konto {
+                    if #available(iOS 26.0, macOS 26.0, *) {
+                        ToolbarSpacer(.fixed, placement: .primaryAction)
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        KontoKnopf(buchstabe: konto.buchstabe, backup: kontext.backup, client: kontext.client,
+                                   nutzerId: kontext.nutzerId, oeffnen: konto.oeffnen)
                     }
                 }
             }
@@ -126,8 +143,9 @@ struct AlbenView: View {
 
     /// „Heute vor … Jahren“: je früherem Jahr eine große Karte mit den Fotos vom heutigen Tag.
     private var heuteFrueher: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        EinklappAbschnitt(id: "heute") {
             Text("Heute in früheren Jahren").font(.title2.bold()).padding(.horizontal, 16)
+        } inhalt: {
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: 10) {
                     ForEach(rueckblicke) { r in
@@ -167,8 +185,9 @@ struct AlbenView: View {
 
     /// Große Karten je Tag, an dem Fotos auf den Server kamen.
     private var kuerzlich: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        EinklappAbschnitt(id: "kuerzlich") {
             Ueberschrift(titel: "Kürzlich hinzugefügt", ziel: TimelineZiel(titel: "Kürzlich hinzugefügt", filter: .kuerzlich))
+        } inhalt: {
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: 10) {
                     ForEach(tage) { tag in
@@ -198,8 +217,9 @@ struct AlbenView: View {
     /// Alben als Reihe zum seitlich Wischen.
     @ViewBuilder
     private func albenReihe(titel: String, liste: [Album], geteilt: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        EinklappAbschnitt(id: geteilt ? "geteilt" : "alben") {
             Ueberschrift(titel: titel, sammlung: .alben(geteilt: geteilt))
+        } inhalt: {
             if liste.isEmpty {
                 Text("Noch keine Alben. Lege mit dem Plus oben eins an.")
                     .foregroundStyle(LilithColor.textLeise)
@@ -231,8 +251,9 @@ struct AlbenView: View {
     }
 
     private var personenAbschnitt: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        EinklappAbschnitt(id: "personen") {
             Ueberschrift(titel: "Personen", sammlung: .personen)
+        } inhalt: {
             ScrollView(.horizontal) {
                 LazyHStack(alignment: .top, spacing: 14) {
                     ForEach(personenReihe) { person in
@@ -253,8 +274,9 @@ struct AlbenView: View {
 
     /// Kleine Karte mit den Orten, darunter die Städte mit den meisten Fotos.
     private var orteAbschnitt: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        EinklappAbschnitt(id: "orte") {
             Ueberschrift(titel: "Orte", sammlung: .orte)
+        } inhalt: {
             NavigationLink(value: SammlungsZiel.orte) {
                 OrteVorschauKarte(orte: orte)
                     .frame(height: 190)
@@ -302,40 +324,32 @@ struct AlbenView: View {
     }
 
     private var medienarten: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        EinklappAbschnitt(id: "medienarten") {
             Text("Medienarten").font(.title2.bold()).padding(.horizontal, 16)
-            VStack(spacing: 0) {
-                ForEach(Array(Medienart.allCases.enumerated()), id: \.element) { i, art in
-                    if i > 0 { Divider().padding(.leading, 52) }
-                    listenEintrag(art.titel, art.symbol, .medienart(art))
+        } inhalt: {
+            KachelRaster {
+                ForEach(Medienart.allCases, id: \.self) { art in
+                    Kachel2(titel: art.titel, symbol: art.symbol, ziel: TimelineZiel(titel: art.titel, filter: .medienart(art)))
                 }
             }
-            .background(LilithColor.flaeche, in: .rect(cornerRadius: 12))
-            .padding(.horizontal, 16)
         }
     }
 
-    /// Weitere Sammlungen als Liste wie in den Einstellungen.
+    /// Weitere Sammlungen als Kacheln in zwei Spalten (wie Apple), Geschütztes mit Schloss.
     private var weitere: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        EinklappAbschnitt(id: "weitere") {
             Text("Weitere").font(.title2.bold()).padding(.horizontal, 16)
-            VStack(spacing: 0) {
-                listenEintrag("Favoriten", "heart", .favoriten)
-                Divider().padding(.leading, 52)
-                sammlungsEintrag("Doppelte Fotos", "square.on.square", .duplikate)
-                Divider().padding(.leading, 52)
-                sammlungsEintrag("Ordner", "folder", .ordner(""))
-                Divider().padding(.leading, 52)
-                listenEintrag("Archiv", "archivebox", .archiv)
-                Divider().padding(.leading, 52)
-                sammlungsEintrag("Gesperrt", "lock", .gesperrt)
+        } inhalt: {
+            KachelRaster {
+                Kachel2(titel: "Favoriten", symbol: "heart", ziel: TimelineZiel(titel: "Favoriten", filter: .favoriten))
+                Kachel2(titel: "Gesperrt", symbol: "eye.slash", ziel: SammlungsZiel.gesperrt, schloss: true)
+                Kachel2(titel: "Doppelte Fotos", symbol: "square.on.square", ziel: SammlungsZiel.duplikate)
+                Kachel2(titel: "Ordner", symbol: "folder", ziel: SammlungsZiel.ordner(""))
+                Kachel2(titel: "Archiv", symbol: "archivebox", ziel: TimelineZiel(titel: "Archiv", filter: .archiv))
                 if kontext.papierkorbAktiv {
-                    Divider().padding(.leading, 52)
-                    listenEintrag("Papierkorb", "trash", .papierkorb)
+                    Kachel2(titel: "Papierkorb", symbol: "trash", ziel: TimelineZiel(titel: "Papierkorb", filter: .papierkorb))
                 }
             }
-            .background(LilithColor.flaeche, in: .rect(cornerRadius: 12))
-            .padding(.horizontal, 16)
         }
     }
 
@@ -779,6 +793,101 @@ struct AlbumWahl: View {
         .presentationDetents([.medium, .large])
         #if os(macOS)
         .frame(minWidth: 420, minHeight: 460)
+        #endif
+    }
+}
+
+
+/// Ein Abschnitt der Sammlungen, der sich wie bei Apple mit einem Pfeil rechts einklappen lässt.
+/// Der Zustand bleibt gespeichert.
+struct EinklappAbschnitt<Kopf: View, Inhalt: View>: View {
+    let id: String
+    @ViewBuilder let kopf: () -> Kopf
+    @ViewBuilder let inhalt: () -> Inhalt
+    @AppStorage("luna.sammlungen.eingeklappt") private var eingeklappt = ""
+
+    private var offen: Bool { !eingeklappt.split(separator: ",").contains(Substring(id)) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                kopf()
+                Spacer(minLength: 8)
+                Button {
+                    withAnimation(.smooth(duration: 0.3)) { umschalten() }
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(LilithColor.nachtrose)
+                        .rotationEffect(.degrees(offen ? 0 : -90))
+                        .frame(width: 34, height: 34)
+                        .background(LilithColor.flaeche, in: .circle)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 16)
+                .accessibilityLabel(offen ? "Einklappen" : "Ausklappen")
+            }
+            if offen {
+                inhalt().transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .clipped()
+    }
+
+    private func umschalten() {
+        var liste = eingeklappt.split(separator: ",").map(String.init)
+        if let i = liste.firstIndex(of: id) { liste.remove(at: i) } else { liste.append(id) }
+        eingeklappt = liste.joined(separator: ",")
+    }
+}
+
+/// Zwei Spalten Kacheln.
+struct KachelRaster<Inhalt: View>: View {
+    @ViewBuilder let inhalt: () -> Inhalt
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+            inhalt()
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
+/// Kachel mit Symbol und Namen, optional mit Schloss (Face ID).
+struct Kachel2<Z: Hashable>: View {
+    let titel: String
+    let symbol: String
+    let ziel: Z
+    var schloss = false
+
+    var body: some View {
+        NavigationLink(value: ziel) {
+            HStack(spacing: 10) {
+                Image(systemName: symbol).foregroundStyle(.secondary).frame(width: 24)
+                Text(titel).foregroundStyle(LilithColor.text).lineLimit(1).minimumScaleFactor(0.85)
+                Spacer(minLength: 4)
+                if schloss { Image(systemName: "lock.fill").font(.caption).foregroundStyle(.secondary) }
+            }
+            .padding(.horizontal, 14)
+            .frame(minHeight: 50)
+            .background(LilithColor.flaeche, in: .rect(cornerRadius: 14))
+            .contentShape(.rect(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+
+/// iOS 26: großer Titel in derselben Reihe wie die Knöpfe (wie Apple in den Sammlungen).
+struct GrosserTitelInDerLeiste: ViewModifier {
+    func body(content: Content) -> some View {
+        #if os(iOS)
+        if #available(iOS 26.0, *) {
+            content.toolbarTitleDisplayMode(.inlineLarge)
+        } else {
+            content
+        }
+        #else
+        content
         #endif
     }
 }

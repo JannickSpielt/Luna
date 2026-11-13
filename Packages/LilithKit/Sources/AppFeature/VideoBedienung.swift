@@ -113,7 +113,7 @@ struct VideoFlaeche: UIViewRepresentable {
 struct AirPlayKnopf: UIViewRepresentable {
     func makeUIView(context: Context) -> AVRoutePickerView {
         let v = AVRoutePickerView()
-        v.tintColor = .white
+        v.tintColor = .label  // dunkel auf hell, hell auf dunkel
         v.activeTintColor = UIColor(LilithColor.nachtrose)
         v.prioritizesVideoDevices = true
         return v

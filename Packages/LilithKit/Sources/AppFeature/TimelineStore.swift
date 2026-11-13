@@ -390,7 +390,7 @@ final class TimelineStore: TimelineQuelle {
     }
 
     static func untertitel(anzahl: Int, lokal: Int) -> String {
-        let text = "\(anzahl.formatted()) Objekte"
+        let text = anzahl == 1 ? "1 Objekt" : "\(anzahl.formatted()) Objekte"
         return lokal == 0 ? text : "\(text) · \(lokal.formatted()) nicht gesichert"
     }
 

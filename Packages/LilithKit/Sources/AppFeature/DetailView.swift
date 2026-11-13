@@ -51,9 +51,19 @@ struct DetailView: View {
             (hell ? LilithColor.hintergrund : Color.black)
                 .opacity(1 - min(zug / 400, 0.7))
                 .ignoresSafeArea()
-            blaetterer
-                .offset(y: zug)
-                .scaleEffect(1 - min(zug / 1500, 0.2))
+            GeometryReader { geo in
+                VStack(spacing: 0) {
+                    blaetterer
+                        .offset(y: zug)
+                        .scaleEffect(1 - min(zug / 1500, 0.2))
+                        // Mit Infos rutscht das Foto nach oben (wie Apple), sonst füllt es alles.
+                        .frame(height: zeigeInfo ? fotoHoeheMitInfo(geo.size) : nil)
+                    if zeigeInfo {
+                        InfoUnterFoto(info: info, client: store?.client)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+            }
             if zeigeBedienung && !zugAktiv {
                 bedienung.transition(.opacity)
             }
@@ -109,10 +119,6 @@ struct DetailView: View {
             }
         }
         .sheet(item: $freigabe) { FreigabeBlatt(ziel: $0) }
-        .sheet(isPresented: $zeigeInfo) {
-            InfoPanel(info: info, monat: aktuell.map { quelle.sections[$0.section].titel } ?? "")
-                .presentationDetents([.medium, .large])
-        }
         .alert("Das hat nicht geklappt", isPresented: .constant(fehler != nil), presenting: fehler) { _ in
             Button("OK") { fehler = nil }
         } message: { text in
@@ -128,8 +134,13 @@ struct DetailView: View {
                 ForEach(seiten, id: \.self) { position in
                     DetailSeite(position: position, quelle: quelle, store: store, istAktuell: position == aktuell,
                                 gezoomt: $gezoomt, zeigeBedienung: zeigeBedienung && !zugAktiv,
-                                verberge: { withAnimation(.smooth(duration: 0.45)) { zeigeBedienung = false } }) {
-                        withAnimation(.smooth(duration: 0.3)) { zeigeBedienung.toggle() }
+                                verberge: { if !zeigeInfo { withAnimation(.smooth(duration: 0.45)) { zeigeBedienung = false } } }) {
+                        // Mit offenen Infos schließt Antippen die Infos (wie Apple).
+                        if zeigeInfo {
+                            withAnimation(.smooth(duration: 0.35)) { zeigeInfo = false }
+                        } else {
+                            withAnimation(.smooth(duration: 0.3)) { zeigeBedienung.toggle() }
+                        }
                     }
                     .containerRelativeFrame([.horizontal, .vertical])
                 }
@@ -150,6 +161,7 @@ struct DetailView: View {
     private var zumSchliessenZiehen: some Gesture {
         DragGesture(minimumDistance: 10)
             .onChanged { wert in
+                if zeigeInfo { return }
                 if !zugAktiv {
                     // Starten, sobald die Bewegung eher nach unten als zur Seite geht (sonst ist es Blättern).
                     guard wert.translation.height > abs(wert.translation.width) else { return }
@@ -159,6 +171,12 @@ struct DetailView: View {
                 zug = max(0, wert.translation.height)
             }
             .onEnded { wert in
+                if zeigeInfo {
+                    if wert.translation.height > 60, wert.translation.height > abs(wert.translation.width) {
+                        withAnimation(.smooth(duration: 0.35)) { zeigeInfo = false }
+                    }
+                    return
+                }
                 guard zugAktiv else { return }
                 // Schon ein kurzer Zug mit etwas Schwung schließt.
                 if zug > 80 || wert.predictedEndTranslation.height > 220 {
@@ -254,13 +272,19 @@ struct DetailView: View {
                 }
             }
             .padding(.horizontal, 16)
+            .opacity(zeigeInfo ? 0 : 1)
+            .allowsHitTesting(!zeigeInfo)
             Spacer()
             // Bei Videos sitzt dort die Zeitleiste (wie bei Apple).
-            if seiten.count > 1, item?.art != .video {
-                VorschauLeiste(seiten: seiten, aktuell: aktuell, quelle: quelle) { ziel in
+            if seiten.count > 1, item?.art != .video, !zeigeInfo {
+                VorschauLeiste(aktuell: aktuell, quelle: quelle) { ziel in
                     var t = Transaction()
                     t.disablesAnimations = true
-                    withTransaction(t) { aktuell = ziel }
+                    withTransaction(t) {
+                        // Liegt das Ziel außerhalb der vorbereiteten Seiten, die Seiten um das Ziel neu aufbauen.
+                        if !seiten.contains(ziel) { seiten = Self.fenster(um: ziel, quelle: quelle) }
+                        aktuell = ziel
+                    }
                 }
                 .padding(.bottom, 6)
             }
@@ -322,9 +346,10 @@ struct DetailView: View {
                 .keyboardShortcut("f", modifiers: [])
                 .disabled(item == nil || store == nil)
                 Button {
-                    zeigeInfo = true
+                    withAnimation(.smooth(duration: 0.35)) { zeigeInfo.toggle() }
                 } label: {
-                    Image(systemName: "info.circle").frame(width: 56, height: 44)
+                    Image(systemName: zeigeInfo ? "info.circle.fill" : "info.circle").frame(width: 56, height: 44)
+                        .contentTransition(.symbolEffect(.replace))
                 }
                 .accessibilityLabel("Informationen")
                 .keyboardShortcut("i", modifiers: .command)
@@ -515,8 +540,14 @@ struct DetailView: View {
         }
     }
 
+    /// Mit Infos so hoch wie das Foto bei voller Breite (keine Lücke), höchstens gut die Hälfte des Bildschirms.
+    private func fotoHoeheMitInfo(_ groesse: CGSize) -> CGFloat {
+        guard let b = info?.breite, let h = info?.hoehe, b > 0, h > 0 else { return groesse.height * 0.42 }
+        return min(groesse.width * CGFloat(h) / CGFloat(b), groesse.height * 0.55)
+    }
+
     /// Heller Hintergrund, solange die Bedienelemente zu sehen sind.
-    private var hell: Bool { zeigeBedienung && !zugAktiv }
+    private var hell: Bool { (zeigeBedienung && !zugAktiv) || zeigeInfo }
 
     private var titel: String {
         if let info { return InfoPanel.datum(info.aufgenommenLokal) }

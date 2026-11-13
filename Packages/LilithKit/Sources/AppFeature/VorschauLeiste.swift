@@ -2,45 +2,57 @@ import SwiftUI
 import DesignSystem
 import TimelineGrid
 
-/// Kleine Vorschaubilder unter dem Foto, wie in Apple Fotos: das aktuelle etwas breiter, Antippen springt hin.
+/// Kleine Vorschaubilder unter dem Foto, wie in Apple Fotos: das aktuelle etwas breiter.
+/// Antippen springt hin, Wischen über die Leiste blättert mit. Die Leiste lädt rund um das aktuelle Foto immer nach.
 struct VorschauLeiste: View {
-    let seiten: [DetailPosition]
     let aktuell: DetailPosition?
     let quelle: TimelineQuelle
     let waehle: (DetailPosition) -> Void
 
-    /// Nur die Nachbarn zeigen, damit die Leiste leicht bleibt.
+    /// Wie viele Nachbarn auf jeder Seite. Rückt mit dem aktuellen Foto mit, endet also nie vor Anfang oder Ende.
+    private static let radius = 120
+    @State private var mitte: DetailPosition?
+    @State private var nutzerWischt = false
+
     private var sichtbar: [DetailPosition] {
-        guard let aktuell, let i = seiten.firstIndex(of: aktuell) else { return [] }
-        return Array(seiten[max(0, i - 20)...min(seiten.count - 1, i + 20)])
+        guard let aktuell else { return [] }
+        return DetailView.fenster(um: aktuell, quelle: quelle, radius: Self.radius)
     }
 
     var body: some View {
-        ScrollViewReader { leser in
-            ScrollView(.horizontal) {
-                LazyHStack(spacing: 2) {
-                    ForEach(sichtbar, id: \.self) { p in
-                        let istAktuell = p == aktuell
-                        LeistenBild(item: quelle.item(section: p.section, index: p.index), quelle: quelle)
-                            .frame(width: istAktuell ? 40 : 21, height: 32)
-                            .clipShape(.rect(cornerRadius: 3))
-                            .padding(.horizontal, istAktuell ? 6 : 0)
-                            .contentShape(.rect)
-                            .onTapGesture { waehle(p) }
-                            .id(p)
-                    }
+        ScrollView(.horizontal) {
+            LazyHStack(spacing: 2) {
+                ForEach(sichtbar, id: \.self) { p in
+                    let istAktuell = p == aktuell
+                    LeistenBild(item: quelle.item(section: p.section, index: p.index), quelle: quelle, section: p.section)
+                        .frame(width: istAktuell ? 40 : 21, height: 32)
+                        .clipShape(.rect(cornerRadius: 3))
+                        .padding(.horizontal, istAktuell ? 6 : 0)
+                        .contentShape(.rect)
+                        .onTapGesture { waehle(p) }
+                        .id(p)
                 }
-                .scrollTargetLayout()
             }
-            .scrollIndicators(.hidden)
-            .contentMargins(.horizontal, 180, for: .scrollContent)
-            .frame(height: 34)
-            .onAppear { leser.scrollTo(aktuell, anchor: .center) }
-            .onChange(of: aktuell) { _, neu in
-                withAnimation(.smooth(duration: 0.25)) { leser.scrollTo(neu, anchor: .center) }
-            }
-            .animation(.smooth(duration: 0.25), value: aktuell)
+            .scrollTargetLayout()
         }
+        .scrollIndicators(.hidden)
+        .contentMargins(.horizontal, 200, for: .scrollContent)
+        .scrollPosition(id: $mitte, anchor: .center)
+        .frame(height: 34)
+        .onScrollPhaseChange { _, phase in
+            nutzerWischt = phase == .interacting || phase == .decelerating
+        }
+        // Wischt der Nutzer über die Leiste, blättert das Foto mit.
+        .onChange(of: mitte) { _, neu in
+            if nutzerWischt, let neu, neu != aktuell { waehle(neu) }
+        }
+        // Blättert der Nutzer im Foto, rückt die Leiste nach.
+        .onChange(of: aktuell) { _, neu in
+            guard !nutzerWischt else { return }
+            withAnimation(.smooth(duration: 0.25)) { mitte = neu }
+        }
+        .onAppear { mitte = aktuell }
+        .animation(.smooth(duration: 0.25), value: aktuell)
         .accessibilityHidden(true)
     }
 }
@@ -49,6 +61,7 @@ struct VorschauLeiste: View {
 private struct LeistenBild: View {
     let item: Kachel?
     let quelle: TimelineQuelle
+    let section: Int
     @State private var bild: Image?
     @Environment(\.displayScale) private var skala
 
@@ -57,7 +70,8 @@ private struct LeistenBild: View {
             .overlay { bild?.resizable().scaledToFill() }
             .clipped()
             .task(id: item?.id) {
-                guard let item else { bild = nil; return }
+                // Monat noch nicht geladen: anstoßen, die Leiste zeigt bis dahin die Platzhalterfarbe.
+                guard let item else { quelle.ladeMonat(section); bild = nil; return }
                 if item.lokal != nil {
                     if let cg = await quelle.lokalesBild(fuer: item, pixel: 44 * skala) {
                         bild = Image(decorative: cg, scale: skala)
