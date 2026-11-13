@@ -46,6 +46,10 @@ struct TimelineInhalt: View {
     @State private var zeigeAlbumWahl = false
     /// Freigabe-Link für Album oder Auswahl.
     @State private var freigabe: FreigabeZiel?
+    /// Auswahl dient gerade nur dazu, ein Titelbild zu wählen.
+    @State private var titelbildWahl = false
+    /// Kurze Bestätigung, z. B. „Titelbild gesetzt“.
+    @State private var meldung: String?
     @State private var fehler: String?
 
 
@@ -214,6 +218,18 @@ struct TimelineInhalt: View {
             .alert("Das hat nicht geklappt", isPresented: .constant(fehler != nil), presenting: fehler) { _ in
                 Button("OK") { fehler = nil }
             } message: { Text($0) }
+            .overlay(alignment: .top) {
+                if let meldung {
+                    Label(meldung, systemImage: "checkmark.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 16)
+                        .frame(height: 40)
+                        .lilithGlas(in: .capsule, klar: true)
+                        .padding(.top, 8)
+                        .transition(.opacity.combined(with: .offset(y: -8)))
+                        .allowsHitTesting(false)
+                }
+            }
     }
 
     // MARK: - Inhalt
@@ -325,6 +341,7 @@ struct TimelineInhalt: View {
         case .ort(let stadt, _): ("Keine Fotos", "Aus \(stadt) gibt es keine Fotos mehr.", "mappin.and.ellipse")
         case .ordner: ("Keine Fotos", "In diesem Ordner liegen keine Fotos.", "folder")
         case .tag: ("Keine Fotos", "Von diesem Tag gibt es keine Fotos.", "calendar")
+        case .gesperrt: ("Noch nichts gesperrt", "Wähle unter „Fotos“ Bilder aus und tippe auf „Sperren“. Sie verschwinden dann überall sonst.", "lock")
         case .suche: ("Nichts gefunden", "Versuch es mit anderen Worten, zum Beispiel einem Ort, einem Tier oder einer Farbe.", "magnifyingglass")
         case .album: ("Album ist leer", "Wähle unter „Fotos“ Bilder aus und füge sie diesem Album hinzu.", "rectangle.stack")
         }
@@ -359,37 +376,55 @@ struct TimelineInhalt: View {
             #endif
             if !auswahlModus {
             Menu {
-                #if os(iOS)
-                if kontext.client != nil, store?.zustand == .bereit {
-                    Button("Auswählen", systemImage: "checkmark.circle") { auswahlModus = true }
-                    Divider()
+                // Aufgebaut wie bei Apple: oben die Aktionen, darunter Abschnitte für Ansicht und Springen.
+                Section {
+                    #if os(iOS)
+                    if kontext.client != nil, store?.zustand == .bereit {
+                        Button("Auswählen", systemImage: "checkmark.circle") { auswahlModus = true }
+                    }
+                    #endif
+                    if case .album(let id) = filter, kontext.client != nil {
+                        #if os(iOS)
+                        Button("Titelbild wählen …", systemImage: "photo.badge.checkmark") {
+                            titelbildWahl = true
+                            auswahlModus = true
+                        }
+                        #endif
+                        Button("Link zum Album teilen …", systemImage: "link") {
+                            freigabe = FreigabeZiel(art: .album(id: id, name: titel))
+                        }
+                    }
+                    #if os(iOS)
+                    if case .person = filter, kontext.client != nil {
+                        Button("Bild für Person wählen …", systemImage: "person.crop.circle.badge.checkmark") {
+                            titelbildWahl = true
+                            auswahlModus = true
+                        }
+                    }
+                    #endif
                 }
-                #endif
-                #if os(iOS)
-                if filter == .alle, kontext.backup?.aktiv == true {
-                    Toggle("Nicht gesicherte zeigen", systemImage: "icloud.slash", isOn: $zeigeNichtGesicherte)
-                    Divider()
+                Section("Ansicht") {
+                    Button("Größer", systemImage: "plus.magnifyingglass") { zoom.groesser() }
+                        .keyboardShortcut("+", modifiers: .command)
+                    Button("Kleiner", systemImage: "minus.magnifyingglass") { zoom.kleiner() }
+                        .keyboardShortcut("-", modifiers: .command)
+                    #if os(iOS)
+                    if filter == .alle, kontext.backup?.aktiv == true {
+                        Toggle("Nicht gesicherte zeigen", systemImage: "icloud.slash", isOn: $zeigeNichtGesicherte)
+                    }
+                    #endif
                 }
-                #endif
-                Button("Größer (weniger Spalten)", systemImage: "plus.magnifyingglass") { zoom.groesser() }
-                    .keyboardShortcut("+", modifiers: .command)
-                Button("Kleiner (mehr Spalten)", systemImage: "minus.magnifyingglass") { zoom.kleiner() }
-                    .keyboardShortcut("-", modifiers: .command)
-                Divider()
-                Button("Zum neuesten Monat", systemImage: "arrow.up.to.line") { sprung = SprungAnfrage(section: 0) }
-                Button("Zum ältesten Monat", systemImage: "arrow.down.to.line") {
-                    sprung = SprungAnfrage(section: max(quelle.sections.count - 1, 0))
-                }
-                if case .album(let id) = filter, kontext.client != nil {
-                    Divider()
-                    Button("Link zum Album teilen …", systemImage: "link") {
-                        freigabe = FreigabeZiel(art: .album(id: id, name: titel))
+                Section("Springen") {
+                    Button("Zum neuesten Foto", systemImage: "arrow.up.to.line") { sprung = SprungAnfrage(section: 0) }
+                    Button("Zum ältesten Foto", systemImage: "arrow.down.to.line") {
+                        sprung = SprungAnfrage(section: max(quelle.sections.count - 1, 0))
                     }
                 }
                 if let store {
-                    Divider()
-                    Button("Neu laden", systemImage: "arrow.clockwise") { Task { await store.laden() } }
-                        .keyboardShortcut("r", modifiers: .command)
+                    Section {
+                        Button("Neu laden", systemImage: "arrow.clockwise") { Task { await store.laden() } }
+                            .keyboardShortcut("r", modifiers: .command)
+                    }
                 }
             } label: {
                 Label("Ansicht", systemImage: "line.3.horizontal.decrease")
@@ -406,7 +441,14 @@ struct TimelineInhalt: View {
     /// Leiste mit Aktionen für die ausgewählten Fotos.
     private var aktionsleiste: some View {
         HStack(spacing: 2) {
-            if filter == .papierkorb {
+            if titelbildWahl {
+                // Titelbild wählen: ein Foto antippen, dann übernehmen.
+                Text(auswahl.isEmpty ? "Tippe auf ein Foto" : auswahl.count > 1 ? "Bitte nur ein Foto wählen" : "Dieses Foto als Titelbild?")
+                    .font(.subheadline)
+                    .padding(.horizontal, 12)
+                aktion("Übernehmen", "checkmark") { setzeTitelbildAusAuswahl() }
+                    .disabled(auswahl.count != 1)
+            } else if filter == .papierkorb {
                 aktion("Wiederherstellen", "arrow.uturn.backward") { fuehreAus { try await $0.stelleWiederHer(assetIds: $1) } }
                 aktion("Endgültig löschen", "trash.slash", rot: true, taste: KeyboardShortcut(.delete, modifiers: [])) { frageLoeschen = true }
             } else {
@@ -415,14 +457,34 @@ struct TimelineInhalt: View {
                 } else {
                     aktion("Favorit", "heart", taste: KeyboardShortcut("f", modifiers: [])) { fuehreAus { try await $0.aendere(assetIds: $1, favorit: true) } }
                 }
-                if filter == .archiv {
-                    aktion("Aus Archiv holen", "arrow.uturn.backward") { fuehreAus { try await $0.aendere(assetIds: $1, archiviert: false) } }
-                } else {
-                    aktion("Archivieren", "archivebox") { fuehreAus { try await $0.aendere(assetIds: $1, archiviert: true) } }
-                }
                 aktion("Zu Album", "rectangle.stack.badge.plus") { zeigeAlbumWahl = true }
                 aktion("Link", "link") { freigabe = FreigabeZiel(art: .fotos(auswahl.filter { !$0.hasPrefix(GridItem.lokalPraefix) })) }
                 aktion("Löschen", "trash", rot: true, taste: KeyboardShortcut(.delete, modifiers: [])) { frageLoeschen = true }
+                // Seltenere Aktionen im „Mehr“-Menü, damit die Leiste nicht überläuft.
+                Menu {
+                    if filter.erlaubtTitelbild, auswahl.count == 1 {
+                        Button("Als Titelbild verwenden", systemImage: "photo.badge.checkmark") { setzeTitelbildAusAuswahl() }
+                    }
+                    if filter == .archiv {
+                        Button("Aus dem Archiv holen", systemImage: "arrow.uturn.backward") { fuehreAus { try await $0.aendere(assetIds: $1, archiviert: false) } }
+                    } else {
+                        Button("Archivieren", systemImage: "archivebox") { fuehreAus { try await $0.aendere(assetIds: $1, archiviert: true) } }
+                    }
+                    if filter == .gesperrt {
+                        Button("Aus dem gesperrten Bereich holen", systemImage: "lock.open") { fuehreAus { try await $0.verschiebe(assetIds: $1, gesperrt: false) } }
+                    } else {
+                        Button("In den gesperrten Bereich", systemImage: "lock") {
+                            fuehreAus { try await $0.verschiebe(assetIds: $1.filter { !$0.hasPrefix(GridItem.lokalPraefix) }, gesperrt: true) }
+                        }
+                    }
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: "ellipsis.circle").font(.body)
+                        Text("Mehr").font(.caption2)
+                    }
+                    .frame(minWidth: 62, minHeight: 44)
+                }
+                .accessibilityLabel("Weitere Aktionen")
             }
             if arbeitet { ProgressView().padding(.horizontal, 10) }
         }
@@ -531,8 +593,36 @@ struct TimelineInhalt: View {
 
     private func beendeAuswahl() {
         auswahlModus = false
+        titelbildWahl = false
         auswahl = []
         auswahlStand += 1
+    }
+
+    /// Das eine ausgewählte Foto wird Titelbild des Albums bzw. Bild der Person.
+    private func setzeTitelbildAusAuswahl() {
+        guard auswahl.count == 1, let foto = auswahl.first, !foto.hasPrefix(GridItem.lokalPraefix),
+              let client = kontext.client, !arbeitet else { return }
+        arbeitet = true
+        Task {
+            defer { arbeitet = false }
+            do {
+                switch filter {
+                case .album(let id): try await client.setzeAlbumTitelbild(album: id, foto: foto)
+                case .person(let id):
+                    try await client.setzePersonBild(person: id, foto: foto)
+                    BilderCache.vergiss(client.personBildAnfrage(id))
+                default: return
+                }
+                beendeAuswahl()
+                kontext.meldeGebuendelt()
+                withAnimation(.smooth) { meldung = "Titelbild gesetzt" }
+                try? await Task.sleep(for: .seconds(1.6))
+                withAnimation(.smooth) { meldung = nil }
+            } catch {
+                fehler = error.localizedDescription
+                kontext.pruefe(error)
+            }
+        }
     }
 
     /// Führt eine Aktion für die ausgewählten Fotos aus und lädt danach neu.
@@ -695,3 +785,13 @@ private struct TitelAusblenden: ViewModifier {
     }
 }
 #endif
+
+private extension TimelineFilter {
+    /// Album oder Person: Hier kann ein Foto zum Titelbild werden.
+    var erlaubtTitelbild: Bool {
+        switch self {
+        case .album, .person: true
+        default: false
+        }
+    }
+}

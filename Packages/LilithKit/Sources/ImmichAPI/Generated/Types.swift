@@ -90,6 +90,34 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /auth/logout`.
     /// - Remark: Generated from `#/paths//auth/logout/post(logout)`.
     func logout(_ input: Operations.Logout.Input) async throws -> Operations.Logout.Output
+    /// Setup pin code
+    ///
+    /// Setup a new pin code for the current user.
+    ///
+    /// - Remark: HTTP `POST /auth/pin-code`.
+    /// - Remark: Generated from `#/paths//auth/pin-code/post(setupPinCode)`.
+    func setupPinCode(_ input: Operations.SetupPinCode.Input) async throws -> Operations.SetupPinCode.Output
+    /// Lock auth session
+    ///
+    /// Remove elevated access to locked assets from the current session.
+    ///
+    /// - Remark: HTTP `POST /auth/session/lock`.
+    /// - Remark: Generated from `#/paths//auth/session/lock/post(lockAuthSession)`.
+    func lockAuthSession(_ input: Operations.LockAuthSession.Input) async throws -> Operations.LockAuthSession.Output
+    /// Unlock auth session
+    ///
+    /// Temporarily grant the session elevated access to locked assets by providing the correct PIN code.
+    ///
+    /// - Remark: HTTP `POST /auth/session/unlock`.
+    /// - Remark: Generated from `#/paths//auth/session/unlock/post(unlockAuthSession)`.
+    func unlockAuthSession(_ input: Operations.UnlockAuthSession.Input) async throws -> Operations.UnlockAuthSession.Output
+    /// Retrieve auth status
+    ///
+    /// Get information about the current session, including whether the user has a password, and if the session can access locked assets.
+    ///
+    /// - Remark: HTTP `GET /auth/status`.
+    /// - Remark: Generated from `#/paths//auth/status/get(getAuthStatus)`.
+    func getAuthStatus(_ input: Operations.GetAuthStatus.Input) async throws -> Operations.GetAuthStatus.Output
     /// Validate access token
     ///
     /// Validate the current authorization method is still valid.
@@ -399,6 +427,42 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//auth/logout/post(logout)`.
     public func logout(headers: Operations.Logout.Input.Headers = .init()) async throws -> Operations.Logout.Output {
         try await logout(Operations.Logout.Input(headers: headers))
+    }
+    /// Setup pin code
+    ///
+    /// Setup a new pin code for the current user.
+    ///
+    /// - Remark: HTTP `POST /auth/pin-code`.
+    /// - Remark: Generated from `#/paths//auth/pin-code/post(setupPinCode)`.
+    public func setupPinCode(body: Operations.SetupPinCode.Input.Body) async throws -> Operations.SetupPinCode.Output {
+        try await setupPinCode(Operations.SetupPinCode.Input(body: body))
+    }
+    /// Lock auth session
+    ///
+    /// Remove elevated access to locked assets from the current session.
+    ///
+    /// - Remark: HTTP `POST /auth/session/lock`.
+    /// - Remark: Generated from `#/paths//auth/session/lock/post(lockAuthSession)`.
+    public func lockAuthSession() async throws -> Operations.LockAuthSession.Output {
+        try await lockAuthSession(Operations.LockAuthSession.Input())
+    }
+    /// Unlock auth session
+    ///
+    /// Temporarily grant the session elevated access to locked assets by providing the correct PIN code.
+    ///
+    /// - Remark: HTTP `POST /auth/session/unlock`.
+    /// - Remark: Generated from `#/paths//auth/session/unlock/post(unlockAuthSession)`.
+    public func unlockAuthSession(body: Operations.UnlockAuthSession.Input.Body) async throws -> Operations.UnlockAuthSession.Output {
+        try await unlockAuthSession(Operations.UnlockAuthSession.Input(body: body))
+    }
+    /// Retrieve auth status
+    ///
+    /// Get information about the current session, including whether the user has a password, and if the session can access locked assets.
+    ///
+    /// - Remark: HTTP `GET /auth/status`.
+    /// - Remark: Generated from `#/paths//auth/status/get(getAuthStatus)`.
+    public func getAuthStatus(headers: Operations.GetAuthStatus.Input.Headers = .init()) async throws -> Operations.GetAuthStatus.Output {
+        try await getAuthStatus(Operations.GetAuthStatus.Input(headers: headers))
     }
     /// Validate access token
     ///
@@ -1472,6 +1536,57 @@ public enum Components {
             case timeline = "timeline"
             case hidden = "hidden"
             case locked = "locked"
+        }
+        /// - Remark: Generated from `#/components/schemas/AuthStatusResponseDto`.
+        public struct AuthStatusResponseDto: Codable, Hashable, Sendable {
+            /// Session expiration date
+            ///
+            /// - Remark: Generated from `#/components/schemas/AuthStatusResponseDto/expiresAt`.
+            public var expiresAt: Swift.String?
+            /// Is elevated session
+            ///
+            /// - Remark: Generated from `#/components/schemas/AuthStatusResponseDto/isElevated`.
+            public var isElevated: Swift.Bool
+            /// Has password set
+            ///
+            /// - Remark: Generated from `#/components/schemas/AuthStatusResponseDto/password`.
+            public var password: Swift.Bool
+            /// Has PIN code set
+            ///
+            /// - Remark: Generated from `#/components/schemas/AuthStatusResponseDto/pinCode`.
+            public var pinCode: Swift.Bool
+            /// PIN expiration date
+            ///
+            /// - Remark: Generated from `#/components/schemas/AuthStatusResponseDto/pinExpiresAt`.
+            public var pinExpiresAt: Swift.String?
+            /// Creates a new `AuthStatusResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - expiresAt: Session expiration date
+            ///   - isElevated: Is elevated session
+            ///   - password: Has password set
+            ///   - pinCode: Has PIN code set
+            ///   - pinExpiresAt: PIN expiration date
+            public init(
+                expiresAt: Swift.String? = nil,
+                isElevated: Swift.Bool,
+                password: Swift.Bool,
+                pinCode: Swift.Bool,
+                pinExpiresAt: Swift.String? = nil
+            ) {
+                self.expiresAt = expiresAt
+                self.isElevated = isElevated
+                self.password = password
+                self.pinCode = pinCode
+                self.pinExpiresAt = pinExpiresAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case expiresAt
+                case isElevated
+                case password
+                case pinCode
+                case pinExpiresAt
+            }
         }
         /// - Remark: Generated from `#/components/schemas/BoolFilter`.
         public struct BoolFilter: Codable, Hashable, Sendable {
@@ -3152,6 +3267,23 @@ public enum Components {
             case write = "write"
             case admin = "admin"
         }
+        /// - Remark: Generated from `#/components/schemas/PinCodeSetupDto`.
+        public struct PinCodeSetupDto: Codable, Hashable, Sendable {
+            /// PIN code (4-6 digits)
+            ///
+            /// - Remark: Generated from `#/components/schemas/PinCodeSetupDto/pinCode`.
+            public var pinCode: Swift.String
+            /// Creates a new `PinCodeSetupDto`.
+            ///
+            /// - Parameters:
+            ///   - pinCode: PIN code (4-6 digits)
+            public init(pinCode: Swift.String) {
+                self.pinCode = pinCode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case pinCode
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/SearchAlbumResponseDto`.
         public struct SearchAlbumResponseDto: Codable, Hashable, Sendable {
             /// Number of albums in this page
@@ -4305,6 +4437,33 @@ public enum Components {
                 case minor
                 case patch
                 case prerelease
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SessionUnlockDto`.
+        public struct SessionUnlockDto: Codable, Hashable, Sendable {
+            /// User password (required if PIN code is not provided)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SessionUnlockDto/password`.
+            public var password: Swift.String?
+            /// New PIN code (4-6 digits)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SessionUnlockDto/pinCode`.
+            public var pinCode: Swift.String?
+            /// Creates a new `SessionUnlockDto`.
+            ///
+            /// - Parameters:
+            ///   - password: User password (required if PIN code is not provided)
+            ///   - pinCode: New PIN code (4-6 digits)
+            public init(
+                password: Swift.String? = nil,
+                pinCode: Swift.String? = nil
+            ) {
+                self.password = password
+                self.pinCode = pinCode
+            }
+            public enum CodingKeys: String, CodingKey {
+                case password
+                case pinCode
             }
         }
         /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto`.
@@ -6986,6 +7145,302 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
             public var ok: Operations.Logout.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Setup pin code
+    ///
+    /// Setup a new pin code for the current user.
+    ///
+    /// - Remark: HTTP `POST /auth/pin-code`.
+    /// - Remark: Generated from `#/paths//auth/pin-code/post(setupPinCode)`.
+    public enum SetupPinCode {
+        public static let id: Swift.String = "setupPinCode"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/auth/pin-code/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/auth/pin-code/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.PinCodeSetupDto)
+            }
+            public var body: Operations.SetupPinCode.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - body:
+            public init(body: Operations.SetupPinCode.Input.Body) {
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//auth/pin-code/post(setupPinCode)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.SetupPinCode.Output.NoContent)
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//auth/pin-code/post(setupPinCode)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.SetupPinCode.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+    }
+    /// Lock auth session
+    ///
+    /// Remove elevated access to locked assets from the current session.
+    ///
+    /// - Remark: HTTP `POST /auth/session/lock`.
+    /// - Remark: Generated from `#/paths//auth/session/lock/post(lockAuthSession)`.
+    public enum LockAuthSession {
+        public static let id: Swift.String = "lockAuthSession"
+        public struct Input: Sendable, Hashable {
+            /// Creates a new `Input`.
+            public init() {}
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//auth/session/lock/post(lockAuthSession)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.LockAuthSession.Output.NoContent)
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//auth/session/lock/post(lockAuthSession)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.LockAuthSession.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+    }
+    /// Unlock auth session
+    ///
+    /// Temporarily grant the session elevated access to locked assets by providing the correct PIN code.
+    ///
+    /// - Remark: HTTP `POST /auth/session/unlock`.
+    /// - Remark: Generated from `#/paths//auth/session/unlock/post(unlockAuthSession)`.
+    public enum UnlockAuthSession {
+        public static let id: Swift.String = "unlockAuthSession"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/auth/session/unlock/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/auth/session/unlock/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.SessionUnlockDto)
+            }
+            public var body: Operations.UnlockAuthSession.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - body:
+            public init(body: Operations.UnlockAuthSession.Input.Body) {
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//auth/session/unlock/post(unlockAuthSession)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.UnlockAuthSession.Output.NoContent)
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//auth/session/unlock/post(unlockAuthSession)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.UnlockAuthSession.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+    }
+    /// Retrieve auth status
+    ///
+    /// Get information about the current session, including whether the user has a password, and if the session can access locked assets.
+    ///
+    /// - Remark: HTTP `GET /auth/status`.
+    /// - Remark: Generated from `#/paths//auth/status/get(getAuthStatus)`.
+    public enum GetAuthStatus {
+        public static let id: Swift.String = "getAuthStatus"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/auth/status/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAuthStatus.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAuthStatus.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetAuthStatus.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            public init(headers: Operations.GetAuthStatus.Input.Headers = .init()) {
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/auth/status/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/auth/status/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AuthStatusResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AuthStatusResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetAuthStatus.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetAuthStatus.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//auth/status/get(getAuthStatus)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetAuthStatus.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetAuthStatus.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):

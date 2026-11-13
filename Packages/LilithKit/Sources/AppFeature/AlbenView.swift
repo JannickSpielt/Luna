@@ -22,6 +22,8 @@ enum SammlungsZiel: Hashable {
     case duplikate
     /// Ordner auf dem Server (`""` = oberste Ebene).
     case ordner(String)
+    /// Der gesperrte Bereich.
+    case gesperrt
 }
 
 /// Der Tab „Sammlungen“, aufgebaut wie in Apples Fotos-App: eine lange Seite mit Abschnitten,
@@ -103,6 +105,8 @@ struct AlbenView: View {
                     DuplikateView()
                 case .ordner(let pfad):
                     OrdnerView(pfad: pfad)
+                case .gesperrt:
+                    GesperrtView()
                 }
             }
             .refreshable { await lade(erzwingen: true) }
@@ -323,6 +327,8 @@ struct AlbenView: View {
                 sammlungsEintrag("Ordner", "folder", .ordner(""))
                 Divider().padding(.leading, 52)
                 listenEintrag("Archiv", "archivebox", .archiv)
+                Divider().padding(.leading, 52)
+                sammlungsEintrag("Gesperrt", "lock", .gesperrt)
                 if kontext.papierkorbAktiv {
                     Divider().padding(.leading, 52)
                     listenEintrag("Papierkorb", "trash", .papierkorb)

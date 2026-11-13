@@ -803,6 +803,200 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Setup pin code
+    ///
+    /// Setup a new pin code for the current user.
+    ///
+    /// - Remark: HTTP `POST /auth/pin-code`.
+    /// - Remark: Generated from `#/paths//auth/pin-code/post(setupPinCode)`.
+    public func setupPinCode(_ input: Operations.SetupPinCode.Input) async throws -> Operations.SetupPinCode.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.SetupPinCode.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/auth/pin-code",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Lock auth session
+    ///
+    /// Remove elevated access to locked assets from the current session.
+    ///
+    /// - Remark: HTTP `POST /auth/session/lock`.
+    /// - Remark: Generated from `#/paths//auth/session/lock/post(lockAuthSession)`.
+    public func lockAuthSession(_ input: Operations.LockAuthSession.Input) async throws -> Operations.LockAuthSession.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.LockAuthSession.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/auth/session/lock",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Unlock auth session
+    ///
+    /// Temporarily grant the session elevated access to locked assets by providing the correct PIN code.
+    ///
+    /// - Remark: HTTP `POST /auth/session/unlock`.
+    /// - Remark: Generated from `#/paths//auth/session/unlock/post(unlockAuthSession)`.
+    public func unlockAuthSession(_ input: Operations.UnlockAuthSession.Input) async throws -> Operations.UnlockAuthSession.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.UnlockAuthSession.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/auth/session/unlock",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Retrieve auth status
+    ///
+    /// Get information about the current session, including whether the user has a password, and if the session can access locked assets.
+    ///
+    /// - Remark: HTTP `GET /auth/status`.
+    /// - Remark: Generated from `#/paths//auth/status/get(getAuthStatus)`.
+    public func getAuthStatus(_ input: Operations.GetAuthStatus.Input) async throws -> Operations.GetAuthStatus.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetAuthStatus.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/auth/status",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetAuthStatus.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AuthStatusResponseDto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Validate access token
     ///
     /// Validate the current authorization method is still valid.

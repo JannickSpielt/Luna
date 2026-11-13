@@ -23,6 +23,8 @@ public enum TimelineFilter: Hashable, Sendable {
     case ordner(String)
     /// Alle Fotos eines Kalendertags (für „Heute vor … Jahren“).
     case tag(Date)
+    /// Der gesperrte Bereich (nur bei entsperrter Sitzung sichtbar).
+    case gesperrt
 }
 
 /// Ein Album.

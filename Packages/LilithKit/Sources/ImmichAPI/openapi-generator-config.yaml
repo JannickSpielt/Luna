@@ -15,6 +15,11 @@ filter:
     - login
     - logout
     - validateAccessToken
+    # Gesperrter Bereich
+    - getAuthStatus
+    - setupPinCode
+    - unlockAuthSession
+    - lockAuthSession
     # Konto
     - getMyUser
     # Timeline

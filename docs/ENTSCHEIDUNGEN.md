@@ -241,3 +241,10 @@ Plan: `docs/LADEN-PLAN.md`.
 - Immich-Freigabelinks (`createSharedLink`): für ein Album (Ansicht-Menü → „Link zum Album teilen …“) oder ausgewählte Fotos (Auswahl-Leiste → „Link“; nur Fotos vom Server). Optionen: gültig 1 Tag / 7 Tage / 30 Tage / nie, Herunterladen erlauben, Passwort. Danach Link senden oder kopieren.
 - Link-Adresse: `<Server>/share/<key>` bzw. `/s/<slug>`.
 - Konto → „Geteilte Links“: alle Links, senden, löschen (Wischen oder Kontextmenü). Löschen entfernt nur den Link, nicht die Fotos.
+
+## 22. Gesperrter Bereich, aufgeräumtes Ansicht-Menü (13.11.2026)
+
+- **Gesperrt:** Sammlungen → Weitere → „Gesperrt“ nutzt Immichs gesperrten Ordner (Sichtbarkeit `locked`). Die Immich-PIN wird einmal eingegeben und im Schlüsselbund abgelegt (nur dieses Gerät, nur mit Face ID/Gerätecode lesbar). Beim Verlassen sperrt Luna die Sitzung wieder. Gibt es noch keine PIN, richtet Luna eine ein.
+- **Ansicht-Menü wie bei Apple:** oben die Aktionen (Auswählen, Titelbild wählen …, Link teilen …), darunter die Abschnitte „Ansicht“ und „Springen“, ganz unten „Neu laden“.
+- **Titelbild wählen:** im Album bzw. bei Personen über das Menü. Ein Foto antippen, „Übernehmen“. Zusätzlich weiterhin in der Fotoansicht.
+- **Auswahl-Leiste:** Favorit, Zu Album, Link, Löschen bleiben sichtbar. Seltenes (Titelbild, Archivieren, Sperren) liegt unter „Mehr“, damit die Leiste nicht überläuft.

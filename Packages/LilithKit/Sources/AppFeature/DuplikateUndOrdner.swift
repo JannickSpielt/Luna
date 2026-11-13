@@ -211,3 +211,120 @@ struct OrdnerView: View {
         p.split(separator: "/").last.map(String.init) ?? p
     }
 }
+
+// MARK: - Gesperrter Bereich
+
+/// Immichs gesperrter Bereich: Fotos darin tauchen nirgends sonst auf. Öffnen mit Face ID
+/// (die Immich-PIN liegt geschützt im Schlüsselbund) oder mit der PIN.
+struct GesperrtView: View {
+    @Environment(BibliothekKontext.self) private var kontext
+
+    enum Stand: Equatable { case prueft, einrichten, pin, offen, fehler(String) }
+
+    @State private var stand: Stand = .prueft
+    @State private var pin = ""
+    @State private var pinWiederholt = ""
+    @State private var arbeitet = false
+    @State private var hinweis: String?
+
+    private var konto: String { kontext.client?.address.description ?? "" }
+
+    var body: some View {
+        Group {
+            switch stand {
+            case .prueft:
+                ProgressView("Wird geöffnet …")
+            case .offen:
+                GefilterteTimeline(ziel: TimelineZiel(titel: "Gesperrt", filter: .gesperrt))
+            case .einrichten:
+                pinFormular(einrichten: true)
+            case .pin:
+                pinFormular(einrichten: false)
+            case .fehler(let text):
+                ContentUnavailableView("Nicht geöffnet", systemImage: "lock.slash", description: Text(text))
+            }
+        }
+        .navigationTitle("Gesperrt")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task { await oeffne() }
+        .onDisappear {
+            // Beim Verlassen sofort wieder sperren.
+            guard let client = kontext.client else { return }
+            Task { await client.sperreSitzung() }
+        }
+    }
+
+    private func pinFormular(einrichten: Bool) -> some View {
+        Form {
+            Section {
+                SecureField("PIN (6 Ziffern)", text: $pin)
+                    #if os(iOS)
+                    .keyboardType(.numberPad)
+                    #endif
+                    .textContentType(einrichten ? .newPassword : .password)
+                if einrichten {
+                    SecureField("PIN wiederholen", text: $pinWiederholt)
+                        #if os(iOS)
+                        .keyboardType(.numberPad)
+                        #endif
+                }
+            } header: {
+                Text(einrichten ? "PIN einrichten" : "PIN eingeben")
+            } footer: {
+                Text(hinweis ?? (einrichten
+                     ? "Immich schützt den gesperrten Bereich mit einer eigenen PIN. Luna merkt sie sich hinter Face ID, du musst sie danach nicht mehr eingeben."
+                     : "Die PIN deines gesperrten Bereichs auf dem Immich-Server. Luna merkt sie sich danach hinter Face ID."))
+            }
+            Section {
+                Button {
+                    Task { await bestaetige(einrichten: einrichten) }
+                } label: {
+                    HStack { Text(einrichten ? "Einrichten und öffnen" : "Öffnen"); Spacer(); if arbeitet { ProgressView() } }
+                }
+                .disabled(arbeitet || pin.count != 6 || pin.contains { !$0.isNumber } || (einrichten && pin != pinWiederholt))
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func oeffne() async {
+        guard let client = kontext.client else { stand = .fehler("Keine Verbindung zum Server."); return }
+        do {
+            let status = try await client.sperrStatus()
+            if status.entsperrt { stand = .offen; return }
+            guard status.hatPin else { stand = .einrichten; return }
+            // Gespeicherte PIN per Face ID holen und damit entsperren.
+            if PinSafe.hatGespeichert(konto: konto), let gemerkt = await PinSafe.lies(konto: konto) {
+                do {
+                    try await client.entsperre(pin: gemerkt)
+                    stand = .offen
+                    return
+                } catch {
+                    PinSafe.loesche(konto: konto)   // passt nicht mehr (z. B. in Immich geändert)
+                }
+            }
+            stand = .pin
+        } catch {
+            stand = .fehler(error.localizedDescription)
+            kontext.pruefe(error)
+        }
+    }
+
+    private func bestaetige(einrichten: Bool) async {
+        guard let client = kontext.client else { return }
+        arbeitet = true
+        defer { arbeitet = false }
+        do {
+            if einrichten { try await client.richtePinEin(pin) }
+            try await client.entsperre(pin: pin)
+            try? PinSafe.speichere(pin, konto: konto)
+            pin = ""; pinWiederholt = ""
+            withAnimation(.smooth) { stand = .offen }
+        } catch {
+            hinweis = einrichten ? "Das hat nicht geklappt: \(error.localizedDescription)" : "Die PIN stimmt nicht."
+            pin = ""
+        }
+    }
+}
