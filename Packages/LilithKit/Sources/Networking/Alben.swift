@@ -131,3 +131,29 @@ extension ImmichClient {
         code == 401 ? .sitzungAbgelaufen : .unerwarteteAntwort(code)
     }
 }
+
+extension ImmichClient {
+    /// Setzt das Titelbild eines Albums.
+    public func setzeAlbumTitelbild(album: String, foto: String) async throws {
+        var dto = Components.Schemas.UpdateAlbumDto()
+        dto.albumThumbnailAssetId = foto
+        let output: Operations.UpdateAlbumInfo.Output
+        do { output = try await client.updateAlbumInfo(path: .init(id: album), body: .json(dto)) } catch { throw Self.uebersetze(error) }
+        switch output {
+        case .ok: return
+        case .undocumented(let code, _): throw Self.fehler(code)
+        }
+    }
+
+    /// Setzt das Gesicht einer Person auf das Gesicht in diesem Foto.
+    public func setzePersonBild(person: String, foto: String) async throws {
+        var dto = Components.Schemas.PersonUpdateDto()
+        dto.featureFaceAssetId = foto
+        let output: Operations.UpdatePerson.Output
+        do { output = try await client.updatePerson(path: .init(id: person), body: .json(dto)) } catch { throw Self.uebersetze(error) }
+        switch output {
+        case .ok: return
+        case .undocumented(let code, _): throw Self.fehler(code)
+        }
+    }
+}

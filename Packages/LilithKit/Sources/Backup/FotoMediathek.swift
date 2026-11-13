@@ -115,6 +115,14 @@ public struct FotoMediathek: Mediathek {
         return ids
     }
 
+    public func loesche(_ ids: [String]) async throws {
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
+        guard assets.count > 0 else { return }
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetChangeRequest.deleteAssets(assets)
+        }
+    }
+
     public func vorschau(_ id: String, kante: CGFloat) async -> CGImage? {
         guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else { return nil }
         let optionen = PHImageRequestOptions()

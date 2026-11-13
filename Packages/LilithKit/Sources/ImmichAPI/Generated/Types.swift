@@ -25,6 +25,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /albums`.
     /// - Remark: Generated from `#/paths//albums/post(createAlbum)`.
     func createAlbum(_ input: Operations.CreateAlbum.Input) async throws -> Operations.CreateAlbum.Output
+    /// Update an album
+    ///
+    /// Update the information of a specific album by its ID. This endpoint can be used to update the album name, description, sort order, etc. However, it is not used to add or remove assets or users from the album.
+    ///
+    /// - Remark: HTTP `PATCH /albums/{id}`.
+    /// - Remark: Generated from `#/paths//albums/{id}/patch(updateAlbumInfo)`.
+    func updateAlbumInfo(_ input: Operations.UpdateAlbumInfo.Input) async throws -> Operations.UpdateAlbumInfo.Output
     /// Add assets to an album
     ///
     /// Add multiple assets to a specific album by its ID.
@@ -118,6 +125,14 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /people`.
     /// - Remark: Generated from `#/paths//people/get(getAllPeople)`.
     func getAllPeople(_ input: Operations.GetAllPeople.Input) async throws -> Operations.GetAllPeople.Output
+    /// Update person
+    ///
+    /// Update an individual person.
+    ///
+    /// - Remark: HTTP `PUT /people/{id}`.
+    /// - Remark: Generated from `#/paths//people/{id}/put(updatePerson)`.
+    @available(*, deprecated)
+    func updatePerson(_ input: Operations.UpdatePerson.Input) async throws -> Operations.UpdatePerson.Output
     /// Search assets by metadata
     ///
     /// Search for assets based on various metadata criteria.
@@ -254,6 +269,23 @@ extension APIProtocol {
         body: Operations.CreateAlbum.Input.Body
     ) async throws -> Operations.CreateAlbum.Output {
         try await createAlbum(Operations.CreateAlbum.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Update an album
+    ///
+    /// Update the information of a specific album by its ID. This endpoint can be used to update the album name, description, sort order, etc. However, it is not used to add or remove assets or users from the album.
+    ///
+    /// - Remark: HTTP `PATCH /albums/{id}`.
+    /// - Remark: Generated from `#/paths//albums/{id}/patch(updateAlbumInfo)`.
+    public func updateAlbumInfo(
+        path: Operations.UpdateAlbumInfo.Input.Path,
+        headers: Operations.UpdateAlbumInfo.Input.Headers = .init(),
+        body: Operations.UpdateAlbumInfo.Input.Body
+    ) async throws -> Operations.UpdateAlbumInfo.Output {
+        try await updateAlbumInfo(Operations.UpdateAlbumInfo.Input(
+            path: path,
             headers: headers,
             body: body
         ))
@@ -429,6 +461,24 @@ extension APIProtocol {
         try await getAllPeople(Operations.GetAllPeople.Input(
             query: query,
             headers: headers
+        ))
+    }
+    /// Update person
+    ///
+    /// Update an individual person.
+    ///
+    /// - Remark: HTTP `PUT /people/{id}`.
+    /// - Remark: Generated from `#/paths//people/{id}/put(updatePerson)`.
+    @available(*, deprecated)
+    public func updatePerson(
+        path: Operations.UpdatePerson.Input.Path,
+        headers: Operations.UpdatePerson.Input.Headers = .init(),
+        body: Operations.UpdatePerson.Input.Body
+    ) async throws -> Operations.UpdatePerson.Output {
+        try await updatePerson(Operations.UpdatePerson.Input(
+            path: path,
+            headers: headers,
+            body: body
         ))
     }
     /// Search assets by metadata
@@ -3027,6 +3077,73 @@ public enum Components {
                 case updatedAt
             }
         }
+        /// - Remark: Generated from `#/components/schemas/PersonUpdateDto`.
+        public struct PersonUpdateDto: Codable, Hashable, Sendable {
+            /// Person date of birth
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonUpdateDto/birthDate`.
+            public var birthDate: Swift.String?
+            /// Person color (hex)
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonUpdateDto/color`.
+            public var color: Swift.String?
+            /// Asset ID used for feature face thumbnail
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonUpdateDto/featureFaceAssetId`.
+            public var featureFaceAssetId: Swift.String?
+            /// Mark as favorite
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonUpdateDto/isFavorite`.
+            public var isFavorite: Swift.Bool?
+            /// Person visibility (hidden)
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonUpdateDto/isHidden`.
+            public var isHidden: Swift.Bool?
+            /// Person name
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonUpdateDto/name`.
+            public var name: Swift.String?
+            /// Restrict the update to the person record of this User ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/PersonUpdateDto/userId`.
+            public var userId: Swift.String?
+            /// Creates a new `PersonUpdateDto`.
+            ///
+            /// - Parameters:
+            ///   - birthDate: Person date of birth
+            ///   - color: Person color (hex)
+            ///   - featureFaceAssetId: Asset ID used for feature face thumbnail
+            ///   - isFavorite: Mark as favorite
+            ///   - isHidden: Person visibility (hidden)
+            ///   - name: Person name
+            ///   - userId: Restrict the update to the person record of this User ID
+            public init(
+                birthDate: Swift.String? = nil,
+                color: Swift.String? = nil,
+                featureFaceAssetId: Swift.String? = nil,
+                isFavorite: Swift.Bool? = nil,
+                isHidden: Swift.Bool? = nil,
+                name: Swift.String? = nil,
+                userId: Swift.String? = nil
+            ) {
+                self.birthDate = birthDate
+                self.color = color
+                self.featureFaceAssetId = featureFaceAssetId
+                self.isFavorite = isFavorite
+                self.isHidden = isHidden
+                self.name = name
+                self.userId = userId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case birthDate
+                case color
+                case featureFaceAssetId
+                case isFavorite
+                case isHidden
+                case name
+                case userId
+            }
+        }
         /// Levels of access for managing people resources on behalf of another user.
         ///
         /// - Remark: Generated from `#/components/schemas/PersonUserRole`.
@@ -5135,6 +5252,55 @@ public enum Components {
                 case count
             }
         }
+        /// - Remark: Generated from `#/components/schemas/UpdateAlbumDto`.
+        public struct UpdateAlbumDto: Codable, Hashable, Sendable {
+            /// Album name
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAlbumDto/albumName`.
+            public var albumName: Swift.String?
+            /// Album thumbnail asset ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAlbumDto/albumThumbnailAssetId`.
+            public var albumThumbnailAssetId: Swift.String?
+            /// Album description
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAlbumDto/description`.
+            public var description: Swift.String?
+            /// Enable activity feed
+            ///
+            /// - Remark: Generated from `#/components/schemas/UpdateAlbumDto/isActivityEnabled`.
+            public var isActivityEnabled: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/UpdateAlbumDto/order`.
+            public var order: Components.Schemas.AssetOrder?
+            /// Creates a new `UpdateAlbumDto`.
+            ///
+            /// - Parameters:
+            ///   - albumName: Album name
+            ///   - albumThumbnailAssetId: Album thumbnail asset ID
+            ///   - description: Album description
+            ///   - isActivityEnabled: Enable activity feed
+            ///   - order:
+            public init(
+                albumName: Swift.String? = nil,
+                albumThumbnailAssetId: Swift.String? = nil,
+                description: Swift.String? = nil,
+                isActivityEnabled: Swift.Bool? = nil,
+                order: Components.Schemas.AssetOrder? = nil
+            ) {
+                self.albumName = albumName
+                self.albumThumbnailAssetId = albumThumbnailAssetId
+                self.description = description
+                self.isActivityEnabled = isActivityEnabled
+                self.order = order
+            }
+            public enum CodingKeys: String, CodingKey {
+                case albumName
+                case albumThumbnailAssetId
+                case description
+                case isActivityEnabled
+                case order
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/UpdateAssetDto`.
         public struct UpdateAssetDto: Codable, Hashable, Sendable {
             /// Original date and time
@@ -5769,6 +5935,145 @@ public enum Operations {
                     default:
                         try throwUnexpectedResponseStatus(
                             expectedStatus: "created",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Update an album
+    ///
+    /// Update the information of a specific album by its ID. This endpoint can be used to update the album name, description, sort order, etc. However, it is not used to add or remove assets or users from the album.
+    ///
+    /// - Remark: HTTP `PATCH /albums/{id}`.
+    /// - Remark: Generated from `#/paths//albums/{id}/patch(updateAlbumInfo)`.
+    public enum UpdateAlbumInfo {
+        public static let id: Swift.String = "updateAlbumInfo"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/albums/{id}/PATCH/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/albums/{id}/PATCH/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.UpdateAlbumInfo.Input.Path
+            /// - Remark: Generated from `#/paths/albums/{id}/PATCH/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateAlbumInfo.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdateAlbumInfo.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdateAlbumInfo.Input.Headers
+            /// - Remark: Generated from `#/paths/albums/{id}/PATCH/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/albums/{id}/PATCH/requestBody/content/application\/json`.
+                case json(Components.Schemas.UpdateAlbumDto)
+            }
+            public var body: Operations.UpdateAlbumInfo.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UpdateAlbumInfo.Input.Path,
+                headers: Operations.UpdateAlbumInfo.Input.Headers = .init(),
+                body: Operations.UpdateAlbumInfo.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/albums/{id}/PATCH/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/albums/{id}/PATCH/responses/200/content/application\/json`.
+                    case json(Components.Schemas.AlbumResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.AlbumResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdateAlbumInfo.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdateAlbumInfo.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//albums/{id}/patch(updateAlbumInfo)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdateAlbumInfo.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdateAlbumInfo.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
                             response: self
                         )
                     }
@@ -7394,6 +7699,145 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
             public var ok: Operations.GetAllPeople.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Update person
+    ///
+    /// Update an individual person.
+    ///
+    /// - Remark: HTTP `PUT /people/{id}`.
+    /// - Remark: Generated from `#/paths//people/{id}/put(updatePerson)`.
+    public enum UpdatePerson {
+        public static let id: Swift.String = "updatePerson"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/people/{id}/PUT/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/people/{id}/PUT/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.UpdatePerson.Input.Path
+            /// - Remark: Generated from `#/paths/people/{id}/PUT/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdatePerson.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UpdatePerson.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UpdatePerson.Input.Headers
+            /// - Remark: Generated from `#/paths/people/{id}/PUT/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/people/{id}/PUT/requestBody/content/application\/json`.
+                case json(Components.Schemas.PersonUpdateDto)
+            }
+            public var body: Operations.UpdatePerson.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            ///   - body:
+            public init(
+                path: Operations.UpdatePerson.Input.Path,
+                headers: Operations.UpdatePerson.Input.Headers = .init(),
+                body: Operations.UpdatePerson.Input.Body
+            ) {
+                self.path = path
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/people/{id}/PUT/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/people/{id}/PUT/responses/200/content/application\/json`.
+                    case json(Components.Schemas.PersonResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.PersonResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UpdatePerson.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UpdatePerson.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//people/{id}/put(updatePerson)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UpdatePerson.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UpdatePerson.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):

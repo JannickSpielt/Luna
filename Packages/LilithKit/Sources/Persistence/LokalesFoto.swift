@@ -121,6 +121,16 @@ extension Datenbank {
         }
     }
 
+    /// Kennungen in der Mediathek zu Fotos auf dem Server (nur gesicherte).
+    public func lokaleIds(konto: String, remoteIds: Set<String>) throws -> [String] {
+        try pool.read { db in
+            try LokalesFoto.filter(Column("konto") == konto && Column("zustand") == LokalesFoto.Zustand.gesichert.rawValue)
+                .fetchAll(db)
+                .filter { $0.remoteId.map(remoteIds.contains) ?? false }
+                .map(\.lokaleId)
+        }
+    }
+
     /// Übersprungene Fotos mit diesem Grund neu prüfen (z. B. wenn iCloud-Originale jetzt erlaubt sind).
     public func pruefeErneut(konto: String, grund: String) throws {
         try pool.write { db in

@@ -47,6 +47,7 @@ final class TestMediathek: Mediathek, @unchecked Sendable {
     }
     func medienIds(inAlbum id: String) async -> Set<String> { albenInhalt[id] ?? [] }
     func vorschau(_ id: String, kante: CGFloat) async -> CGImage? { nil }
+    func loesche(_ ids: [String]) async throws { medien.removeAll { ids.contains($0.id) } }
 }
 
 extension WarteschlangeTests {

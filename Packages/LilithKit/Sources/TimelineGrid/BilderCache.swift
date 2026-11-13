@@ -18,6 +18,13 @@ public enum BilderCache {
         ImagePipeline.shared = ImagePipeline(configuration: konfiguration)
     }
 
+    /// Ein Bild aus allen Speichern entfernen (wenn sich hinter derselben Adresse ein neues Bild verbirgt).
+    public static func vergiss(_ anfrage: URLRequest) {
+        let r = ImageRequest(urlRequest: anfrage)
+        ImagePipeline.shared.cache.removeCachedImage(for: r)
+        ImagePipeline.shared.cache.removeCachedData(for: r)
+    }
+
     /// Lädt ein Bild in voller Größe (über denselben Cache), z. B. für die Detailansicht.
     public static func lade(_ anfrage: URLRequest) async throws -> PlattformBild {
         try await ImagePipeline.shared.image(for: ImageRequest(urlRequest: anfrage))

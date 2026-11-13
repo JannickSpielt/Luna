@@ -220,6 +220,19 @@ public final class BackupDienst {
             .flatMap { (try? db.lokaleFotos(konto: konto, zustand: $0)) ?? [] }
     }
 
+    /// Zu Server-Fotos die passenden Fotos auf diesem iPhone (nur bereits gesicherte).
+    public func lokaleIds(fuerServer ids: [String]) async -> [String] {
+        guard let db else { return [] }
+        let konto = self.konto, menge = Set(ids)
+        return await Task.detached { (try? db.lokaleIds(konto: konto, remoteIds: menge)) ?? [] }.value
+    }
+
+    /// Fotos auch aus der iPhone-Mediathek löschen (iOS fragt selbst noch einmal).
+    public func loescheVomGeraet(_ lokaleIds: [String]) async throws {
+        try await mediathek.loesche(lokaleIds)
+        if aktiv { starte() }
+    }
+
     /// Wie `nichtGesicherte()`, aber die Datenbank wird abseits des Haupt-Threads gelesen.
     public func nichtGesicherteImHintergrund() async -> [LokalesFoto] {
         guard aktiv, let db else { return [] }

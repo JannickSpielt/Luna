@@ -24,6 +24,8 @@ struct DetailView: View {
     @State private var zug: CGFloat = 0
     @State private var zugAktiv = false
     @State private var fehler: String?
+    /// Kurze Bestätigung, z. B. „Titelbild gesetzt“.
+    @State private var meldung: String?
     @State private var frageLoeschen = false
     @State private var loescht = false
     @FocusState private var fokus: Bool
@@ -48,6 +50,16 @@ struct DetailView: View {
                 .scaleEffect(1 - min(zug / 1500, 0.2))
             if zeigeBedienung && !zugAktiv {
                 bedienung.transition(.opacity)
+            }
+            if let meldung {
+                Label(meldung, systemImage: "checkmark.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 16)
+                    .frame(height: 40)
+                    .lilithGlas(in: .capsule, klar: true)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 120)
+                    .transition(.opacity.combined(with: .offset(y: -8)))
             }
         }
         // Obere und untere Leiste blenden immer weich ein und aus, auch beim Wegziehen.
@@ -284,6 +296,7 @@ struct DetailView: View {
                 }
                 .accessibilityLabel("Informationen")
                 .keyboardShortcut("i", modifiers: .command)
+                titelbildMenue
                 if loeschen != nil {
                     Button {
                         frageLoeschen = true
@@ -303,6 +316,49 @@ struct DetailView: View {
             .padding(.vertical, 4)
             .lilithGlas(in: .capsule, klar: true)
             .padding(.bottom, 12)
+    }
+
+    /// Im Album oder bei einer Person: dieses Foto als Titelbild verwenden.
+    @ViewBuilder
+    private var titelbildMenue: some View {
+        if let item, item.lokal == nil, let client = store?.client {
+            switch store?.filter {
+            case .album(let album):
+                Button {
+                    setzeTitelbild { try await client.setzeAlbumTitelbild(album: album, foto: item.id) }
+                } label: {
+                    Image(systemName: "photo.badge.checkmark").frame(width: 52, height: 44)
+                }
+                .accessibilityLabel("Als Albumtitelbild verwenden")
+            case .person(let person):
+                Button {
+                    setzeTitelbild {
+                        try await client.setzePersonBild(person: person, foto: item.id)
+                        BilderCache.vergiss(client.personBildAnfrage(person))
+                    }
+                } label: {
+                    Image(systemName: "person.crop.circle.badge.checkmark").frame(width: 52, height: 44)
+                }
+                .accessibilityLabel("Als Bild für diese Person verwenden")
+            default:
+                EmptyView()
+            }
+        }
+    }
+
+    private func setzeTitelbild(_ tun: @escaping () async throws -> Void) {
+        Task {
+            do {
+                try await tun()
+                kontext.melde(von: nil)
+                withAnimation(.smooth) { meldung = "Titelbild gesetzt" }
+                try? await Task.sleep(for: .seconds(2))
+                withAnimation(.smooth) { meldung = nil }
+            } catch {
+                fehler = error.localizedDescription
+                kontext.pruefe(error)
+            }
+        }
     }
 
     @ViewBuilder

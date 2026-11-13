@@ -41,6 +41,8 @@ struct TimelineInhalt: View {
     @State private var auswahlStand = 0
     @State private var arbeitet = false
     @State private var frageLoeschen = false
+    /// Nach dem Löschen auf dem Server: dieselben Fotos auf dem iPhone (zum Nachfragen).
+    @State private var geraetLoeschen: [String] = []
     @State private var zeigeAlbumWahl = false
     /// Freigabe-Link für Album oder Auswahl.
     @State private var freigabe: FreigabeZiel?
@@ -176,11 +178,29 @@ struct TimelineInhalt: View {
             .confirmationDialog(loeschFrage, isPresented: $frageLoeschen, titleVisibility: .visible) {
                 Button(loeschtEndgueltig ? "Endgültig löschen" : "In den Papierkorb", role: .destructive) {
                     let endgueltig = loeschtEndgueltig
-                    fuehreAus { try await $0.loesche(assetIds: $1, endgueltig: endgueltig) }
+                    let ids = auswahl
+                    fuehreAus(danach: { fragAuchGeraet(ids) }) { try await $0.loesche(assetIds: $1, endgueltig: endgueltig) }
                 }
             } message: {
                 Text(loeschtEndgueltig ? "Das lässt sich nicht rückgängig machen."
                                        : "Du kannst sie im Papierkorb wiederherstellen.")
+            }
+            .confirmationDialog(geraetLoeschen.count == 1 ? "Auch vom iPhone löschen?" : "\(geraetLoeschen.count) Fotos auch vom iPhone löschen?",
+                                isPresented: Binding(get: { !geraetLoeschen.isEmpty }, set: { if !$0 { geraetLoeschen = [] } }),
+                                titleVisibility: .visible) {
+                Button("Vom iPhone löschen", role: .destructive) {
+                    let ids = geraetLoeschen
+                    geraetLoeschen = []
+                    Task {
+                        do { try await kontext.backup?.loescheVomGeraet(ids) } catch {
+                            // Abgebrochen in der iOS-Abfrage: kein Fehler.
+                            if (error as NSError).code != 3072 { fehler = error.localizedDescription }
+                        }
+                    }
+                }
+                Button("Auf dem iPhone behalten", role: .cancel) { geraetLoeschen = [] }
+            } message: {
+                Text("Diese Fotos liegen auch in der Fotos-App auf diesem iPhone. iOS fragt danach noch einmal nach; dort landen sie unter „Zuletzt gelöscht“.")
             }
             .sheet(item: $freigabe) { FreigabeBlatt(ziel: $0) }
             .sheet(isPresented: $zeigeAlbumWahl) {
@@ -516,7 +536,7 @@ struct TimelineInhalt: View {
     }
 
     /// Führt eine Aktion für die ausgewählten Fotos aus und lädt danach neu.
-    private func fuehreAus(_ aktion: @escaping (ImmichClient, [String]) async throws -> Void) {
+    private func fuehreAus(danach: (() -> Void)? = nil, _ aktion: @escaping (ImmichClient, [String]) async throws -> Void) {
         guard let client = kontext.client, !auswahl.isEmpty, !arbeitet else { return }
         let ids = auswahl
         arbeitet = true
@@ -524,6 +544,7 @@ struct TimelineInhalt: View {
             defer { arbeitet = false }
             do {
                 try await aktion(client, ids)
+                danach?()
                 beendeAuswahl()
                 await store?.laden()
                 kontext.melde(von: store)
@@ -534,6 +555,19 @@ struct TimelineInhalt: View {
         }
     }
 
+    /// Liegen gelöschte Server-Fotos auch auf dem iPhone, nachfragen, ob sie dort auch weg sollen.
+    private func fragAuchGeraet(_ serverIds: [String]) {
+        #if os(iOS)
+        guard let backup = kontext.backup, !serverIds.isEmpty else { return }
+        Task {
+            // Kurz warten, bis der erste Dialog weg ist.
+            try? await Task.sleep(for: .milliseconds(600))
+            let lokal = await backup.lokaleIds(fuerServer: serverIds.filter { !$0.hasPrefix(GridItem.lokalPraefix) })
+            if !lokal.isEmpty { geraetLoeschen = lokal }
+        }
+        #endif
+    }
+
     /// Löschen aus der Detailansicht. Gibt zurück, ob es geklappt hat.
     private func loescheEinzeln(_ id: String) async -> Bool {
         guard let client = kontext.client else { return false }
@@ -541,6 +575,7 @@ struct TimelineInhalt: View {
             try await client.loesche(assetIds: [id], endgueltig: !kontext.papierkorbAktiv)
             await store?.laden()
             kontext.melde(von: store)
+            fragAuchGeraet([id])
             return true
         } catch {
             fehler = error.localizedDescription

@@ -25,6 +25,7 @@ filter:
     - updateAsset
     # Alben
     - getAllAlbums
+    - updateAlbumInfo
     - createAlbum
     - addAssetsToAlbum
     # Mehrere Fotos
@@ -37,6 +38,7 @@ filter:
     - getSearchSuggestions
     # Personen
     - getAllPeople
+    - updatePerson
     # Karte
     - getMapMarkers
     # Doppelte Fotos

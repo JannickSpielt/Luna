@@ -76,4 +76,6 @@ public protocol Mediathek: Sendable {
     func medienIds(inAlbum id: String) async -> Set<String>
     /// Kleines Vorschaubild vom Gerät.
     func vorschau(_ id: String, kante: CGFloat) async -> CGImage?
+    /// Fotos aus der Mediathek löschen. iOS fragt dabei selbst noch einmal nach.
+    func loesche(_ ids: [String]) async throws
 }
