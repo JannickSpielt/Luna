@@ -161,6 +161,27 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /server/version`.
     /// - Remark: Generated from `#/paths//server/version/get(getServerVersion)`.
     func getServerVersion(_ input: Operations.GetServerVersion.Input) async throws -> Operations.GetServerVersion.Output
+    /// Retrieve all shared links
+    ///
+    /// Retrieve a list of all shared links.
+    ///
+    /// - Remark: HTTP `GET /shared-links`.
+    /// - Remark: Generated from `#/paths//shared-links/get(getAllSharedLinks)`.
+    func getAllSharedLinks(_ input: Operations.GetAllSharedLinks.Input) async throws -> Operations.GetAllSharedLinks.Output
+    /// Create a shared link
+    ///
+    /// Create a new shared link.
+    ///
+    /// - Remark: HTTP `POST /shared-links`.
+    /// - Remark: Generated from `#/paths//shared-links/post(createSharedLink)`.
+    func createSharedLink(_ input: Operations.CreateSharedLink.Input) async throws -> Operations.CreateSharedLink.Output
+    /// Delete a shared link
+    ///
+    /// Delete a specific shared link by its ID.
+    ///
+    /// - Remark: HTTP `DELETE /shared-links/{id}`.
+    /// - Remark: Generated from `#/paths//shared-links/{id}/delete(removeSharedLink)`.
+    func removeSharedLink(_ input: Operations.RemoveSharedLink.Input) async throws -> Operations.RemoveSharedLink.Output
     /// Get time bucket
     ///
     /// Retrieve a string of all asset ids in a given time bucket.
@@ -484,6 +505,45 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//server/version/get(getServerVersion)`.
     public func getServerVersion(headers: Operations.GetServerVersion.Input.Headers = .init()) async throws -> Operations.GetServerVersion.Output {
         try await getServerVersion(Operations.GetServerVersion.Input(headers: headers))
+    }
+    /// Retrieve all shared links
+    ///
+    /// Retrieve a list of all shared links.
+    ///
+    /// - Remark: HTTP `GET /shared-links`.
+    /// - Remark: Generated from `#/paths//shared-links/get(getAllSharedLinks)`.
+    public func getAllSharedLinks(
+        query: Operations.GetAllSharedLinks.Input.Query = .init(),
+        headers: Operations.GetAllSharedLinks.Input.Headers = .init()
+    ) async throws -> Operations.GetAllSharedLinks.Output {
+        try await getAllSharedLinks(Operations.GetAllSharedLinks.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Create a shared link
+    ///
+    /// Create a new shared link.
+    ///
+    /// - Remark: HTTP `POST /shared-links`.
+    /// - Remark: Generated from `#/paths//shared-links/post(createSharedLink)`.
+    public func createSharedLink(
+        headers: Operations.CreateSharedLink.Input.Headers = .init(),
+        body: Operations.CreateSharedLink.Input.Body
+    ) async throws -> Operations.CreateSharedLink.Output {
+        try await createSharedLink(Operations.CreateSharedLink.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Delete a shared link
+    ///
+    /// Delete a specific shared link by its ID.
+    ///
+    /// - Remark: HTTP `DELETE /shared-links/{id}`.
+    /// - Remark: Generated from `#/paths//shared-links/{id}/delete(removeSharedLink)`.
+    public func removeSharedLink(path: Operations.RemoveSharedLink.Input.Path) async throws -> Operations.RemoveSharedLink.Output {
+        try await removeSharedLink(Operations.RemoveSharedLink.Input(path: path))
     }
     /// Get time bucket
     ///
@@ -4129,6 +4189,221 @@ public enum Components {
                 case patch
                 case prerelease
             }
+        }
+        /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto`.
+        public struct SharedLinkCreateDto: Codable, Hashable, Sendable {
+            /// Album ID (for album sharing)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/albumId`.
+            public var albumId: Swift.String?
+            /// Allow downloads
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/allowDownload`.
+            public var allowDownload: Swift.Bool?
+            /// Allow uploads
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/allowUpload`.
+            public var allowUpload: Swift.Bool?
+            /// Asset IDs (for individual assets)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/assetIds`.
+            public var assetIds: [Swift.String]?
+            /// Link description
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/description`.
+            public var description: Swift.String?
+            /// Expiration date
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/expiresAt`.
+            public var expiresAt: Foundation.Date?
+            /// Link password
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/password`.
+            public var password: Swift.String?
+            /// Show metadata
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/showMetadata`.
+            public var showMetadata: Swift.Bool?
+            /// Custom URL slug
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/slug`.
+            public var slug: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SharedLinkCreateDto/type`.
+            public var _type: Components.Schemas.SharedLinkType
+            /// Creates a new `SharedLinkCreateDto`.
+            ///
+            /// - Parameters:
+            ///   - albumId: Album ID (for album sharing)
+            ///   - allowDownload: Allow downloads
+            ///   - allowUpload: Allow uploads
+            ///   - assetIds: Asset IDs (for individual assets)
+            ///   - description: Link description
+            ///   - expiresAt: Expiration date
+            ///   - password: Link password
+            ///   - showMetadata: Show metadata
+            ///   - slug: Custom URL slug
+            ///   - _type:
+            public init(
+                albumId: Swift.String? = nil,
+                allowDownload: Swift.Bool? = nil,
+                allowUpload: Swift.Bool? = nil,
+                assetIds: [Swift.String]? = nil,
+                description: Swift.String? = nil,
+                expiresAt: Foundation.Date? = nil,
+                password: Swift.String? = nil,
+                showMetadata: Swift.Bool? = nil,
+                slug: Swift.String? = nil,
+                _type: Components.Schemas.SharedLinkType
+            ) {
+                self.albumId = albumId
+                self.allowDownload = allowDownload
+                self.allowUpload = allowUpload
+                self.assetIds = assetIds
+                self.description = description
+                self.expiresAt = expiresAt
+                self.password = password
+                self.showMetadata = showMetadata
+                self.slug = slug
+                self._type = _type
+            }
+            public enum CodingKeys: String, CodingKey {
+                case albumId
+                case allowDownload
+                case allowUpload
+                case assetIds
+                case description
+                case expiresAt
+                case password
+                case showMetadata
+                case slug
+                case _type = "type"
+            }
+        }
+        /// Shared link response
+        ///
+        /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto`.
+        public struct SharedLinkResponseDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/album`.
+            public var album: Components.Schemas.AlbumResponseDto?
+            /// Allow downloads
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/allowDownload`.
+            public var allowDownload: Swift.Bool
+            /// Allow uploads
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/allowUpload`.
+            public var allowUpload: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/assets`.
+            public var assets: [Components.Schemas.AssetResponseDto]
+            /// Creation date
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Link description
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/description`.
+            public var description: Swift.String?
+            /// Expiration date
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/expiresAt`.
+            public var expiresAt: Foundation.Date?
+            /// Shared link ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/id`.
+            public var id: Swift.String
+            /// Encryption key (base64url)
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/key`.
+            public var key: Swift.String
+            /// Has password
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/password`.
+            public var password: Swift.String?
+            /// Show metadata
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/showMetadata`.
+            public var showMetadata: Swift.Bool
+            /// Custom URL slug
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/slug`.
+            public var slug: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/type`.
+            public var _type: Components.Schemas.SharedLinkType
+            /// Owner user ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/SharedLinkResponseDto/userId`.
+            public var userId: Swift.String
+            /// Creates a new `SharedLinkResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - album:
+            ///   - allowDownload: Allow downloads
+            ///   - allowUpload: Allow uploads
+            ///   - assets:
+            ///   - createdAt: Creation date
+            ///   - description: Link description
+            ///   - expiresAt: Expiration date
+            ///   - id: Shared link ID
+            ///   - key: Encryption key (base64url)
+            ///   - password: Has password
+            ///   - showMetadata: Show metadata
+            ///   - slug: Custom URL slug
+            ///   - _type:
+            ///   - userId: Owner user ID
+            public init(
+                album: Components.Schemas.AlbumResponseDto? = nil,
+                allowDownload: Swift.Bool,
+                allowUpload: Swift.Bool,
+                assets: [Components.Schemas.AssetResponseDto],
+                createdAt: Foundation.Date,
+                description: Swift.String? = nil,
+                expiresAt: Foundation.Date? = nil,
+                id: Swift.String,
+                key: Swift.String,
+                password: Swift.String? = nil,
+                showMetadata: Swift.Bool,
+                slug: Swift.String? = nil,
+                _type: Components.Schemas.SharedLinkType,
+                userId: Swift.String
+            ) {
+                self.album = album
+                self.allowDownload = allowDownload
+                self.allowUpload = allowUpload
+                self.assets = assets
+                self.createdAt = createdAt
+                self.description = description
+                self.expiresAt = expiresAt
+                self.id = id
+                self.key = key
+                self.password = password
+                self.showMetadata = showMetadata
+                self.slug = slug
+                self._type = _type
+                self.userId = userId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case album
+                case allowDownload
+                case allowUpload
+                case assets
+                case createdAt
+                case description
+                case expiresAt
+                case id
+                case key
+                case password
+                case showMetadata
+                case slug
+                case _type = "type"
+                case userId
+            }
+        }
+        /// Shared link type
+        ///
+        /// - Remark: Generated from `#/components/schemas/SharedLinkType`.
+        @frozen public enum SharedLinkType: String, Codable, Hashable, Sendable, CaseIterable {
+            case album = "ALBUM"
+            case individual = "INDIVIDUAL"
         }
         /// - Remark: Generated from `#/components/schemas/SmartSearchDto`.
         public struct SmartSearchDto: Codable, Hashable, Sendable {
@@ -7939,6 +8214,342 @@ public enum Operations {
                     .json
                 ]
             }
+        }
+    }
+    /// Retrieve all shared links
+    ///
+    /// Retrieve a list of all shared links.
+    ///
+    /// - Remark: HTTP `GET /shared-links`.
+    /// - Remark: Generated from `#/paths//shared-links/get(getAllSharedLinks)`.
+    public enum GetAllSharedLinks {
+        public static let id: Swift.String = "getAllSharedLinks"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/shared-links/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Filter by album ID
+                ///
+                /// - Remark: Generated from `#/paths/shared-links/GET/query/albumId`.
+                public var albumId: Swift.String?
+                /// Filter by shared link ID
+                ///
+                /// - Remark: Generated from `#/paths/shared-links/GET/query/id`.
+                public var id: Swift.String?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - albumId: Filter by album ID
+                ///   - id: Filter by shared link ID
+                public init(
+                    albumId: Swift.String? = nil,
+                    id: Swift.String? = nil
+                ) {
+                    self.albumId = albumId
+                    self.id = id
+                }
+            }
+            public var query: Operations.GetAllSharedLinks.Input.Query
+            /// - Remark: Generated from `#/paths/shared-links/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAllSharedLinks.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetAllSharedLinks.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetAllSharedLinks.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetAllSharedLinks.Input.Query = .init(),
+                headers: Operations.GetAllSharedLinks.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/shared-links/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/shared-links/GET/responses/200/content/application\/json`.
+                    case json([Components.Schemas.SharedLinkResponseDto])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Components.Schemas.SharedLinkResponseDto] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetAllSharedLinks.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetAllSharedLinks.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//shared-links/get(getAllSharedLinks)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetAllSharedLinks.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetAllSharedLinks.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Create a shared link
+    ///
+    /// Create a new shared link.
+    ///
+    /// - Remark: HTTP `POST /shared-links`.
+    /// - Remark: Generated from `#/paths//shared-links/post(createSharedLink)`.
+    public enum CreateSharedLink {
+        public static let id: Swift.String = "createSharedLink"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/shared-links/POST/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateSharedLink.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.CreateSharedLink.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.CreateSharedLink.Input.Headers
+            /// - Remark: Generated from `#/paths/shared-links/POST/requestBody`.
+            @frozen public enum Body: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/shared-links/POST/requestBody/content/application\/json`.
+                case json(Components.Schemas.SharedLinkCreateDto)
+            }
+            public var body: Operations.CreateSharedLink.Input.Body
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - headers:
+            ///   - body:
+            public init(
+                headers: Operations.CreateSharedLink.Input.Headers = .init(),
+                body: Operations.CreateSharedLink.Input.Body
+            ) {
+                self.headers = headers
+                self.body = body
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Created: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/shared-links/POST/responses/201/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/shared-links/POST/responses/201/content/application\/json`.
+                    case json(Components.Schemas.SharedLinkResponseDto)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.SharedLinkResponseDto {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.CreateSharedLink.Output.Created.Body
+                /// Creates a new `Created`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.CreateSharedLink.Output.Created.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//shared-links/post(createSharedLink)/responses/201`.
+            ///
+            /// HTTP response code: `201 created`.
+            case created(Operations.CreateSharedLink.Output.Created)
+            /// The associated value of the enum case if `self` is `.created`.
+            ///
+            /// - Throws: An error if `self` is not `.created`.
+            /// - SeeAlso: `.created`.
+            public var created: Operations.CreateSharedLink.Output.Created {
+                get throws {
+                    switch self {
+                    case let .created(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "created",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Delete a shared link
+    ///
+    /// Delete a specific shared link by its ID.
+    ///
+    /// - Remark: HTTP `DELETE /shared-links/{id}`.
+    /// - Remark: Generated from `#/paths//shared-links/{id}/delete(removeSharedLink)`.
+    public enum RemoveSharedLink {
+        public static let id: Swift.String = "removeSharedLink"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/shared-links/{id}/DELETE/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/shared-links/{id}/DELETE/path/id`.
+                public var id: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - id:
+                public init(id: Swift.String) {
+                    self.id = id
+                }
+            }
+            public var path: Operations.RemoveSharedLink.Input.Path
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            public init(path: Operations.RemoveSharedLink.Input.Path) {
+                self.path = path
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct NoContent: Sendable, Hashable {
+                /// Creates a new `NoContent`.
+                public init() {}
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//shared-links/{id}/delete(removeSharedLink)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            case noContent(Operations.RemoveSharedLink.Output.NoContent)
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//shared-links/{id}/delete(removeSharedLink)/responses/204`.
+            ///
+            /// HTTP response code: `204 noContent`.
+            public static var noContent: Self {
+                .noContent(.init())
+            }
+            /// The associated value of the enum case if `self` is `.noContent`.
+            ///
+            /// - Throws: An error if `self` is not `.noContent`.
+            /// - SeeAlso: `.noContent`.
+            public var noContent: Operations.RemoveSharedLink.Output.NoContent {
+                get throws {
+                    switch self {
+                    case let .noContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "noContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
         }
     }
     /// Get time bucket

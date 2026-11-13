@@ -44,6 +44,8 @@ struct TimelineInhalt: View {
     @State private var arbeitet = false
     @State private var frageLoeschen = false
     @State private var zeigeAlbumWahl = false
+    /// Freigabe-Link für Album oder Auswahl.
+    @State private var freigabe: FreigabeZiel?
     @State private var fehler: String?
 
 
@@ -185,6 +187,7 @@ struct TimelineInhalt: View {
                 Text(loeschtEndgueltig ? "Das lässt sich nicht rückgängig machen."
                                        : "Du kannst sie im Papierkorb wiederherstellen.")
             }
+            .sheet(item: $freigabe) { FreigabeBlatt(ziel: $0) }
             .sheet(isPresented: $zeigeAlbumWahl) {
                 AlbumWahl(anzahl: auswahl.count) { ziel in
                     switch ziel {
@@ -363,6 +366,12 @@ struct TimelineInhalt: View {
                 Button("Zum ältesten Monat", systemImage: "arrow.down.to.line") {
                     sprung = SprungAnfrage(section: max(quelle.sections.count - 1, 0))
                 }
+                if case .album(let id) = filter, kontext.client != nil {
+                    Divider()
+                    Button("Link zum Album teilen …", systemImage: "link") {
+                        freigabe = FreigabeZiel(art: .album(id: id, name: titel))
+                    }
+                }
                 if let store {
                     Divider()
                     Button("Neu laden", systemImage: "arrow.clockwise") { Task { await store.laden() } }
@@ -398,6 +407,7 @@ struct TimelineInhalt: View {
                     aktion("Archivieren", "archivebox") { fuehreAus { try await $0.aendere(assetIds: $1, archiviert: true) } }
                 }
                 aktion("Zu Album", "rectangle.stack.badge.plus") { zeigeAlbumWahl = true }
+                aktion("Link", "link") { freigabe = FreigabeZiel(art: .fotos(auswahl.filter { !$0.hasPrefix(GridItem.lokalPraefix) })) }
                 aktion("Löschen", "trash", rot: true, taste: KeyboardShortcut(.delete, modifiers: [])) { frageLoeschen = true }
             }
             if arbeitet { ProgressView().padding(.horizontal, 10) }

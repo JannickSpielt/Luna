@@ -85,6 +85,14 @@ struct KontoView: View {
                 }
                 #endif
 
+                Section {
+                    NavigationLink {
+                        FreigabenListe(client: client)
+                    } label: {
+                        Label { Text("Geteilte Links") } icon: { Image(systemName: "link").foregroundStyle(.secondary) }
+                    }
+                }
+
                 UeberLunaAbschnitt()
 
                 Section {

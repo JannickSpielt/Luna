@@ -42,6 +42,10 @@ filter:
     # Doppelte Fotos
     - getAssetDuplicates
     - resolveDuplicates
+    # Teilen-Links
+    - createSharedLink
+    - getAllSharedLinks
+    - removeSharedLink
     # Ordner
     - getUniqueOriginalPaths
     - getAssetsByOriginalPath

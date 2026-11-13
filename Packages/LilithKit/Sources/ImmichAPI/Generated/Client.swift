@@ -1615,6 +1615,193 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Retrieve all shared links
+    ///
+    /// Retrieve a list of all shared links.
+    ///
+    /// - Remark: HTTP `GET /shared-links`.
+    /// - Remark: Generated from `#/paths//shared-links/get(getAllSharedLinks)`.
+    public func getAllSharedLinks(_ input: Operations.GetAllSharedLinks.Input) async throws -> Operations.GetAllSharedLinks.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetAllSharedLinks.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/shared-links",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "albumId",
+                    value: input.query.albumId
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "id",
+                    value: input.query.id
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetAllSharedLinks.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            [Components.Schemas.SharedLinkResponseDto].self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Create a shared link
+    ///
+    /// Create a new shared link.
+    ///
+    /// - Remark: HTTP `POST /shared-links`.
+    /// - Remark: Generated from `#/paths//shared-links/post(createSharedLink)`.
+    public func createSharedLink(_ input: Operations.CreateSharedLink.Input) async throws -> Operations.CreateSharedLink.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.CreateSharedLink.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/shared-links",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 201:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.CreateSharedLink.Output.Created.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.SharedLinkResponseDto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .created(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Delete a shared link
+    ///
+    /// Delete a specific shared link by its ID.
+    ///
+    /// - Remark: HTTP `DELETE /shared-links/{id}`.
+    /// - Remark: Generated from `#/paths//shared-links/{id}/delete(removeSharedLink)`.
+    public func removeSharedLink(_ input: Operations.RemoveSharedLink.Input) async throws -> Operations.RemoveSharedLink.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.RemoveSharedLink.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/shared-links/{}",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Get time bucket
     ///
     /// Retrieve a string of all asset ids in a given time bucket.

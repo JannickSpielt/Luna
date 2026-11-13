@@ -235,3 +235,9 @@ Plan: `docs/LADEN-PLAN.md`.
 
 - Ganz oben in den Sammlungen: je früherem Jahr eine Karte mit den Fotos vom heutigen Kalendertag („Vor einem Jahr“, „Vor 5 Jahren“). Gibt es keine, bleibt der Abschnitt weg.
 - Bewusst über die Suche (`takenAfter`/`takenBefore`, bis 20 Jahre zurück, parallel) statt über Immichs „Erinnerungen“: Die hängen von einem nächtlichen Serverauftrag ab. Wird einmal pro Tag geladen. Zum Prüfen: `-LilithHeute 2026-11-21`.
+
+## 21. Teilen-Links (13.11.2026)
+
+- Immich-Freigabelinks (`createSharedLink`): für ein Album (Ansicht-Menü → „Link zum Album teilen …“) oder ausgewählte Fotos (Auswahl-Leiste → „Link“; nur Fotos vom Server). Optionen: gültig 1 Tag / 7 Tage / 30 Tage / nie, Herunterladen erlauben, Passwort. Danach Link senden oder kopieren.
+- Link-Adresse: `<Server>/share/<key>` bzw. `/s/<slug>`.
+- Konto → „Geteilte Links“: alle Links, senden, löschen (Wischen oder Kontextmenü). Löschen entfernt nur den Link, nicht die Fotos.
