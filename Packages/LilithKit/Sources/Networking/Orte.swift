@@ -3,7 +3,7 @@ import ImmichAPI
 import OpenAPIRuntime
 
 /// Ein Ort mit Fotos: Stadt, Land, Anzahl, Mittelpunkt und ein Foto als Titelbild.
-public struct Ort: Identifiable, Hashable, Sendable {
+public struct Ort: Identifiable, Hashable, Sendable, Codable {
     public let stadt: String
     public let land: String?
     public let anzahl: Int

@@ -212,6 +212,16 @@ public final class BackupDienst {
             .flatMap { (try? db.lokaleFotos(konto: konto, zustand: $0)) ?? [] }
     }
 
+    /// Wie `nichtGesicherte()`, aber die Datenbank wird abseits des Haupt-Threads gelesen.
+    public func nichtGesicherteImHintergrund() async -> [LokalesFoto] {
+        guard aktiv, let db else { return [] }
+        let konto = self.konto
+        return await Task.detached {
+            [LokalesFoto.Zustand.bereit, .eingereiht, .fehler, .uebersprungen]
+                .flatMap { (try? db.lokaleFotos(konto: konto, zustand: $0)) ?? [] }
+        }.value
+    }
+
     /// „Jetzt sichern“ für ein einzelnes Foto: wieder einreihen und einen Durchgang starten.
     public func sichereJetzt(_ lokaleId: String) {
         guard let db else { return }

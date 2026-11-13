@@ -44,6 +44,19 @@ final class BibliothekKontext {
         stand += 1
     }
 
+    @ObservationIgnored private var buendel: Task<Void, Never>?
+
+    /// Für Meldungen von Backup und Uploads: höchstens alle 2 Sekunden ein Neuladen,
+    /// statt bei jedem einzelnen Ereignis alles neu zu holen.
+    func meldeGebuendelt() {
+        buendel?.cancel()
+        buendel = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            self?.melde(von: nil)
+        }
+    }
+
     func pruefe(_ error: any Error) {
         if case ImmichError.sitzungAbgelaufen = error { onSitzungAbgelaufen?() }
     }

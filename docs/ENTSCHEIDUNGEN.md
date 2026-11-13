@@ -215,3 +215,13 @@ Plan: `docs/SAMMLUNGEN-PLAN.md`.
 - **Ring ums Profilbild** nur, solange gesichert wird oder etwas fehlt.
 - **Video:** AirPlay oben rechts neben der Datums-Pille, kein Bild-in-Bild-Knopf mehr; stattdessen automatisch beim Verlassen der App (Schalter unter Konto → Videos). Beim Spulen sind Blättern und Wegziehen gesperrt, damit die Leiste bleibt. Weichere Übergänge.
 - **Auswahl in Alben:** „Zurück“ und damit das Zurückwischen sind aus, solange man auswählt.
+
+## 18. Laden: schneller und gleichmäßiger (13.11.2026)
+
+Plan: `docs/LADEN-PLAN.md`.
+
+- **Hauptursache für „mal schnell, mal langsam“:** Backup- und Upload-Meldungen haben Timeline und Sammlungen jedes Mal komplett neu geladen. Jetzt werden sie gebündelt (höchstens alle 2 s), und `TimelineStore.laden()` behält jeden Monat, dessen Schlüssel und Anzahl gleich sind (Server-Inhalt je Monat wird gemerkt, lokale Fotos neu eingemischt). Ist nichts geändert, passiert nichts.
+- **Kleinere Bremsen:** 120 ms Wartezeit nur noch beim Scrollen (das Raster meldet `scrollt`), fehlgeschlagene Monate werden nach 0,5 s und 2 s erneut geladen, Datum wird von Hand gelesen (statt drei Formatierern pro Foto), Datenbank und Sortieren der Gerätefotos laufen abseits des Haupt-Threads, Nuke speichert verkleinerte Bilder auch auf der Festplatte (`dataCachePolicy = .automatic`).
+- **Sofortstart:** Statt der im Plan genannten Datenbank-Tabellen eine JSON-Datei im Caches-Ordner (einfacher, gleiche Wirkung): Monatsliste und Inhalt der 3 neuesten Monate. Beim Start sofort zeigen, danach gespeicherte Monate einmal frisch holen. Beim Abmelden wird alles gelöscht.
+- **Sammlungen** werden genauso gespeichert und sofort gezeigt; neu geladen wird erst nach 2 Minuten oder bei einer Änderung (Ziehen zum Aktualisieren erzwingt es).
+- **Messen:** `LadeMessung` schreibt Signposts und Zeilen ins Log (Subsystem `app.lilith`, Kategorie `Laden`).

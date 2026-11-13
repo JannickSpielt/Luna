@@ -3,7 +3,7 @@ import ImmichAPI
 import OpenAPIRuntime
 
 /// Ein Monat der Timeline mit der Anzahl seiner Fotos und Videos (Immich-„Time Bucket“).
-public struct TimelineMonat: Hashable, Sendable {
+public struct TimelineMonat: Hashable, Sendable, Codable {
     /// Schlüssel, wie ihn der Server liefert, z. B. „2026-10-01“. Wird unverändert zum Nachladen genutzt.
     public let schluessel: String
     public let anzahl: Int
@@ -22,7 +22,7 @@ public struct TimelineMonat: Hashable, Sendable {
 }
 
 /// Ein Foto oder Video in der Timeline, so knapp wie möglich.
-public struct TimelineAsset: Hashable, Sendable {
+public struct TimelineAsset: Hashable, Sendable, Codable {
     public let id: String
     public let istBild: Bool
     /// Dauer in Millisekunden bei Videos, sonst `nil`.
@@ -118,23 +118,45 @@ extension ImmichClient {
     }
 
     /// ISO-Datum mit oder ohne Sekundenbruchteile.
+    // Einmal angelegt statt pro Foto (Formatierer sind teuer). Laut Apple sind sie threadsicher.
+    nonisolated(unsafe) private static let isoMit: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f
+    }()
+    nonisolated(unsafe) private static let isoOhne: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime]; return f
+    }()
+
     static func leseDatum(_ text: String) -> Date? {
+        // Häufigster Fall (Timeline): Ortszeit ohne Zeitzone, „2026-11-12T10:01:18.975“. Von Hand lesen, das ist
+        // viel schneller als ein Formatierer; als Ortszeit des Geräts.
+        if let d = leseOrtszeit(text) { return d }
         // Immich schreibt je nach Version „…Z“ oder „…+00:00“, mit oder ohne Sekundenbruchteile.
-        let mit = ISO8601DateFormatter()
-        mit.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = mit.date(from: text) { return d }
-        let ohne = ISO8601DateFormatter()
-        ohne.formatOptions = [.withInternetDateTime]
-        if let d = ohne.date(from: text) { return d }
-        // Die Timeline liefert die Ortszeit ohne Zeitzone („2026-11-12T10:01:18.975“): als Ortszeit des Geräts lesen.
-        let teile = text.split(separator: ".", maxSplits: 1)
-        let basis = DateFormatter()
-        basis.locale = Locale(identifier: "en_US_POSIX")
-        basis.timeZone = .current
-        basis.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        guard let sekunden = teile.first.flatMap({ basis.date(from: String($0)) }) else { return nil }
-        let bruch = teile.count > 1 ? Double("0." + teile[1].prefix { $0.isNumber }) ?? 0 : 0
-        return sekunden.addingTimeInterval(bruch)
+        return isoMit.date(from: text) ?? isoOhne.date(from: text)
+    }
+
+    /// „yyyy-MM-ddTHH:mm:ss“ mit optionalen Sekundenbruchteilen und ohne Zeitzone, sonst `nil`.
+    static func leseOrtszeit(_ text: String) -> Date? {
+        let z = Array(text.utf8)
+        guard z.count >= 19, z[4] == 45, z[7] == 45, z[10] == 84, z[13] == 58, z[16] == 58 else { return nil }
+        func zahl(_ von: Int, _ bis: Int) -> Int? {
+            var w = 0
+            for i in von..<bis { let c = z[i]; guard c >= 48, c <= 57 else { return nil }; w = w * 10 + Int(c - 48) }
+            return w
+        }
+        var bruch = 0.0
+        if z.count > 19 {
+            guard z[19] == 46 else { return nil }   // Zeitzone dahinter: nicht dieser Fall
+            var faktor = 0.1
+            for c in z[20...] {
+                guard c >= 48, c <= 57 else { return nil }
+                bruch += Double(c - 48) * faktor; faktor /= 10
+            }
+        }
+        guard let jahr = zahl(0, 4), let monat = zahl(5, 7), let tag = zahl(8, 10),
+              let stunde = zahl(11, 13), let minute = zahl(14, 16), let sekunde = zahl(17, 19) else { return nil }
+        var k = DateComponents()
+        k.year = jahr; k.month = monat; k.day = tag; k.hour = stunde; k.minute = minute; k.second = sekunde
+        return Calendar.current.date(from: k)?.addingTimeInterval(bruch)
     }
 
     static func zusammensetzen(_ d: Components.Schemas.TimeBucketAssetResponseDto, mitPapierkorb: Bool = false) -> [TimelineAsset] {

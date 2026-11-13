@@ -322,6 +322,7 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
 
     public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         nutzerHatGescrollt = true
+        quelle.scrollt(true)
     }
 
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -435,9 +436,15 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
     }
 
     /// Beim Stehenbleiben: Monate, deren Laden beim schnellen Überfliegen abgebrochen wurde, jetzt laden.
-    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) { ladeFehlende() }
+    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        quelle.scrollt(false)
+        ladeFehlende()
+    }
     public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
-        if !decelerate { ladeFehlende() }
+        if !decelerate {
+            quelle.scrollt(false)
+            ladeFehlende()
+        }
     }
 
     private func ladeFehlende() {

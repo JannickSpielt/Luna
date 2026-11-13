@@ -22,7 +22,7 @@ public enum TimelineFilter: Hashable, Sendable {
 }
 
 /// Ein Album.
-public struct Album: Identifiable, Hashable, Sendable {
+public struct Album: Identifiable, Hashable, Sendable, Codable {
     public let id: String
     public var name: String
     public var anzahl: Int

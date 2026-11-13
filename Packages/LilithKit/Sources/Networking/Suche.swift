@@ -75,7 +75,7 @@ extension ImmichClient {
 }
 
 /// Ein Tag, an dem Fotos auf den Server kamen.
-public struct HochladeTag: Hashable, Sendable, Identifiable {
+public struct HochladeTag: Hashable, Sendable, Identifiable, Codable {
     public let tag: Date
     public let anzahl: Int
     public let titelBildId: String

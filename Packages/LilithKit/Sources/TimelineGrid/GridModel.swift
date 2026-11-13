@@ -97,11 +97,14 @@ public protocol TimelineQuelle: AnyObject {
     func lokalesBild(fuer item: GridItem, pixel: CGFloat) async -> CGImage?
     /// Aufnahmedatum eines Eintrags, `nil` wenn unbekannt oder noch nicht geladen.
     func datum(section: Int, index: Int) -> Date?
+    /// Das Grid meldet, ob gerade gescrollt wird. Nur dann lohnt kurzes Warten vor dem Laden eines Monats.
+    func scrollt(_ jetzt: Bool)
 }
 
 extension TimelineQuelle {
     public func lokalesBild(fuer item: GridItem, pixel: CGFloat) async -> CGImage? { nil }
     public func datum(section: Int, index: Int) -> Date? { nil }
+    public func scrollt(_ jetzt: Bool) {}
 }
 
 extension TimelineQuelle {

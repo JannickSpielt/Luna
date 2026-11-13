@@ -11,6 +11,9 @@ public enum BilderCache {
         var konfiguration = ImagePipeline.Configuration.withDataCache(
             name: "app.lilith.vorschau", sizeLimit: speicherLimitMB * 1024 * 1024)
         konfiguration.isProgressiveDecodingEnabled = false
+        // Verkleinerte Kachelbilder auch auf der Festplatte speichern: Beim Zurückscrollen muss dann nichts
+        // neu dekodiert und verkleinert werden. Bilder ohne Verkleinerung bleiben als Originaldaten liegen.
+        konfiguration.dataCachePolicy = .automatic
         konfiguration.dataLoadingQueue.maxConcurrentOperationCount = 8
         ImagePipeline.shared = ImagePipeline(configuration: konfiguration)
     }

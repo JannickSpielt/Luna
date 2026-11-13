@@ -218,7 +218,7 @@ struct HauptView: View {
         neu.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
         uploads?.onSitzungAbgelaufen = { [weak sitzung] in sitzung?.sitzungAbgelaufen() }
         // Nach dem Hochladen alle Ansichten neu laden, damit die neuen Fotos erscheinen.
-        uploads?.onDurchgangFertig = { [weak neu] in neu?.melde(von: nil) }
+        uploads?.onDurchgangFertig = { [weak neu] in neu?.meldeGebuendelt() }
         backup?.starte()
         if let client = session.client {
             let store = TimelineStore(client: client)
@@ -227,10 +227,10 @@ struct HauptView: View {
                 // Nicht gesicherte Fotos vom Gerät in der Bibliothek zeigen (abschaltbar im Ansicht-Menü).
                 store.lokaleFotos = { [weak backup] in
                     guard let backup, UserDefaults.standard.object(forKey: NichtGesicherte.schluessel) as? Bool ?? true else { return [] }
-                    return backup.nichtGesicherte().map(LokalerEintrag.init)
+                    return await backup.nichtGesicherteImHintergrund().map(LokalerEintrag.init)
                 }
                 store.lokalesBildLader = { [weak backup] id, pixel in await backup?.vorschau(id, kante: pixel) }
-                backup.onAenderung = { [weak neu] in neu?.melde(von: nil) }
+                backup.onAenderung = { [weak neu] in neu?.meldeGebuendelt() }
             }
             #if DEBUG && os(iOS)
             // Nur zum Prüfen der Anzeige: Fotos der Mediathek als „nicht gesichert“ zeigen, ohne etwas hochzuladen.

@@ -29,7 +29,7 @@ public enum Medienart: String, Hashable, Sendable, CaseIterable {
 }
 
 /// Eine Person, die Immich auf Fotos erkannt hat.
-public struct Person: Identifiable, Hashable, Sendable {
+public struct Person: Identifiable, Hashable, Sendable, Codable {
     public let id: String
     public let name: String
 

@@ -28,6 +28,8 @@ struct AlbenView: View {
     @State private var tage: [HochladeTag] = []
     @State private var personen: [Person] = []
     @State private var orte: [Ort] = []
+    /// Wann zuletzt vom Server geladen (und bei welchem Stand): kein erneutes Laden bei jedem Öffnen des Tabs.
+    @State private var zuletzt: (stand: Int, zeit: Date)?
     @State private var geladen = false
     @State private var fehler: String?
     @State private var neuesAlbum = false
@@ -81,7 +83,7 @@ struct AlbenView: View {
                     OrteKarte(orte: orte)
                 }
             }
-            .refreshable { await lade() }
+            .refreshable { await lade(erzwingen: true) }
             .task(id: kontext.stand) { await lade() }
             .alert("Neues Album", isPresented: $neuesAlbum) {
                 TextField("Name", text: $neuerName)
@@ -288,8 +290,15 @@ struct AlbenView: View {
 
     // MARK: - Laden
 
-    private func lade() async {
+    private func lade(erzwingen: Bool = false) async {
         guard let client = kontext.client else { return }
+        // Sofort zeigen, was gespeichert ist.
+        if !geladen, let s = await SammlungenSpeicher.lies(client.address) {
+            alben = s.alben; tage = s.tage; personen = s.personen; orte = s.orte
+            geladen = true
+        }
+        // Gerade erst geladen und nichts geändert: nicht schon wieder.
+        if !erzwingen, let z = zuletzt, z.stand == kontext.stand, Date.now.timeIntervalSince(z.zeit) < 120 { return }
         do {
             async let a = client.alben()
             async let t = client.kuerzlichNachTagen()
@@ -300,6 +309,9 @@ struct AlbenView: View {
             personen = (try? await p) ?? []
             orte = (try? await o) ?? []
             geladen = true
+            zuletzt = (kontext.stand, .now)
+            SammlungenSpeicher.schreibe(SammlungenDaten(alben: alben, tage: tage, personen: personen, orte: orte),
+                                        client.address)
         } catch {
             if !geladen { fehler = error.localizedDescription }
             geladen = true
@@ -313,7 +325,7 @@ struct AlbenView: View {
         Task {
             do {
                 _ = try await client.erstelleAlbum(name: name)
-                await lade()
+                await lade(erzwingen: true)
             } catch {
                 fehler = error.localizedDescription
                 kontext.pruefe(error)

@@ -32,12 +32,22 @@ final class TimelineStore: TimelineQuelle {
     /// Aufnahmedatum je Foto, für das Datum oben links.
     @ObservationIgnored private var datumJeId: [String: Date] = [:]
     /// Liefert die nicht gesicherten Fotos vom Gerät (nur Bibliothek, nur wenn das Backup an ist).
-    @ObservationIgnored var lokaleFotos: (() -> [LokalerEintrag])?
+    @ObservationIgnored var lokaleFotos: (() async -> [LokalerEintrag])?
     /// Lädt Vorschaubilder vom Gerät.
     @ObservationIgnored var lokalesBildLader: ((String, CGFloat) async -> CGImage?)?
     @ObservationIgnored private var inhalte: [Int: [GridItem]] = [:]
+    /// Server-Inhalt je Monat (Schlüssel + Anzahl), damit ein Neuladen unveränderte Monate behalten kann.
+    @ObservationIgnored private var serverInhalt: [TimelineMonat: [TimelineAsset]] = [:]
     @ObservationIgnored private var laufend: [Int: Task<Void, Never>] = [:]
     @ObservationIgnored private var sichtbareMonate: Set<Int> = []
+    /// Scrollt man gerade? Nur dann kurz warten, bevor ein Monat geladen wird.
+    @ObservationIgnored private var scrolltGerade = false
+    /// Fehlversuche je Monat (Schlüssel), für erneutes Laden mit wachsender Pause.
+    @ObservationIgnored private var fehlversuche: [TimelineMonat: Int] = [:]
+    /// Monate, deren Inhalt aus dem gespeicherten Stand kommt und noch einmal frisch geholt werden soll.
+    @ObservationIgnored private var ausSpeicher: Set<TimelineMonat> = []
+    /// Nur die Hauptbibliothek wird für den Sofortstart gespeichert.
+    private var mitSpeicher: Bool { filter == .alle }
     @ObservationIgnored let client: ImmichClient
     /// Wird aufgerufen, wenn der Server die Anmeldung ablehnt.
     @ObservationIgnored var onSitzungAbgelaufen: (() -> Void)?
@@ -67,30 +77,63 @@ final class TimelineStore: TimelineQuelle {
             }
             return
         }
+        // Sofortstart: den gespeicherten Stand zeigen, während der Server gefragt wird.
+        if mitSpeicher, sections.isEmpty, let s = await TimelineCache.lies(client.address), !s.monate.isEmpty {
+            zeigeSchnappschuss(s)
+        }
         do {
-            let geladen = try await client.timelineMonate(filter).filter { $0.anzahl > 0 }
-            let lokal = filter == .alle ? Self.gruppiere(lokaleFotos?() ?? []) : [:]
+            let geladen = try await LadeMessung.miss("Monatsliste", "\(filter)") {
+                try await client.timelineMonate(filter).filter { $0.anzahl > 0 }
+            }
+            // Fotos vom Gerät: Datenbank lesen und nach Monat sortieren, nicht auf dem Haupt-Thread.
+            let eintraege = filter == .alle ? (await lokaleFotos?() ?? []) : []
+            let lokal = eintraege.isEmpty ? [:] : await Task.detached { Self.gruppiere(eintraege) }.value
             let monatsliste = Self.verbinde(server: geladen, lokal: lokal)
-            monate = monatsliste.map(\.server)
-            lokalJeMonat = monatsliste.map(\.lokal)
-            inhalte = [:]
-            laufend.values.forEach { $0.cancel() }
-            laufend = [:]
-            sections = monatsliste.map { m in
+            let neueSections = monatsliste.map { m in
                 let anzahl = (m.server?.anzahl ?? 0) + m.lokal.count
                 return GridSection(id: m.schluessel, titel: "\(Monatsname.namen[m.monat - 1]) \(m.jahr)",
                                    untertitel: Self.untertitel(anzahl: anzahl, lokal: m.lokal.count), anzahl: anzahl)
             }
-            // Monate nur mit Fotos vom Gerät sind sofort fertig.
-            for (i, m) in monatsliste.enumerated() where m.server == nil {
-                inhalte[i] = m.lokal.map(\.item)
+            // Nur Geändertes neu laden: Monate mit gleichem Schlüssel und gleicher Anzahl behalten ihren Inhalt
+            // (lokale Fotos werden neu eingemischt). So bleiben Kacheln stehen, statt grau zu werden.
+            var neueInhalte: [Int: [GridItem]] = [:]
+            for (i, m) in monatsliste.enumerated() {
+                if let server = m.server {
+                    if let assets = serverInhalt[server] { neueInhalte[i] = Self.mische(assets, lokal: m.lokal) }
+                } else {
+                    neueInhalte[i] = m.lokal.map(\.item)
+                }
                 for l in m.lokal { datumJeId[l.item.id] = l.erstellt }
             }
+            let behalten = Set(monatsliste.compactMap(\.server))
+            serverInhalt = serverInhalt.filter { behalten.contains($0.key) }
+            let gleicheStruktur = neueSections.map(\.id) == sections.map(\.id)
+                && neueSections.map(\.anzahl) == sections.map(\.anzahl)
+            let unveraendert = zustand == .bereit && gleicheStruktur && monate == monatsliste.map(\.server)
+                && lokalJeMonat.map { $0.map(\.item.id) } == monatsliste.map { $0.lokal.map(\.item.id) }
+            if unveraendert {
+                LadeMessung.ereignis("Neu laden: nichts geändert")
+                hinweis = nil
+                pruefeGespeicherte()
+                return
+            }
+            monate = monatsliste.map(\.server)
+            lokalJeMonat = monatsliste.map(\.lokal)
+            // Laufende Ladevorgänge nur abbrechen, wenn sich die Monate verschoben haben.
+            if !gleicheStruktur {
+                laufend.values.forEach { $0.cancel() }
+                laufend = [:]
+                sichtbareMonate = []
+            }
+            inhalte = neueInhalte
+            sections = neueSections
             gesamt = sections.reduce(0) { $0 + $1.anzahl }
             zustand = sections.isEmpty ? .leer : .bereit
             hinweis = nil
-            sichtbareMonate = []
+            LadeMessung.ereignis("Neu laden: \(neueInhalte.count) von \(sections.count) Monaten behalten")
             onAllesNeu?()
+            pruefeGespeicherte()
+            speichere()
         } catch ImmichError.sitzungAbgelaufen {
             onSitzungAbgelaufen?()
         } catch {
@@ -157,6 +200,68 @@ final class TimelineStore: TimelineQuelle {
         }
     }
 
+    func scrollt(_ jetzt: Bool) { scrolltGerade = jetzt }
+
+    // MARK: - Sofortstart
+
+    private func zeigeSchnappschuss(_ s: TimelineSchnappschuss) {
+        let liste = Self.verbinde(server: s.monate, lokal: [:])
+        monate = liste.map(\.server)
+        lokalJeMonat = liste.map(\.lokal)
+        sections = liste.map { m in
+            GridSection(id: m.schluessel, titel: "\(Monatsname.namen[m.monat - 1]) \(m.jahr)",
+                        untertitel: Self.untertitel(anzahl: m.server?.anzahl ?? 0, lokal: 0), anzahl: m.server?.anzahl ?? 0)
+        }
+        inhalte = [:]
+        for (i, m) in s.monate.enumerated() {
+            guard let assets = s.inhalte[m.schluessel] else { continue }
+            serverInhalt[m] = assets
+            ausSpeicher.insert(m)
+            inhalte[i] = assets.map(Self.gridItem)
+            for a in assets { if let d = a.erstellt { datumJeId[a.id] = d } }
+        }
+        gesamt = sections.reduce(0) { $0 + $1.anzahl }
+        zustand = .bereit
+        LadeMessung.ereignis("Sofortstart: \(sections.count) Monate, \(inhalte.count) mit Inhalt aus dem Speicher")
+        onAllesNeu?()
+    }
+
+    /// Gespeicherte Monate einmal frisch holen (Favoriten oder Fotos könnten sich bei gleicher Anzahl geändert haben).
+    private func pruefeGespeicherte() {
+        let offen = ausSpeicher
+        ausSpeicher = []
+        for monat in offen {
+            guard let section = monate.firstIndex(of: monat) else { continue }
+            Task { [weak self] in
+                guard let self, let assets = try? await self.client.timelineInhalt(monat, filter: self.filter),
+                      section < self.monate.count, self.monate[section] == monat else { return }
+                guard assets != self.serverInhalt[monat] else { return }
+                let lokal = section < self.lokalJeMonat.count ? self.lokalJeMonat[section] : []
+                self.serverInhalt[monat] = assets
+                self.inhalte[section] = Self.mische(assets, lokal: lokal)
+                for a in assets { if let d = a.erstellt { self.datumJeId[a.id] = d } }
+                let neu = assets.count + lokal.count
+                let geaendert = neu != self.sections[section].anzahl
+                self.sections[section].anzahl = neu
+                LadeMessung.ereignis("Gespeicherter Monat \(monat.schluessel) aufgefrischt")
+                self.onMonatGeladen?(section, geaendert)
+                self.speichere()
+            }
+        }
+    }
+
+    /// Monatsliste und die neuesten Monate für den nächsten Start sichern.
+    private func speichere() {
+        guard mitSpeicher else { return }
+        let server = monate.compactMap { $0 }
+        guard !server.isEmpty else { return }
+        var inhalte: [String: [TimelineAsset]] = [:]
+        for m in server.prefix(TimelineCache.monateMitInhalt) {
+            if let a = serverInhalt[m] { inhalte[m.schluessel] = a }
+        }
+        TimelineCache.schreibe(TimelineSchnappschuss(monate: server, inhalte: inhalte), client.address)
+    }
+
     func ladeMonat(_ section: Int) {
         ladeMonat(section, erzwingen: false)
     }
@@ -167,8 +272,8 @@ final class TimelineStore: TimelineQuelle {
               let monat = monate[section] else { return }
         laufend[section] = Task {
             defer { if laufend[section] != nil, !Task.isCancelled { laufend[section] = nil } }
-            // Kurz warten: Beim schnellen Scrubben ist der Monat danach oft schon wieder weg.
-            if !erzwingen {
+            // Kurz warten, aber nur beim Scrollen: Beim schnellen Scrubben ist der Monat danach oft schon wieder weg.
+            if !erzwingen && scrolltGerade {
                 try? await Task.sleep(for: .milliseconds(120))
                 guard !Task.isCancelled, wirdGebraucht(section) else {
                     laufend[section] = nil
@@ -176,12 +281,17 @@ final class TimelineStore: TimelineQuelle {
                 }
             }
             do {
-                let assets = try await client.timelineInhalt(monat, filter: filter)
+                let assets = try await LadeMessung.miss("Monat", monat.schluessel) {
+                    try await client.timelineInhalt(monat, filter: filter)
+                }
                 guard !Task.isCancelled else { return }
                 // Die Monate könnten inzwischen neu geladen worden sein.
                 guard section < monate.count, monate[section] == monat else { return }
                 let lokal = section < lokalJeMonat.count ? lokalJeMonat[section] : []
                 inhalte[section] = Self.mische(assets, lokal: lokal)
+                serverInhalt[monat] = assets
+                fehlversuche[monat] = nil
+                if section < TimelineCache.monateMitInhalt { speichere() }
                 for a in assets { if let d = a.erstellt { datumJeId[a.id] = d } }
                 for l in lokal { datumJeId[l.item.id] = l.erstellt }
                 let alteAnzahl = sections[section].anzahl
@@ -192,7 +302,18 @@ final class TimelineStore: TimelineQuelle {
             } catch ImmichError.sitzungAbgelaufen {
                 onSitzungAbgelaufen?()
             } catch {
-                // Kein Absturz und keine Fehlermeldung pro Monat: Beim nächsten Anzeigen wird es erneut versucht.
+                // Keine Fehlermeldung pro Monat: nach 0,5 s und 2 s noch einmal versuchen, solange er gebraucht wird.
+                guard !Task.isCancelled else { return }
+                let versuch = (fehlversuche[monat] ?? 0) + 1
+                fehlversuche[monat] = versuch
+                guard versuch <= 2 else { return }
+                LadeMessung.ereignis("Monat \(monat.schluessel) fehlgeschlagen, Versuch \(versuch + 1) folgt")
+                laufend[section] = nil
+                Task { [weak self] in
+                    try? await Task.sleep(for: .milliseconds(versuch == 1 ? 500 : 2000))
+                    guard let self, self.wirdGebraucht(section) || erzwingen else { return }
+                    self.ladeMonat(section, erzwingen: erzwingen)
+                }
             }
         }
     }
@@ -235,7 +356,7 @@ final class TimelineStore: TimelineQuelle {
 
     // MARK: - Umwandlung
 
-    static func gridItem(_ asset: TimelineAsset) -> GridItem {
+    nonisolated static func gridItem(_ asset: TimelineAsset) -> GridItem {
         let art: GridItemKind = !asset.istBild ? .video : (asset.livePhotoVideoId != nil ? .livePhoto : .foto)
         let farbe = asset.thumbhash.flatMap(Thumbhash.durchschnittsfarbe)
             ?? GridPalette.farben[asset.id.utf8.reduce(0) { $0 &+ Int($1) } % GridPalette.farben.count]
@@ -273,7 +394,7 @@ final class TimelineStore: TimelineQuelle {
     }
 
     /// Lokale Fotos nach Monat („2026-10“), jeweils neueste zuerst.
-    static func gruppiere(_ eintraege: [LokalerEintrag]) -> [String: [LokalerEintrag]] {
+    nonisolated static func gruppiere(_ eintraege: [LokalerEintrag]) -> [String: [LokalerEintrag]] {
         let kalender = Calendar.current
         var ergebnis: [String: [LokalerEintrag]] = [:]
         for e in eintraege {
@@ -283,10 +404,10 @@ final class TimelineStore: TimelineQuelle {
         return ergebnis.mapValues { $0.sorted { $0.erstellt > $1.erstellt } }
     }
 
-    static func schluessel(_ jahr: Int, _ monat: Int) -> String { String(format: "%04d-%02d", jahr, monat) }
+    nonisolated static func schluessel(_ jahr: Int, _ monat: Int) -> String { String(format: "%04d-%02d", jahr, monat) }
 
     /// Server-Monate und Monate mit Fotos vom Gerät zu einer Liste, neueste zuerst.
-    static func verbinde(server: [TimelineMonat], lokal: [String: [LokalerEintrag]]) -> [Monatsliste] {
+    nonisolated static func verbinde(server: [TimelineMonat], lokal: [String: [LokalerEintrag]]) -> [Monatsliste] {
         var liste: [Monatsliste] = []
         var rest = lokal
         for m in server {
@@ -307,7 +428,7 @@ final class TimelineStore: TimelineQuelle {
     }
 
     /// Fotos vom Gerät nach Datum zwischen die Server-Fotos (beide neueste zuerst).
-    static func mische(_ assets: [TimelineAsset], lokal: [LokalerEintrag]) -> [GridItem] {
+    nonisolated static func mische(_ assets: [TimelineAsset], lokal: [LokalerEintrag]) -> [GridItem] {
         guard !lokal.isEmpty else { return assets.map(gridItem) }
         var ergebnis: [GridItem] = []
         ergebnis.reserveCapacity(assets.count + lokal.count)

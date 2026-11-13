@@ -125,6 +125,7 @@ public final class SessionStore {
 
     private func beende(_ account: Account, hinweis: String?) {
         store.remove(account)
+        TimelineCache.loescheAlles()
         client = nil
         letzteAdresse = account.server.address.description
         self.hinweis = hinweis
