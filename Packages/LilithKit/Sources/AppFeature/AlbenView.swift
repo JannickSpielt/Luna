@@ -30,6 +30,9 @@ struct AlbenView: View {
     @Environment(BibliothekKontext.self) private var kontext
     @State private var alben: [Album] = []
     @State private var tage: [HochladeTag] = []
+    /// „Heute vor … Jahren“ (ändert sich täglich, wird nicht gespeichert).
+    @State private var rueckblicke: [Rueckblick] = []
+    @State private var rueckblickVon = Date.distantPast
     @State private var personen: [Person] = []
     @State private var orte: [Ort] = []
     /// Wann zuletzt vom Server geladen (und bei welchem Stand): kein erneutes Laden bei jedem Öffnen des Tabs.
@@ -53,6 +56,7 @@ struct AlbenView: View {
                     } else if !geladen {
                         ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
                     } else {
+                        if !rueckblicke.isEmpty { heuteFrueher }
                         if !tage.isEmpty { kuerzlich }
                         albenReihe(titel: "Alben", liste: eigene, geteilt: false)
                         if !geteilte.isEmpty { albenReihe(titel: "Geteilte Alben", liste: geteilte, geteilt: true) }
@@ -105,6 +109,47 @@ struct AlbenView: View {
     }
 
     // MARK: - Abschnitte
+
+    /// „Heute vor … Jahren“: je früherem Jahr eine große Karte mit den Fotos vom heutigen Tag.
+    private var heuteFrueher: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Heute in früheren Jahren").font(.title2.bold()).padding(.horizontal, 16)
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 10) {
+                    ForEach(rueckblicke) { r in
+                        NavigationLink(value: TimelineZiel(titel: Self.vorJahren(r.jahreZurueck), filter: .tag(r.tag))) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                VorschauBild(client: kontext.client, assetId: r.titelBildId, groesse: .preview)
+                                    .frame(width: 260, height: 180)
+                                    .clipShape(.rect(cornerRadius: 12))
+                                    .overlay(alignment: .bottomLeading) {
+                                        Text(Self.vorJahren(r.jahreZurueck))
+                                            .font(.subheadline.weight(.semibold))
+                                            .padding(.horizontal, 12)
+                                            .frame(height: 32)
+                                            .lilithGlas(in: .capsule)
+                                            .padding(10)
+                                    }
+                                Text(r.tag.formatted(.dateTime.day().month(.wide).year()))
+                                    .font(LilithFont.karte).foregroundStyle(LilithColor.text)
+                                    .padding(.top, 6)
+                                Text(r.anzahl == 1 ? "1 Objekt" : "\(r.anzahl.formatted()) Objekte")
+                                    .font(.caption).foregroundStyle(LilithColor.textLeise)
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollIndicators(.hidden)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+        }
+    }
+
+    static func vorJahren(_ n: Int) -> String { n == 1 ? "Vor einem Jahr" : "Vor \(n) Jahren" }
 
     /// Große Karten je Tag, an dem Fotos auf den Server kamen.
     private var kuerzlich: some View {
@@ -316,6 +361,24 @@ struct AlbenView: View {
         if !geladen, let s = await SammlungenSpeicher.lies(client.address) {
             alben = s.alben; tage = s.tage; personen = s.personen; orte = s.orte
             geladen = true
+        }
+        // Rückblicke ändern sich täglich: einmal je Tag laden, unabhängig vom Speicher.
+        if rueckblicke.isEmpty || !Calendar.current.isDateInToday(rueckblickVon) {
+            rueckblickVon = .now
+            Task {
+                do {
+                    var heute = Date.now
+                    #if DEBUG
+                    // Zum Prüfen: „-LilithHeute 2026-11-21“ tut so, als wäre heute dieser Tag.
+                    if let t = UserDefaults.standard.string(forKey: "LilithHeute"),
+                       let d = try? Date(t + "T12:00:00Z", strategy: .iso8601) { heute = d }
+                    #endif
+                    rueckblicke = try await client.rueckblicke(heute: heute)
+                    LadeMessung.ereignis("Rückblicke: \(rueckblicke.count) Jahre mit Fotos")
+                } catch {
+                    LadeMessung.ereignis("Rückblicke nicht geladen: \(error.localizedDescription)")
+                }
+            }
         }
         // Gerade erst geladen und nichts geändert: nicht schon wieder.
         if !erzwingen, let z = zuletzt, z.stand == kontext.stand, Date.now.timeIntervalSince(z.zeit) < 120 { return }

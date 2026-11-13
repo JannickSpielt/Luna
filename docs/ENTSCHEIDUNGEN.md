@@ -230,3 +230,8 @@ Plan: `docs/LADEN-PLAN.md`.
 
 - **Doppelte Fotos:** `getAssetDuplicates`; je Gruppe die Fotos nebeneinander mit Auflösung, Dateigröße und Datum, Immichs Vorschlag (`suggestedKeepAssetIds`) ist vorausgewählt. „Auswahl behalten“ ruft `resolveDuplicates` auf: Die übrigen kommen in den Papierkorb und sind dort wiederherstellbar.
 - **Ordner:** `getUniqueOriginalPaths` als Baum, beginnend beim gemeinsamen Anfang aller Pfade (statt fünf leeren Ebenen wie `/usr/src/app/upload/…`). „Fotos in diesem Ordner“ nutzt `getAssetsByOriginalPath`. Symbole in der Liste grau.
+
+## 20. „Heute in früheren Jahren“ (13.11.2026)
+
+- Ganz oben in den Sammlungen: je früherem Jahr eine Karte mit den Fotos vom heutigen Kalendertag („Vor einem Jahr“, „Vor 5 Jahren“). Gibt es keine, bleibt der Abschnitt weg.
+- Bewusst über die Suche (`takenAfter`/`takenBefore`, bis 20 Jahre zurück, parallel) statt über Immichs „Erinnerungen“: Die hängen von einem nächtlichen Serverauftrag ab. Wird einmal pro Tag geladen. Zum Prüfen: `-LilithHeute 2026-11-21`.

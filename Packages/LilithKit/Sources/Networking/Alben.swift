@@ -21,6 +21,8 @@ public enum TimelineFilter: Hashable, Sendable {
     case ort(stadt: String, land: String?)
     /// Fotos direkt in einem Ordner auf dem Server.
     case ordner(String)
+    /// Alle Fotos eines Kalendertags (für „Heute vor … Jahren“).
+    case tag(Date)
 }
 
 /// Ein Album.
