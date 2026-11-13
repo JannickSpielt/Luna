@@ -6,7 +6,7 @@ struct LunaRelease: Equatable, Sendable {
     let version: String
     let titel: String
     let seite: URL
-    /// Direkter Download der Mac-App (ZIP), falls vorhanden.
+    /// Direkter Download der Mac-App (DMG, bei älteren Releases ZIP), falls vorhanden.
     let macDownload: URL?
 }
 
@@ -29,7 +29,9 @@ enum AppUpdate {
         struct Release: Decodable { let tag_name: String; let name: String?; let html_url: URL; let assets: [Asset] }
         let r = try JSONDecoder().decode(Release.self, from: daten)
         let version = r.tag_name.hasPrefix("v") ? String(r.tag_name.dropFirst()) : r.tag_name
-        let mac = r.assets.first { $0.name.localizedCaseInsensitiveContains("mac") && $0.name.hasSuffix(".zip") }
+        // Mac-App: am liebsten die DMG, sonst die ZIP (ältere Releases).
+        let mac = r.assets.first { $0.name.lowercased().hasSuffix(".dmg") }
+            ?? r.assets.first { $0.name.localizedCaseInsensitiveContains("mac") && $0.name.hasSuffix(".zip") }
         return LunaRelease(version: version, titel: r.name ?? r.tag_name, seite: r.html_url, macDownload: mac?.browser_download_url)
     }
 
