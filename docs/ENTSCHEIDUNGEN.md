@@ -207,3 +207,11 @@ Plan: `docs/SAMMLUNGEN-PLAN.md`.
 - **Personen:** `getAllPeople` (ohne ausgeblendete), Gesichter über `/people/{id}/thumbnail`. Ein Tipp öffnet die Timeline mit `personId`.
 - **Medienarten** nutzen die einfachen, älteren Suchfelder (`type`, `isMotion`, `lensModel`, `originalFileName`), weil der neue `filter` auf v3.3.5 mit 400 antwortete. Selfies: Objektive mit „front“ aus `getSearchSuggestions`. Bildschirmfotos: PNG-Bilder. RAW: bekannte Endungen. Mehrere Abfragen werden zusammengeführt und nach Datum sortiert.
 - **Start-Animation:** Erst erscheint unten „von Jannick Stahn“ (geladen), dann wird der Mond voll, dann geht es mit wachsender Geschwindigkeit hinein (0,55 s).
+
+## 17. Orte und Fehlerbehebungen (13.11.2026)
+
+- **Orte:** `getMapMarkers`, je Stadt zusammengefasst (Mittelpunkt, Anzahl, ein Foto als Titelbild). Kleine Karte in den Sammlungen, große Karte mit runden Foto-Nadeln; ein Tipp zeigt die Fotos der Stadt (Suche mit `city`/`country`).
+- **„Jetzt sichern“ beendete die App:** Hintergrund-Aufgaben wurden mit `using: nil` angemeldet; iOS ruft den Block dann im Hintergrund auf, Swift 6 bricht ab, weil er zum MainActor gehört. Jetzt `using: .main`, und `expirationHandler` sind `@Sendable`. Betraf auch die nächtlichen Läufe.
+- **Ring ums Profilbild** nur, solange gesichert wird oder etwas fehlt.
+- **Video:** AirPlay oben rechts neben der Datums-Pille, kein Bild-in-Bild-Knopf mehr; stattdessen automatisch beim Verlassen der App (Schalter unter Konto → Videos). Beim Spulen sind Blättern und Wegziehen gesperrt, damit die Leiste bleibt. Weichere Übergänge.
+- **Auswahl in Alben:** „Zurück“ und damit das Zurückwischen sind aus, solange man auswählt.

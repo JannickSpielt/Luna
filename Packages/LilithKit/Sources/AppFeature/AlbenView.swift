@@ -1,3 +1,4 @@
+import MapKit
 import SwiftUI
 import DesignSystem
 import Networking
@@ -15,6 +16,8 @@ enum SammlungsZiel: Hashable {
     case alben(geteilt: Bool)
     /// Alle erkannten Personen.
     case personen
+    /// Karte mit allen Orten.
+    case orte
 }
 
 /// Der Tab „Sammlungen“, aufgebaut wie in Apples Fotos-App: eine lange Seite mit Abschnitten,
@@ -24,6 +27,7 @@ struct AlbenView: View {
     @State private var alben: [Album] = []
     @State private var tage: [HochladeTag] = []
     @State private var personen: [Person] = []
+    @State private var orte: [Ort] = []
     @State private var geladen = false
     @State private var fehler: String?
     @State private var neuesAlbum = false
@@ -47,6 +51,7 @@ struct AlbenView: View {
                         albenReihe(titel: "Alben", liste: eigene, geteilt: false)
                         if !geteilte.isEmpty { albenReihe(titel: "Geteilte Alben", liste: geteilte, geteilt: true) }
                         if !personenReihe.isEmpty { personenAbschnitt }
+                        if !orte.isEmpty { orteAbschnitt }
                         medienarten
                         weitere
                     }
@@ -72,6 +77,8 @@ struct AlbenView: View {
                     AlbenRaster(titel: geteilt ? "Geteilte Alben" : "Alben", alben: geteilt ? geteilte : eigene)
                 case .personen:
                     PersonenRaster(personen: personen)
+                case .orte:
+                    OrteKarte(orte: orte)
                 }
             }
             .refreshable { await lade() }
@@ -175,6 +182,56 @@ struct AlbenView: View {
         }
     }
 
+    /// Kleine Karte mit den Orten, darunter die Städte mit den meisten Fotos.
+    private var orteAbschnitt: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Ueberschrift(titel: "Orte", sammlung: .orte)
+            NavigationLink(value: SammlungsZiel.orte) {
+                OrteVorschauKarte(orte: orte)
+                    .frame(height: 190)
+                    // Die Karte selbst nimmt keine Tipps an: Eine durchsichtige Fläche darüber öffnet die große Karte.
+                    .overlay { Color.white.opacity(0.001) }
+                    .clipShape(.rect(cornerRadius: 14))
+                    .contentShape(.rect(cornerRadius: 14))
+                    .overlay(alignment: .bottomLeading) {
+                        Text(orte.count == 1 ? "1 Ort" : "\(orte.count.formatted()) Orte")
+                            .font(.subheadline.weight(.semibold))
+                            .padding(.horizontal, 12)
+                            .frame(height: 32)
+                            .lilithGlas(in: .capsule)
+                            .padding(10)
+                    }
+                    .padding(.horizontal, 16)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Karte mit \(orte.count) Orten")
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 12) {
+                    ForEach(orte.prefix(20)) { ort in
+                        NavigationLink(value: TimelineZiel(titel: ort.stadt, filter: .ort(stadt: ort.stadt, land: ort.land))) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                VorschauBild(client: kontext.client, assetId: ort.titelBildId)
+                                    .frame(width: 140, height: 140)
+                                    .clipShape(.rect(cornerRadius: 12))
+                                Text(ort.stadt).font(LilithFont.karte).foregroundStyle(LilithColor.text).lineLimit(1)
+                                    .padding(.top, 6)
+                                Text(ort.anzahl == 1 ? "1 Objekt" : "\(ort.anzahl.formatted()) Objekte")
+                                    .font(.caption).foregroundStyle(LilithColor.textLeise)
+                            }
+                            .frame(width: 140, alignment: .leading)
+                            .accessibilityElement(children: .combine)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollIndicators(.hidden)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+        }
+    }
+
     private var medienarten: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Medienarten").font(.title2.bold()).padding(.horizontal, 16)
@@ -237,9 +294,11 @@ struct AlbenView: View {
             async let a = client.alben()
             async let t = client.kuerzlichNachTagen()
             async let p = client.personen()
+            async let o = client.orte()
             alben = try await a
             tage = (try? await t) ?? []
             personen = (try? await p) ?? []
+            orte = (try? await o) ?? []
             geladen = true
         } catch {
             if !geladen { fehler = error.localizedDescription }
@@ -347,6 +406,86 @@ struct PersonenRaster: View {
         }
         .background(LilithColor.hintergrund)
         .navigationTitle("Personen")
+    }
+}
+
+/// Ruhige Kartenvorschau: ein Punkt je Ort, ohne Bedienung.
+struct OrteVorschauKarte: View {
+    let orte: [Ort]
+
+    var body: some View {
+        Map(initialPosition: .automatic, interactionModes: []) {
+            ForEach(orte.prefix(60)) { ort in
+                Annotation(ort.stadt, coordinate: CLLocationCoordinate2D(latitude: ort.breite, longitude: ort.laenge),
+                           anchor: .center) {
+                    Circle()
+                        .fill(LilithColor.nachtrose)
+                        .frame(width: 10, height: 10)
+                        .overlay(Circle().stroke(.white, lineWidth: 2))
+                }
+                .annotationTitles(.hidden)
+            }
+        }
+        .mapStyle(.standard(pointsOfInterest: .excludingAll))
+        .allowsHitTesting(false)
+    }
+}
+
+/// Große Karte mit allen Orten: Fotos als runde Stecknadeln mit Anzahl. Ein Tipp öffnet die Fotos der Stadt.
+struct OrteKarte: View {
+    let orte: [Ort]
+    @Environment(BibliothekKontext.self) private var kontext
+
+    var body: some View {
+        Map(initialPosition: .automatic) {
+            ForEach(orte) { ort in
+                Annotation(ort.stadt, coordinate: CLLocationCoordinate2D(latitude: ort.breite, longitude: ort.laenge),
+                           anchor: .bottom) {
+                    NavigationLink(value: TimelineZiel(titel: ort.stadt, filter: .ort(stadt: ort.stadt, land: ort.land))) {
+                        OrtNadel(ort: ort, client: kontext.client)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .mapStyle(.standard(pointsOfInterest: .excludingAll))
+        .mapControls {
+            MapCompass()
+            MapScaleView()
+        }
+        .navigationTitle("Orte")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+        #endif
+        .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+/// Stecknadel: rundes Foto mit weißem Rand und der Anzahl.
+private struct OrtNadel: View {
+    let ort: Ort
+    let client: ImmichClient?
+
+    var body: some View {
+        VorschauBild(client: client, assetId: ort.titelBildId)
+            .frame(width: 46, height: 46)
+            .clipShape(.circle)
+            .overlay(Circle().stroke(.white, lineWidth: 2.5))
+            .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+            .overlay(alignment: .topTrailing) {
+                if ort.anzahl > 1 {
+                    Text(ort.anzahl > 999 ? "999+" : "\(ort.anzahl)")
+                        .font(.caption2.weight(.bold)).monospacedDigit()
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .frame(minWidth: 20, minHeight: 20)
+                        .background(LilithColor.nachtroseFill, in: .capsule)
+                        .offset(x: 8, y: -6)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(ort.stadt), \(ort.anzahl) Fotos")
     }
 }
 

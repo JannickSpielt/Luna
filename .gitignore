@@ -13,3 +13,6 @@ Package.resolved
 
 # macOS
 .DS_Store
+
+# Graphify (lokaler Code-Graph, wird neu erzeugt)
+graphify-out/

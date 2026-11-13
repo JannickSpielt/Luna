@@ -71,10 +71,12 @@ public final class BackupZentrale {
     }
 
     /// Einmal beim App-Start (vor dem Ende des Startvorgangs) aufrufen.
+    /// Wichtig: `using: .main`. Ohne Warteschlange ruft iOS den Block im Hintergrund auf; der Block gehört
+    /// aber zum Haupt-Thread (MainActor), und Swift 6 beendet die App dann sofort.
     public static func registriereHintergrund() {
         #if os(iOS)
         for kennung in [nachtKennung, kurzKennung] {
-            BGTaskScheduler.shared.register(forTaskWithIdentifier: kennung, using: nil) { aufgabe in
+            BGTaskScheduler.shared.register(forTaskWithIdentifier: kennung, using: .main) { aufgabe in
                 let gesendet = Gesendet(aufgabe)
                 Task { @MainActor in await shared.fuehreAus(gesendet.wert) }
             }
@@ -105,7 +107,7 @@ public final class BackupZentrale {
         guard let backup, backup.aktiv, !jetztAktiv else { return false }
         // Jede Anfrage braucht eine eigene Kennung (Muster in der Info.plist: app.lilith.Lilith.jetzt.*).
         let kennung = "app.lilith.Lilith.jetzt.\(UUID().uuidString.prefix(8))"
-        let registriert = BGTaskScheduler.shared.register(forTaskWithIdentifier: kennung, using: nil) { aufgabe in
+        let registriert = BGTaskScheduler.shared.register(forTaskWithIdentifier: kennung, using: .main) { aufgabe in
             guard let a = aufgabe as? BGContinuedProcessingTask else { aufgabe.setTaskCompleted(success: false); return }
             let gesendet = Gesendet(a)
             Task { @MainActor in await BackupZentrale.shared.fuehreJetztAus(gesendet.wert) }
@@ -130,7 +132,7 @@ public final class BackupZentrale {
         defer { jetztAktiv = false }
         let gesendet = Gesendet(aufgabe)
         aufgabe.progress.totalUnitCount = 100
-        aufgabe.expirationHandler = {
+        aufgabe.expirationHandler = { @Sendable in
             Task { @MainActor in
                 backup.halteAn()
                 uploads.uebergibAnHintergrund()
@@ -162,7 +164,7 @@ public final class BackupZentrale {
         }
         planeHintergrund()
         let gesendet = Gesendet(aufgabe)
-        aufgabe.expirationHandler = {
+        aufgabe.expirationHandler = { @Sendable in
             Task { @MainActor in
                 // Zeit ist um: anhalten, Fertiges an iOS übergeben, damit es ohne Lilith weiterläuft.
                 backup.halteAn()

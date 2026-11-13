@@ -16,15 +16,23 @@ struct KontoKnopf: View {
     var nutzerId: String?
     let oeffnen: () -> Void
 
+    private var zeigeRing: Bool {
+        guard let backup, backup.aktiv else { return false }
+        return !backup.allesGesichert || backup.uebersicht.fehler > 0
+    }
+
     var body: some View {
         Button(action: oeffnen) {
             ProfilBild(client: client, nutzerId: nutzerId, buchstabe: buchstabe, groesse: 30)
-                .padding(backup?.aktiv == true ? 4 : 0)
+                .padding(zeigeRing ? 4 : 0)
                 .overlay {
-                    if let backup, backup.aktiv {
+                    // Nur solange gesichert wird (oder etwas fehlt): Ist alles auf dem Server, verschwindet der Ring.
+                    if let backup, zeigeRing {
                         MondRing(anteil: backup.uebersicht.anteil, fehler: backup.uebersicht.fehler > 0, breite: 2.5)
+                            .transition(.opacity)
                     }
                 }
+                .animation(.easeOut(duration: 0.3), value: zeigeRing)
                 .overlay(alignment: .bottomTrailing) {
                     if let backup, backup.aktiv, case .halt = backup.phase {
                         Image(systemName: "cloud.fill")

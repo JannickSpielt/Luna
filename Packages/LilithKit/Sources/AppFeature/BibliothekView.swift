@@ -89,6 +89,9 @@ struct TimelineInhalt: View {
             #endif
             #endif
             .toolbar { werkzeuge }
+            // Beim Auswählen nicht versehentlich zurückwischen: „Zurück“ (und damit die Wischgeste) ist aus,
+            // beenden geht über „Fertig“.
+            .navigationBarBackButtonHidden(auswahlModus)
             #if os(iOS)
             .toolbar {
                 // In Sammlungen: Titel in einer Glas-Kapsel, gut lesbar über den Fotos.
@@ -302,6 +305,7 @@ struct TimelineInhalt: View {
         case .kuerzlich: ("Nichts Neues", "In den letzten 30 Tagen wurde nichts hochgeladen.", "clock.arrow.circlepath")
         case .person: ("Keine Fotos", "Immich hat diese Person noch auf keinem Foto erkannt.", "person.crop.circle")
         case .medienart(let art): ("Keine \(art.titel)", "In deiner Bibliothek gibt es davon noch nichts.", art.symbol)
+        case .ort(let stadt, _): ("Keine Fotos", "Aus \(stadt) gibt es keine Fotos mehr.", "mappin.and.ellipse")
         case .suche: ("Nichts gefunden", "Versuch es mit anderen Worten, zum Beispiel einem Ort, einem Tier oder einer Farbe.", "magnifyingglass")
         case .album: ("Album ist leer", "Wähle unter „Fotos“ Bilder aus und füge sie diesem Album hinzu.", "rectangle.stack")
         }

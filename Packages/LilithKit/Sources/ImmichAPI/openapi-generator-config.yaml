@@ -37,5 +37,7 @@ filter:
     - getSearchSuggestions
     # Personen
     - getAllPeople
+    # Karte
+    - getMapMarkers
     # Upload
     - checkBulkUpload

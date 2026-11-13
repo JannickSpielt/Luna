@@ -792,6 +792,110 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Retrieve map markers
+    ///
+    /// Retrieve a list of latitude and longitude coordinates for every asset with location data.
+    ///
+    /// - Remark: HTTP `GET /map/markers`.
+    /// - Remark: Generated from `#/paths//map/markers/get(getMapMarkers)`.
+    public func getMapMarkers(_ input: Operations.GetMapMarkers.Input) async throws -> Operations.GetMapMarkers.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.GetMapMarkers.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/map/markers",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "fileCreatedAfter",
+                    value: input.query.fileCreatedAfter
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "fileCreatedBefore",
+                    value: input.query.fileCreatedBefore
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "isArchived",
+                    value: input.query.isArchived
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "isFavorite",
+                    value: input.query.isFavorite
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "withPartners",
+                    value: input.query.withPartners
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "withSharedAlbums",
+                    value: input.query.withSharedAlbums
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.GetMapMarkers.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            [Components.Schemas.MapMarkerResponseDto].self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Get all people
     ///
     /// Retrieve a list of all people.

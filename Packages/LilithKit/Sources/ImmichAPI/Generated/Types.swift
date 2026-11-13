@@ -90,6 +90,13 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /auth/validateToken`.
     /// - Remark: Generated from `#/paths//auth/validateToken/post(validateAccessToken)`.
     func validateAccessToken(_ input: Operations.ValidateAccessToken.Input) async throws -> Operations.ValidateAccessToken.Output
+    /// Retrieve map markers
+    ///
+    /// Retrieve a list of latitude and longitude coordinates for every asset with location data.
+    ///
+    /// - Remark: HTTP `GET /map/markers`.
+    /// - Remark: Generated from `#/paths//map/markers/get(getMapMarkers)`.
+    func getMapMarkers(_ input: Operations.GetMapMarkers.Input) async throws -> Operations.GetMapMarkers.Output
     /// Get all people
     ///
     /// Retrieve a list of all people.
@@ -320,6 +327,21 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//auth/validateToken/post(validateAccessToken)`.
     public func validateAccessToken(headers: Operations.ValidateAccessToken.Input.Headers = .init()) async throws -> Operations.ValidateAccessToken.Output {
         try await validateAccessToken(Operations.ValidateAccessToken.Input(headers: headers))
+    }
+    /// Retrieve map markers
+    ///
+    /// Retrieve a list of latitude and longitude coordinates for every asset with location data.
+    ///
+    /// - Remark: HTTP `GET /map/markers`.
+    /// - Remark: Generated from `#/paths//map/markers/get(getMapMarkers)`.
+    public func getMapMarkers(
+        query: Operations.GetMapMarkers.Input.Query = .init(),
+        headers: Operations.GetMapMarkers.Input.Headers = .init()
+    ) async throws -> Operations.GetMapMarkers.Output {
+        try await getMapMarkers(Operations.GetMapMarkers.Input(
+            query: query,
+            headers: headers
+        ))
     }
     /// Get all people
     ///
@@ -1971,6 +1993,65 @@ public enum Components {
             public enum CodingKeys: String, CodingKey {
                 case redirectUri
                 case successful
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MapMarkerResponseDto`.
+        public struct MapMarkerResponseDto: Codable, Hashable, Sendable {
+            /// City name
+            ///
+            /// - Remark: Generated from `#/components/schemas/MapMarkerResponseDto/city`.
+            public var city: Swift.String?
+            /// Country name
+            ///
+            /// - Remark: Generated from `#/components/schemas/MapMarkerResponseDto/country`.
+            public var country: Swift.String?
+            /// Asset ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/MapMarkerResponseDto/id`.
+            public var id: Swift.String
+            /// Latitude
+            ///
+            /// - Remark: Generated from `#/components/schemas/MapMarkerResponseDto/lat`.
+            public var lat: Swift.Double
+            /// Longitude
+            ///
+            /// - Remark: Generated from `#/components/schemas/MapMarkerResponseDto/lon`.
+            public var lon: Swift.Double
+            /// State/Province name
+            ///
+            /// - Remark: Generated from `#/components/schemas/MapMarkerResponseDto/state`.
+            public var state: Swift.String?
+            /// Creates a new `MapMarkerResponseDto`.
+            ///
+            /// - Parameters:
+            ///   - city: City name
+            ///   - country: Country name
+            ///   - id: Asset ID
+            ///   - lat: Latitude
+            ///   - lon: Longitude
+            ///   - state: State/Province name
+            public init(
+                city: Swift.String? = nil,
+                country: Swift.String? = nil,
+                id: Swift.String,
+                lat: Swift.Double,
+                lon: Swift.Double,
+                state: Swift.String? = nil
+            ) {
+                self.city = city
+                self.country = country
+                self.id = id
+                self.lat = lat
+                self.lon = lon
+                self.state = state
+            }
+            public enum CodingKeys: String, CodingKey {
+                case city
+                case country
+                case id
+                case lat
+                case lon
+                case state
             }
         }
         /// - Remark: Generated from `#/components/schemas/MetadataSearchDto`.
@@ -6276,6 +6357,175 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.ok`.
             /// - SeeAlso: `.ok`.
             public var ok: Operations.ValidateAccessToken.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Retrieve map markers
+    ///
+    /// Retrieve a list of latitude and longitude coordinates for every asset with location data.
+    ///
+    /// - Remark: HTTP `GET /map/markers`.
+    /// - Remark: Generated from `#/paths//map/markers/get(getMapMarkers)`.
+    public enum GetMapMarkers {
+        public static let id: Swift.String = "getMapMarkers"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/map/markers/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// Filter assets created after this date
+                ///
+                /// - Remark: Generated from `#/paths/map/markers/GET/query/fileCreatedAfter`.
+                public var fileCreatedAfter: Foundation.Date?
+                /// Filter assets created before this date
+                ///
+                /// - Remark: Generated from `#/paths/map/markers/GET/query/fileCreatedBefore`.
+                public var fileCreatedBefore: Foundation.Date?
+                /// Filter by archived status
+                ///
+                /// - Remark: Generated from `#/paths/map/markers/GET/query/isArchived`.
+                public var isArchived: Swift.Bool?
+                /// Filter by favorite status
+                ///
+                /// - Remark: Generated from `#/paths/map/markers/GET/query/isFavorite`.
+                public var isFavorite: Swift.Bool?
+                /// Include partner assets
+                ///
+                /// - Remark: Generated from `#/paths/map/markers/GET/query/withPartners`.
+                public var withPartners: Swift.Bool?
+                /// Include shared album assets
+                ///
+                /// - Remark: Generated from `#/paths/map/markers/GET/query/withSharedAlbums`.
+                public var withSharedAlbums: Swift.Bool?
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - fileCreatedAfter: Filter assets created after this date
+                ///   - fileCreatedBefore: Filter assets created before this date
+                ///   - isArchived: Filter by archived status
+                ///   - isFavorite: Filter by favorite status
+                ///   - withPartners: Include partner assets
+                ///   - withSharedAlbums: Include shared album assets
+                public init(
+                    fileCreatedAfter: Foundation.Date? = nil,
+                    fileCreatedBefore: Foundation.Date? = nil,
+                    isArchived: Swift.Bool? = nil,
+                    isFavorite: Swift.Bool? = nil,
+                    withPartners: Swift.Bool? = nil,
+                    withSharedAlbums: Swift.Bool? = nil
+                ) {
+                    self.fileCreatedAfter = fileCreatedAfter
+                    self.fileCreatedBefore = fileCreatedBefore
+                    self.isArchived = isArchived
+                    self.isFavorite = isFavorite
+                    self.withPartners = withPartners
+                    self.withSharedAlbums = withSharedAlbums
+                }
+            }
+            public var query: Operations.GetMapMarkers.Input.Query
+            /// - Remark: Generated from `#/paths/map/markers/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetMapMarkers.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.GetMapMarkers.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.GetMapMarkers.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.GetMapMarkers.Input.Query = .init(),
+                headers: Operations.GetMapMarkers.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/map/markers/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/map/markers/GET/responses/200/content/application\/json`.
+                    case json([Components.Schemas.MapMarkerResponseDto])
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: [Components.Schemas.MapMarkerResponseDto] {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.GetMapMarkers.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.GetMapMarkers.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            ///
+            ///
+            /// - Remark: Generated from `#/paths//map/markers/get(getMapMarkers)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.GetMapMarkers.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.GetMapMarkers.Output.Ok {
                 get throws {
                     switch self {
                     case let .ok(response):

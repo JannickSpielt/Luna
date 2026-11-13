@@ -95,8 +95,8 @@ struct DetailView: View {
                 ForEach(seiten, id: \.self) { position in
                     DetailSeite(position: position, quelle: quelle, store: store, istAktuell: position == aktuell,
                                 gezoomt: $gezoomt, zeigeBedienung: zeigeBedienung && !zugAktiv,
-                                verberge: { withAnimation(.easeInOut(duration: 0.3)) { zeigeBedienung = false } }) {
-                        withAnimation(.easeInOut(duration: 0.2)) { zeigeBedienung.toggle() }
+                                verberge: { withAnimation(.smooth(duration: 0.45)) { zeigeBedienung = false } }) {
+                        withAnimation(.smooth(duration: 0.3)) { zeigeBedienung.toggle() }
                     }
                     .containerRelativeFrame([.horizontal, .vertical])
                 }
@@ -205,7 +205,19 @@ struct DetailView: View {
                 .lilithGlas(in: .capsule, klar: true)
                 .accessibilityElement(children: .combine)
                 Spacer()
+                #if os(iOS)
+                if item?.art == .video {
+                    // AirPlay oben rechts, gegenüber von „Zurück“.
+                    AirPlayKnopf()
+                        .frame(width: 44, height: 44)
+                        .lilithGlas(in: .circle, klar: true)
+                        .accessibilityLabel("AirPlay")
+                } else {
+                    Color.clear.frame(width: 44, height: 44)
+                }
+                #else
                 Color.clear.frame(width: 44, height: 44)
+                #endif
             }
             .padding(.horizontal, 16)
             Spacer()

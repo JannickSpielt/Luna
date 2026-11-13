@@ -4,6 +4,15 @@ import AVKit
 import SwiftUI
 import DesignSystem
 
+/// Einstellungen rund ums Video.
+enum VideoEinstellung {
+    static let schluesselBildInBild = "luna.video.automatischBildInBild"
+    /// Läuft ein Video, geht es beim Verlassen der App automatisch ins Bild-in-Bild. Voreinstellung: an.
+    static var automatischBildInBild: Bool {
+        UserDefaults.standard.object(forKey: schluesselBildInBild) as? Bool ?? true
+    }
+}
+
 /// Zustand eines Videos für die eigene Bedienung: läuft es, wo steht es, wie lang ist es.
 @MainActor
 @Observable
@@ -87,7 +96,9 @@ struct VideoFlaeche: UIViewRepresentable {
         v.ebene.videoGravity = .resizeAspect
         if AVPictureInPictureController.isPictureInPictureSupported() {
             let pip = AVPictureInPictureController(contentSource: .init(playerLayer: v.ebene))
-            pip.canStartPictureInPictureAutomaticallyFromInline = false
+            // Wischt man die App weg, während das Video läuft, geht es von selbst ins Bild-in-Bild
+            // (abschaltbar in den Einstellungen).
+            pip.canStartPictureInPictureAutomaticallyFromInline = VideoEinstellung.automatischBildInBild
             modell.pip = pip
         }
         return v
@@ -142,16 +153,6 @@ struct VideoBedienung: View {
             }
             .accessibilityLabel(modell.stumm ? "Ton an" : "Ton aus")
 
-            if let pip = modell.pip {
-                Button { pip.startPictureInPicture() } label: {
-                    Image(systemName: "pip.enter").frame(width: 36, height: 44)
-                }
-                .accessibilityLabel("Bild in Bild")
-            }
-
-            AirPlayKnopf()
-                .frame(width: 36, height: 44)
-                .accessibilityLabel("AirPlay")
         }
         .buttonStyle(.plain)
         .foregroundStyle(.white)

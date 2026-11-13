@@ -65,7 +65,7 @@ struct DetailSeite: View {
                               lokalesBild: { await quelle.lokalesBild(fuer: item, pixel: 2048) })
                 } else if item.art == .video, let client = store?.client {
                     VideoSeite(item: item, client: client, istAktuell: istAktuell,
-                               zeigeBedienung: zeigeBedienung, onTap: onTap, verberge: verberge)
+                               zeigeBedienung: zeigeBedienung, onTap: onTap, verberge: verberge, sperrt: $gezoomt)
                 } else {
                     FotoSeite(item: item, client: store?.client, istAktuell: istAktuell, gezoomt: $gezoomt, onTap: onTap)
                 }
@@ -310,6 +310,8 @@ struct VideoSeite: View {
     var onTap: () -> Void = {}
     /// Bedienung ausblenden (nach ein paar Sekunden Abspielen).
     var verberge: () -> Void = {}
+    /// Während man spult: Blättern und Wegziehen sperren, damit die Leiste nicht verschwindet.
+    @Binding var sperrt: Bool
 
     #if os(iOS)
     @State private var modell: PlayerModell?
@@ -348,9 +350,10 @@ struct VideoSeite: View {
                 VideoBedienung(modell: modell)
                     .padding(.horizontal, 16)
                     .padding(.bottom, VideoSeite.fensterRand().bottom + 72)
-                    .transition(.opacity)
+                    .transition(.opacity.combined(with: .offset(y: 6)))
             }
         }
+        .onChange(of: modell?.zieht ?? false) { _, zieht in sperrt = zieht }
         .task(id: (zeigeBedienung && modell?.spielt == true && modell?.zieht == false) ? 1 : 0) {
             // Läuft das Video, verschwindet die Bedienung nach 3 Sekunden.
             guard zeigeBedienung, modell?.spielt == true, modell?.zieht == false else { return }

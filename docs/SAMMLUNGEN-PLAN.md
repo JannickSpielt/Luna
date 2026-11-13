@@ -38,7 +38,7 @@ Nicht möglich: Porträts und Panoramen (Immich kann danach nicht filtern). Erin
 
 1. ✔ Neue Seite mit Kürzlich hinzugefügt, Alben, Geteilte Alben, Weitere (ohne Neues vom Server)
 2. ✔ Personen und Medienarten
-3. Orte mit Karte
+3. ✔ Orte mit Karte
 4. Doppelte Fotos und Ordner
 
 Nach jeder Etappe kurz anhalten und zeigen.

@@ -17,6 +17,8 @@ public enum TimelineFilter: Hashable, Sendable {
     case person(String)
     /// Videos, Live Photos, Selfies, Bildschirmfotos oder RAW.
     case medienart(Medienart)
+    /// Fotos aus einer Stadt (Kartenpunkte von Immich).
+    case ort(stadt: String, land: String?)
 }
 
 /// Ein Album.

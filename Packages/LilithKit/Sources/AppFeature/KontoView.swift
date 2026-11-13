@@ -13,6 +13,9 @@ struct KontoView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var frageAbmelden = false
     @AppStorage(Entsperren.schluessel) private var sperreAn = false
+    #if os(iOS)
+    @AppStorage(VideoEinstellung.schluesselBildInBild) private var bildInBild = true
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -70,6 +73,17 @@ struct KontoView: View {
                          ? "Luna sperrt sich, sobald du die App verlässt."
                          : "Richte auf diesem Gerät zuerst einen Code oder \(Entsperren.methode) ein.")
                 }
+
+                #if os(iOS)
+                Section {
+                    Toggle("Bild-in-Bild beim Verlassen", isOn: $bildInBild)
+                        .tint(LilithColor.schalter)
+                } header: {
+                    Text("Videos")
+                } footer: {
+                    Text("Läuft ein Video und du wechselst zu einer anderen App, spielt es in einem kleinen Fenster weiter.")
+                }
+                #endif
 
                 UeberLunaAbschnitt()
 

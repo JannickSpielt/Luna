@@ -53,6 +53,10 @@ final class TimelineStore: TimelineQuelle {
             await ladeListe(titel: "Ergebnisse", untertitel: "beste Treffer zuerst") { try await $0.sucheSmart(text) }
             return
         }
+        if case .ort(let stadt, let land) = filter {
+            await ladeListe(titel: stadt, untertitel: "neueste zuerst") { try await $0.fotos(inStadt: stadt, land: land) }
+            return
+        }
         if case .medienart(let art) = filter {
             await ladeListe(titel: art.titel, untertitel: "neueste zuerst") { try await $0.medien(art) }
             return
