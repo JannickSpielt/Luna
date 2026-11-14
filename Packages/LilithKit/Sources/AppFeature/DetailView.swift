@@ -61,8 +61,8 @@ struct DetailView: View {
             GeometryReader { geo in
                 VStack(spacing: 0) {
                     blaetterer
-                        .offset(y: zug)
-                        .scaleEffect(1 - min(zug / 1500, 0.2))
+                        // Nur dieser kleine Baustein liest den Zug: So wird beim Ziehen nicht die ganze Ansicht neu aufgebaut.
+                        .modifier(Wegziehen(zug: $zug))
                         // Mit Infos rutscht das Foto nach oben (wie Apple), sonst füllt es alles.
                         .frame(height: zeigeInfo ? fotoHoeheMitInfo(geo.size) : nil)
                     if zeigeInfo {
@@ -184,7 +184,8 @@ struct DetailView: View {
 
     /// Nach unten ziehen schließt die Ansicht.
     private var zumSchliessenZiehen: some Gesture {
-        DragGesture(minimumDistance: 10)
+        // Am Bildschirm messen, nicht am Foto: Das Foto bewegt sich ja mit, sonst springt es beim langsamen Ziehen.
+        DragGesture(minimumDistance: 10, coordinateSpace: .global)
             .onChanged { wert in
                 if zeigeInfo { return }
                 if !zugAktiv {
@@ -607,7 +608,9 @@ struct DetailView: View {
     }
 
     /// Heller Hintergrund, solange die Bedienelemente zu sehen sind.
-    private var hell: Bool { (zeigeBedienung && !zugAktiv) || zeigeInfo }
+    /// Beim Ziehen bleibt das Farbschema, wie es ist (der Hintergrund ist dann ohnehin ausgeblendet);
+    /// ein Wechsel hell → dunkel genau beim Start würde alles neu zeichnen und ruckeln.
+    private var hell: Bool { zeigeBedienung || zeigeInfo }
 
     private var titel: String {
         if let info { return InfoPanel.datum(info.aufgenommenLokal) }
@@ -835,5 +838,16 @@ struct InfoPanel: View {
         if let t = info.belichtung { teile.append("\(t) s") }
         if let iso = info.iso, iso > 0 { teile.append("ISO \(iso)") }
         return teile.joined(separator: " · ")
+    }
+}
+
+/// Verschiebt und verkleinert das Foto beim Herunterziehen.
+private struct Wegziehen: ViewModifier {
+    @Binding var zug: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .offset(y: zug)
+            .scaleEffect(1 - min(zug / 1500, 0.2))
     }
 }
