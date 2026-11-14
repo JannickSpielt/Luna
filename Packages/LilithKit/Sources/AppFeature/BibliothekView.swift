@@ -337,6 +337,12 @@ struct TimelineInhalt: View {
             }
             #else
             raster
+                .overlay(alignment: .top) {
+                    // Weihnachtszeit: leiser Schnee über der ganzen Bibliothek (Klicks gehen hindurch).
+                    if Weihnachten.aktiv, konto != nil {
+                        Schneefall(anzahl: 70, laeuft: kontext.detail == nil)
+                    }
+                }
                 .overlay(alignment: .trailing) {
                     ScrubberMitStand(quelle: quelle, scroll: scroll) { sprung = SprungAnfrage(section: $0) }
                         .padding(.vertical, 8)
@@ -381,6 +387,7 @@ struct TimelineInhalt: View {
         case .ordner: ("Keine Fotos", "In diesem Ordner liegen keine Fotos.", "folder")
         case .tag: ("Keine Fotos", "Von diesem Tag gibt es keine Fotos.", "calendar")
         case .ohneAlbum: ("Alles einsortiert", "Jedes Foto liegt in mindestens einem Album.", "rectangle.stack")
+        case .weihnachten: ("Keine Weihnachtsfotos", "Vom 24. bis 26. Dezember früherer Jahre gibt es keine Fotos.", "gift")
         case .gesperrt: ("Noch nichts gesperrt", "Wähle unter „Fotos“ Bilder aus und tippe auf „Sperren“. Sie verschwinden dann überall sonst.", "lock")
         case .suche: ("Nichts gefunden", "Versuch es mit anderen Worten, zum Beispiel einem Ort, einem Tier oder einer Farbe.", "magnifyingglass")
         case .album: ("Album ist leer", "Wähle unter „Fotos“ Bilder aus und füge sie diesem Album hinzu.", "rectangle.stack")

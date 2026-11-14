@@ -86,6 +86,10 @@ struct HauptView: View {
         if let kontext {
             tabs
                 .environment(kontext)
+                #if os(iOS)
+                // Weihnachtszeit: Schnee über der App, der auf der Tab-Leiste liegen bleibt (unter der Fotoansicht).
+                .overlay { if Weihnachten.aktiv { SchneeWelt(laeuft: kontext.detail == nil && startVorbei) } }
+                #endif
                 .overlay { DetailEbene(kontext: kontext) }
                 // Die App kommt aus dem Mond leicht auf einen zu.
                 .scaleEffect(1 + 0.08 * (1 - startOeffnung))
@@ -161,6 +165,7 @@ struct HauptView: View {
 
     private var tabs: some View {
         TabView(selection: $auswahl) {
+            // (Tab-Wechsel wirbelt in der Weihnachtszeit den Schnee auf, siehe .onChange unten.)
             Tab("Fotos", systemImage: "photo.on.rectangle", value: Bereich.bibliothek) {
                 if let quelle {
                     BibliothekView(quelle: quelle, store: timeline, zeigeKonto: $zeigeKonto,
@@ -182,6 +187,9 @@ struct HauptView: View {
             }
         }
         .modifier(TabStil())
+        #if os(iOS)
+        .onChange(of: auswahl) { _, _ in SchneeImpuls.melde(900) }
+        #endif
         .background {
             // Unsichtbare Knöpfe nur für Tastenkürzel (Mac, iPad mit Tastatur).
             Group {

@@ -78,6 +78,11 @@ final class TimelineStore: TimelineQuelle {
             await ladeListe(titel: stadt, untertitel: "neueste zuerst") { try await $0.fotos(inStadt: stadt, land: land) }
             return
         }
+        if case .weihnachten(let jahr) = filter {
+            await ladeListe(titel: jahr.map { "Weihnachten \(String($0))" } ?? "Weihnachten früher", untertitel: "24. bis 26. Dezember",
+                            jeJahr: jahr == nil) { try await $0.weihnachtsFotos(jahr: jahr) }
+            return
+        }
         if filter == .ohneAlbum {
             await ladeListe(titel: "In keinem Album", untertitel: "neueste zuerst") { try await $0.fotosOhneAlbum() }
             return
@@ -158,17 +163,28 @@ final class TimelineStore: TimelineQuelle {
 
     /// Suchergebnisse und „Kürzlich hinzugefügt“ haben keine Monate: Sie stehen in fester Reihenfolge
     /// in einem einzigen Abschnitt.
-    private func ladeListe(titel: String, untertitel: String,
+    private func ladeListe(titel: String, untertitel: String, jeJahr: Bool = false,
                            _ laden: (ImmichClient) async throws -> [TimelineAsset]) async {
         do {
-            let treffer = try await laden(client).map(Self.gridItem)
+            let assets = try await laden(client)
+            let treffer = assets.map(Self.gridItem)
             monate = []
             lokalJeMonat = []
             laufend.values.forEach { $0.cancel() }
             laufend = [:]
-            inhalte = [0: treffer]
-            sections = treffer.isEmpty ? [] : [GridSection(
-                id: "liste", titel: titel, untertitel: untertitel, anzahl: treffer.count)]
+            if jeJahr {
+                // Je Jahr ein Abschnitt (z. B. „Weihnachten 2024“), neuestes zuerst.
+                let gruppen = ImmichClient.gruppiereNachJahr(assets)
+                inhalte = Dictionary(uniqueKeysWithValues: gruppen.enumerated().map { ($0.offset, $0.element.fotos.map(Self.gridItem)) })
+                sections = gruppen.map { g in
+                    GridSection(id: "jahr-\(g.jahr)", titel: "\(titel.replacingOccurrences(of: " früher", with: "")) \(String(g.jahr))",
+                                untertitel: g.fotos.count == 1 ? "1 Objekt" : "\(g.fotos.count.formatted()) Objekte", anzahl: g.fotos.count)
+                }
+            } else {
+                inhalte = [0: treffer]
+                sections = treffer.isEmpty ? [] : [GridSection(
+                    id: "liste", titel: titel, untertitel: untertitel, anzahl: treffer.count)]
+            }
             gesamt = treffer.count
             zustand = treffer.isEmpty ? .leer : .bereit
             hinweis = nil

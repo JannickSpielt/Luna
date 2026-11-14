@@ -37,6 +37,11 @@ struct AlbenView: View {
     /// „Heute vor … Jahren“ (ändert sich täglich, wird nicht gespeichert).
     @State private var rueckblicke: [Rueckblick] = []
     @State private var rueckblickVon = Date.distantPast
+    /// Weihnachtszeit: frühere Weihnachten (24. bis 26. Dezember), je Jahr eine Karte.
+    @State private var weihnachtsJahre: [WeihnachtsJahr] = []
+    #if os(iOS)
+    @State private var scrollTempo = ScrollTempo()
+    #endif
     @State private var personen: [Person] = []
     @State private var orte: [Ort] = []
     /// Wann zuletzt vom Server geladen (und bei welchem Stand): kein erneutes Laden bei jedem Öffnen des Tabs.
@@ -60,6 +65,7 @@ struct AlbenView: View {
                     } else if !geladen {
                         ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
                     } else {
+                        if Weihnachten.aktiv, !weihnachtsJahre.isEmpty { weihnachtenFrueher }
                         if !rueckblicke.isEmpty { heuteFrueher }
                         if !tage.isEmpty { kuerzlich }
                         albenReihe(titel: "Alben", liste: eigene, geteilt: false)
@@ -75,16 +81,20 @@ struct AlbenView: View {
             .background(LilithColor.hintergrund)
             .navigationTitle("Sammlungen")
             .modifier(GrosserTitelInDerLeiste())
-            .background(alignment: .top) {
-                // Weihnachtszeit: ein Hauch Schnee oben über den Sammlungen.
+            #if os(macOS)
+            .overlay {
+                // Weihnachtszeit: leiser Schnee über den ganzen Sammlungen (Klicks gehen hindurch).
+                // Auf dem iPhone übernimmt das die Schneewelt über der ganzen App.
                 if Weihnachten.aktiv {
-                    Schneefall(anzahl: 26)
-                        .colorMultiply(LilithColor.textLeise)
-                        .frame(height: 220)
-                        .mask(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
-                        .ignoresSafeArea(edges: .top)
+                    Schneefall(anzahl: 60, laeuft: kontext.detail == nil)
                 }
             }
+            #else
+            // Scrollen wirbelt den Schnee auf der Tab-Leiste auf.
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, y in
+                if Weihnachten.aktiv { scrollTempo.melde(y) }
+            }
+            #endif
             .toolbar {
                 if kontext.client != nil {
                     ToolbarItem(placement: .primaryAction) {
@@ -166,6 +176,46 @@ struct AlbenView: View {
                                     .font(LilithFont.karte).foregroundStyle(LilithColor.text)
                                     .padding(.top, 6)
                                 Text(r.anzahl == 1 ? "1 Objekt" : "\(r.anzahl.formatted()) Objekte")
+                                    .font(.caption).foregroundStyle(LilithColor.textLeise)
+                            }
+                            .accessibilityElement(children: .combine)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollIndicators(.hidden)
+            .contentMargins(.horizontal, 16, for: .scrollContent)
+            .scrollTargetBehavior(.viewAligned)
+        }
+    }
+
+    /// Weihnachtszeit: „Weihnachten früher“, je Jahr eine große Karte mit den Fotos vom 24. bis 26. Dezember.
+    private var weihnachtenFrueher: some View {
+        EinklappAbschnitt(id: "weihnachten") {
+            Ueberschrift(titel: "Weihnachten früher", ziel: TimelineZiel(titel: "Weihnachten früher", filter: .weihnachten(nil)))
+        } inhalt: {
+            ScrollView(.horizontal) {
+                LazyHStack(alignment: .top, spacing: 10) {
+                    ForEach(weihnachtsJahre) { w in
+                        NavigationLink(value: TimelineZiel(titel: "Weihnachten \(String(w.jahr))", filter: .weihnachten(w.jahr))) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                VorschauBild(client: kontext.client, assetId: w.titelBildId, groesse: .preview)
+                                    .frame(width: 260, height: 180)
+                                    .clipShape(.rect(cornerRadius: 12))
+                                    .overlay(alignment: .bottomLeading) {
+                                        Label(String(w.jahr), systemImage: "sparkle")
+                                            .font(.subheadline.weight(.semibold))
+                                            .padding(.horizontal, 12)
+                                            .frame(height: 32)
+                                            .lilithGlas(in: .capsule)
+                                            .padding(10)
+                                    }
+                                Text("Weihnachten \(String(w.jahr))")
+                                    .font(LilithFont.karte).foregroundStyle(LilithColor.text)
+                                    .padding(.top, 6)
+                                Text(w.anzahl == 1 ? "1 Objekt" : "\(w.anzahl.formatted()) Objekte")
                                     .font(.caption).foregroundStyle(LilithColor.textLeise)
                             }
                             .accessibilityElement(children: .combine)
@@ -407,6 +457,17 @@ struct AlbenView: View {
                     LadeMessung.ereignis("Rückblicke: \(rueckblicke.count) Jahre mit Fotos")
                 } catch {
                     LadeMessung.ereignis("Rückblicke nicht geladen: \(error.localizedDescription)")
+                }
+            }
+        }
+        // Weihnachtszeit: frühere Weihnachten einmal laden (ändert sich in der Zeit kaum).
+        if Weihnachten.aktiv, weihnachtsJahre.isEmpty {
+            Task {
+                do {
+                    weihnachtsJahre = try await client.weihnachtsJahreMitBild()
+                    LadeMessung.ereignis("Weihnachten früher: \(weihnachtsJahre.count) Jahre")
+                } catch {
+                    LadeMessung.ereignis("Weihnachten früher nicht geladen: \(error.localizedDescription)")
                 }
             }
         }

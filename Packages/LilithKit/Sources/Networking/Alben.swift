@@ -27,6 +27,8 @@ public enum TimelineFilter: Hashable, Sendable {
     case gesperrt
     /// Fotos, die in keinem Album liegen.
     case ohneAlbum
+    /// Fotos vom 24. bis 26. Dezember früherer Jahre (`nil`: alle Jahre, nach Jahr gruppiert).
+    case weihnachten(Int?)
 }
 
 /// Ein Album.

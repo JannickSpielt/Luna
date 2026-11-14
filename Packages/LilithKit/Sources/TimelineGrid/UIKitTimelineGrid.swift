@@ -2,6 +2,7 @@
 import UIKit
 import UniformTypeIdentifiers
 import Nuke
+import DesignSystem
 
 /// Timeline-Grid für iPhone und iPad auf Basis von `UICollectionView`.
 /// Bewusst ohne Diffable Data Source: Die Anzahl pro Monat ist vorab bekannt
@@ -338,7 +339,11 @@ public final class TimelineGridController: UIViewController, UICollectionViewDat
         onScroll?(max > 0 ? Double((scrollView.contentOffset.y + scrollView.adjustedContentInset.top) / max) : 0)
         meldeMonat()
         meldeLeiste(scrollView)
+        // Weihnachtszeit: Scrollen wirbelt den Schnee auf der Tab-Leiste auf.
+        if scrollView.isTracking || scrollView.isDecelerating { scrollTempo.melde(scrollView.contentOffset.y) }
     }
+
+    private let scrollTempo = ScrollTempo()
 
     /// Beim Scrollen (egal in welche Richtung) verschwindet die Tab-Leiste.
     /// Bleibt man stehen, kommt sie nach `leistePause` Sekunden wieder.
