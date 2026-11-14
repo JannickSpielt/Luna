@@ -37,4 +37,4 @@ Severity: S1 security / data / core flow · S2 feature broken · S3 visibly wron
 - **Fix:** While the strip is being scrolled, nothing is hidden automatically (`VorschauLeiste.wischt` → `leisteAktiv`). Status: **fixed, checked in the simulator**.
 
 ## To check
-- **Order of the strip and of swiping in Fotos:** Newer photos are on the left, older on the right. With Apple it's the other way round (newest at the far right, like in the grid). Not a bug in the strict sense, but different from Apple.
+- **Order of the strip and of swiping in Fotos:** ~~Newer on the left~~ → **changed**: in Fotos older photos are on the left and the newest on the far right, as with Apple and in the grid. Albums and filters stay newest-first (like their grid). Checked in the simulator.

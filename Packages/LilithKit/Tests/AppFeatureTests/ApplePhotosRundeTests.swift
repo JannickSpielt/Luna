@@ -63,3 +63,21 @@ struct VorschauLeisteTests {
         #expect(anfang.count == 121)
     }
 }
+
+@MainActor
+@Suite("Reihenfolge wie Apple")
+struct ReihenfolgeTests {
+    let quelle = BeispielQuelle(anzahl: 1_000)
+
+    @Test("In „Fotos“ ältere links, sonst Neuestes zuerst")
+    func reihenfolge() {
+        let mitte = DetailPosition(section: quelle.sections.count / 2, index: 0)
+        let liste = DetailView.fenster(um: mitte, quelle: quelle, radius: 5)
+        let apple = DetailView.fenster(um: mitte, quelle: quelle, radius: 5, aeltereLinks: true)
+        #expect(apple == liste.reversed())
+        // Links vom aktuellen Foto liegt in „Fotos“ das ältere (davor in der Liste = neuer).
+        let i = apple.firstIndex(of: mitte)!
+        #expect(apple[i - 1] == DetailView.danach(mitte, quelle: quelle))
+        #expect(DetailView.fenster(um: mitte, quelle: quelle, radius: 5, aeltereLinks: false) == liste)
+    }
+}

@@ -7,6 +7,8 @@ import TimelineGrid
 struct VorschauLeiste: View {
     let aktuell: DetailPosition?
     let quelle: TimelineQuelle
+    /// Wie die Fotoansicht: in „Fotos“ ältere links, neuere rechts.
+    var aeltereLinks = false
     let waehle: (DetailPosition) -> Void
     /// Meldet, ob gerade über die Leiste gewischt wird (dann nichts automatisch ausblenden).
     var wischt: (Bool) -> Void = { _ in }
@@ -18,7 +20,7 @@ struct VorschauLeiste: View {
 
     private var sichtbar: [DetailPosition] {
         guard let aktuell else { return [] }
-        return DetailView.fenster(um: aktuell, quelle: quelle, radius: Self.radius)
+        return DetailView.fenster(um: aktuell, quelle: quelle, radius: Self.radius, aeltereLinks: aeltereLinks)
     }
 
     var body: some View {

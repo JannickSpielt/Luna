@@ -42,7 +42,7 @@ struct DetailView: View {
         self.store = store
         self.loeschen = loeschen
         self.schliessen = schliessen
-        _seiten = State(initialValue: Self.fenster(um: start, quelle: quelle))
+        _seiten = State(initialValue: Self.fenster(um: start, quelle: quelle, aeltereLinks: Self.aeltereLinks(store)))
         _aktuell = State(initialValue: start)
         _item = State(initialValue: quelle.item(section: start.section, index: start.index))
     }
@@ -201,14 +201,31 @@ struct DetailView: View {
 
     /// Hält rund um das aktuelle Foto genug Seiten bereit, ohne je alle 100.000 anzulegen.
     private func fensterNachziehen(um position: DetailPosition) {
-        guard let i = seiten.firstIndex(of: position) else { return }
-        let amAnfang = i < 4 && Self.davor(seiten[0], quelle: quelle) != nil
-        let amEnde = i > seiten.count - 5 && Self.danach(seiten[seiten.count - 1], quelle: quelle) != nil
+        guard let i = seiten.firstIndex(of: position), let erste = seiten.first, let letzte = seiten.last else { return }
+        let links = aeltereLinks ? Self.danach(erste, quelle: quelle) : Self.davor(erste, quelle: quelle)
+        let rechts = aeltereLinks ? Self.davor(letzte, quelle: quelle) : Self.danach(letzte, quelle: quelle)
+        let amAnfang = i < 4 && links != nil
+        let amEnde = i > seiten.count - 5 && rechts != nil
         guard amAnfang || amEnde else { return }
-        seiten = Self.fenster(um: position, quelle: quelle)
+        seiten = Self.fenster(um: position, quelle: quelle, aeltereLinks: aeltereLinks)
         aktuell = position
     }
 
+    /// In „Fotos“ steht das neueste Foto unten rechts im Raster. Wie bei Apple liegen dann auch beim Blättern
+    /// und in der Vorschau-Leiste die älteren Fotos links und die neueren rechts. In Alben und Filtern
+    /// (Neuestes zuerst) bleibt es umgekehrt, passend zum jeweiligen Raster.
+    static func aeltereLinks(_ store: TimelineStore?) -> Bool { (store?.filter ?? .alle) == .alle }
+
+    private var aeltereLinks: Bool { Self.aeltereLinks(store) }
+
+    /// Seiten in Anzeige-Reihenfolge (links → rechts).
+    static func fenster(um mitte: DetailPosition, quelle: TimelineQuelle, radius: Int = 40,
+                        aeltereLinks: Bool) -> [DetailPosition] {
+        let liste = fenster(um: mitte, quelle: quelle, radius: radius)
+        return aeltereLinks ? liste.reversed() : liste
+    }
+
+    /// Seiten in Listen-Reihenfolge (Neuestes zuerst).
     static func fenster(um mitte: DetailPosition, quelle: TimelineQuelle, radius: Int = 40) -> [DetailPosition] {
         var vorher: [DetailPosition] = []
         var p = mitte
@@ -280,12 +297,12 @@ struct DetailView: View {
             // Auch bei Videos sichtbar (über der Video-Leiste): Würde die Leiste beim Wischen über ein Video
             // verschwinden, bräche das Wischen mittendrin ab.
             if seiten.count > 1, !zeigeInfo {
-                VorschauLeiste(aktuell: aktuell, quelle: quelle, waehle: { ziel in
+                VorschauLeiste(aktuell: aktuell, quelle: quelle, aeltereLinks: aeltereLinks, waehle: { ziel in
                     var t = Transaction()
                     t.disablesAnimations = true
                     withTransaction(t) {
                         // Liegt das Ziel außerhalb der vorbereiteten Seiten, die Seiten um das Ziel neu aufbauen.
-                        if !seiten.contains(ziel) { seiten = Self.fenster(um: ziel, quelle: quelle) }
+                        if !seiten.contains(ziel) { seiten = Self.fenster(um: ziel, quelle: quelle, aeltereLinks: aeltereLinks) }
                         aktuell = ziel
                     }
                 }, wischt: { leisteAktiv = $0 })
