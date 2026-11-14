@@ -52,8 +52,11 @@ struct DetailView: View {
     var body: some View {
         ZStack {
             // Wie Apple: hell mit Bedienelementen (im hellen Modus), schwarz zum reinen Ansehen.
+            // Sobald man zieht, blendet der Hintergrund ganz aus (wie Apple): Es bewegt sich nur das Foto,
+            // dahinter erscheint schon das Raster.
             (hell ? LilithColor.hintergrund : Color.black)
-                .opacity(1 - min(zug / 400, 0.7))
+                .opacity(zugAktiv ? 0 : 1)
+                .animation(.easeOut(duration: 0.25), value: zugAktiv)
                 .ignoresSafeArea()
             GeometryReader { geo in
                 VStack(spacing: 0) {
