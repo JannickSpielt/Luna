@@ -85,6 +85,8 @@ struct FotoEintrag: TimelineEntry {
     let bild: UIImage?
     /// Statt eines Fotos ein kurzer Hinweis (z. B. „In Luna anmelden“).
     var hinweis: String?
+    /// Zuletzt geladenes Foto, weil der Server gerade nicht antwortet.
+    var ausSpeicher = false
 }
 
 struct FotoAnbieter: AppIntentTimelineProvider {
@@ -104,7 +106,9 @@ struct FotoAnbieter: AppIntentTimelineProvider {
 
     func timeline(for configuration: FotoWidgetEinstellung, in context: Context) async -> Timeline<FotoEintrag> {
         let liste = await eintraege(configuration, kante: context.displaySize, hoechstens: Self.anzahl)
-        let naechstes = Date.now.addingTimeInterval(Double(max(liste.count, 1)) * Self.abstand)
+        // Nichts Neues geladen (Server weg, nicht angemeldet): in einer halben Stunde noch einmal versuchen.
+        let frisch = liste.contains { $0.bild != nil && !$0.ausSpeicher }
+        let naechstes = Date.now.addingTimeInterval(frisch ? Double(liste.count) * Self.abstand : 1800)
         return Timeline(entries: liste, policy: .after(naechstes))
     }
 
@@ -118,7 +122,8 @@ struct FotoAnbieter: AppIntentTimelineProvider {
             fotos = try await client.zufaelligeFotos(einstellung.zufallsQuelle, anzahl: hoechstens)
         } catch {
             Self.log.error("Fotos laden: \(String(describing: error), privacy: .public)")
-            return [FotoEintrag(date: .now, foto: nil, bild: nil, hinweis: "Server nicht erreichbar")]
+            // Lieber das letzte Foto weiter zeigen als eine Meldung.
+            return [Self.gemerkt() ?? FotoEintrag(date: .now, foto: nil, bild: nil, hinweis: "Server nicht erreichbar")]
         }
         guard !fotos.isEmpty else {
             return [FotoEintrag(date: .now, foto: nil, bild: nil, hinweis: "Keine Fotos gefunden")]
@@ -130,7 +135,29 @@ struct FotoAnbieter: AppIntentTimelineProvider {
             let bild = await Self.ladeBild(client.vorschauAnfrage(assetId: foto.id, groesse: .preview), pixel: pixel)
             ergebnis.append(FotoEintrag(date: .now.addingTimeInterval(Double(i) * Self.abstand), foto: foto, bild: bild))
         }
+        if let erstes = ergebnis.first(where: { $0.bild != nil }) { Self.merke(erstes) }
         return ergebnis
+    }
+
+    // MARK: Letztes Foto (für Zeiten ohne Server)
+
+    private static var ordner: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appending(path: "luna-widget", directoryHint: .isDirectory)
+    }
+
+    private static func merke(_ eintrag: FotoEintrag) {
+        guard let foto = eintrag.foto, let daten = eintrag.bild?.jpegData(compressionQuality: 0.85),
+              let info = try? JSONEncoder().encode(foto) else { return }
+        try? FileManager.default.createDirectory(at: ordner, withIntermediateDirectories: true)
+        try? daten.write(to: ordner.appending(path: "bild.jpg"), options: .atomic)
+        try? info.write(to: ordner.appending(path: "foto.json"), options: .atomic)
+    }
+
+    private static func gemerkt() -> FotoEintrag? {
+        guard let daten = try? Data(contentsOf: ordner.appending(path: "foto.json")),
+              let foto = try? JSONDecoder().decode(WidgetFoto.self, from: daten),
+              let bild = UIImage(contentsOfFile: ordner.appending(path: "bild.jpg").path()) else { return nil }
+        return FotoEintrag(date: .now, foto: foto, bild: bild, ausSpeicher: true)
     }
 
     private static func ladeBild(_ anfrage: URLRequest, pixel: CGFloat) async -> UIImage? {
@@ -155,27 +182,39 @@ struct FotoWidgetAnsicht: View {
     var body: some View {
         ZStack(alignment: .bottomLeading) {
             if eintrag.bild == nil {
-                VStack(spacing: 6) {
-                    Image(systemName: "moon.fill").font(.title2).foregroundStyle(Self.mondlicht)
+                // Ohne Foto: kleiner Mond oben links, Hinweis klein unten links – nichts groß in der Mitte.
+                VStack(alignment: .leading, spacing: 0) {
+                    Image(systemName: "moon.fill").font(.callout).foregroundStyle(Self.mondlicht)
+                    Spacer(minLength: 0)
                     if let hinweis = eintrag.hinweis {
-                        Text(hinweis).font(.caption).foregroundStyle(.white.opacity(0.85)).multilineTextAlignment(.center)
+                        Text(hinweis)
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.white.opacity(0.7))
+                            .lineLimit(2)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(14)
             }
             if let foto = eintrag.foto, eintrag.bild != nil {
-                VStack(alignment: .leading, spacing: 1) {
+                // Datum klein unten links auf einem sanften Verlauf, damit es auf hellen Fotos lesbar bleibt.
+                HStack(spacing: 4) {
                     Text(foto.aufgenommen.formatted(.dateTime.day().month(groesse == .systemSmall ? .abbreviated : .wide).year()))
-                        .font(.caption.weight(.semibold))
+                        .font(.caption2.weight(.semibold))
                     if let stadt = foto.stadt, groesse != .systemSmall {
-                        Text(stadt).font(.caption2)
+                        Text("· \(stadt)").font(.caption2).lineLimit(1)
                     }
                 }
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.5), radius: 3)
-                .padding(12)
+                .foregroundStyle(.white.opacity(0.92))
+                .padding(.horizontal, 12)
+                .padding(.bottom, 10)
+                .padding(.top, 36)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(LinearGradient(colors: [.clear, .black.opacity(0.35)], startPoint: .top, endPoint: .bottom))
             }
         }
+        // Ganze Fläche des Widgets nutzen, damit das Datum wirklich unten links sitzt (nicht mittig).
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .containerBackground(for: .widget) {
             if let bild = eintrag.bild {
                 Image(uiImage: bild).resizable().scaledToFill()

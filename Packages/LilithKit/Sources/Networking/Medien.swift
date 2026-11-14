@@ -69,6 +69,20 @@ extension ImmichClient {
                 neu { $0.originalFileName = ".\(endung)" }
             }
         }
+        return try await sammle(abfragen, hoechstens: hoechstens)
+    }
+
+    /// Fotos, die in keinem Album liegen (wie Apples Filter „In keinem Album“), neueste zuerst.
+    public func fotosOhneAlbum(hoechstens: Int = 5000) async throws -> [TimelineAsset] {
+        var a = Components.Schemas.MetadataSearchDto()
+        a.visibility = .timeline
+        a.isNotInAlbum = true
+        return try await sammle([a], hoechstens: hoechstens)
+    }
+
+    /// Führt mehrere Suchen seitenweise aus und fasst die Treffer zusammen (ohne Doppelte, ohne Papierkorb).
+    private func sammle(_ abfragen: [Components.Schemas.MetadataSearchDto], hoechstens: Int) async throws -> [TimelineAsset] {
+        typealias S = Components.Schemas
         var gesehen = Set<String>()
         var treffer: [S.AssetResponseDto] = []
         for var anfrage in abfragen {

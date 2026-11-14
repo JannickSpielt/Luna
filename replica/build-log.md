@@ -11,4 +11,4 @@
 | S05 Sammlungen | 2026-11-13 | fertig | „Angepinnt“ zum Bearbeiten | – |
 | S06 Suche | 2026-11-13 | teilweise | „Zuletzt angesehen“ | – |
 
-Parity laut replica-diff/parity.py: 88,3 / 100, alle Must-haves erledigt.
+Parity laut replica-diff/parity.py: 94,9 / 100 (14.11.), alle Must-haves erledigt. Neu: Diashow, „In keinem Album“, Bildunterschrift.

@@ -6,16 +6,16 @@ Middle pill heart / info,fotoansicht,must,yes,yes,edit button only with idea 5
 """…"" button top right in photo",fotoansicht,must,yes,yes,
 """…"" menu: top row Kopieren / Ausblenden",fotoansicht,should,yes,yes,Ausblenden = locked area; Duplizieren skip
 """…"" menu: Add to album / cover / archive / link",fotoansicht,must,yes,yes,
-"""…"" menu: slideshow",fotoansicht,could,yes,no,
+"""…"" menu: slideshow",fotoansicht,could,yes,yes,
 Preview strip under the photo,fotoansicht,must,yes,yes,since 5bea447
 Info under the photo instead of a sheet,info,must,yes,yes,
-Info: description field (Immich description),info,should,yes,no,"writes to the server, only after confirmation"
+Info: description field (Immich description),info,should,yes,yes,Speichern erst mit „Fertig“/Return
 Info: camera + format badge + exposure row,info,should,yes,yes,
 Info: map with the photo as a pin,info,should,yes,yes,
 Library: large title + count underneath,mediathek,should,yes,yes,
 "Library: ""Auswählen"" as a visible button",mediathek,should,yes,yes,
 ≡ menu: sort added / taken,mediathek,could,yes,no,Immich sorts by date taken
-≡ menu: filters (favourites / not in album / media types),mediathek,should,yes,yes,
+≡ menu: filters (favourites / not in album / media types),mediathek,should,yes,yes,"Alle, Favoriten, In keinem Album, Medienarten"
 Sammlungen: collapsible sections,sammlungen,should,yes,yes,
 "Sammlungen: ""Weitere"" as a 2-column tile grid with lock",sammlungen,should,yes,yes,
 "Sammlungen: profile + ""…"" top right",sammlungen,could,yes,yes,profile currently in Fotos
@@ -23,3 +23,4 @@ Sammlungen: pinned and editable,sammlungen,could,yes,no,
 Search: field at the bottom with recents,suche,could,yes,partial,
 Memory films / wallpaper suggestions,sammlungen,could,yes,skip,Apple's own features
 Full photo editor,fotoansicht,could,yes,skip,separately as idea 5
+≡ filter: In keinem Album,mediathek,should,yes,yes,Immich isNotInAlbum

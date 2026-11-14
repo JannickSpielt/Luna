@@ -43,6 +43,7 @@ struct BibliothekView: View {
         switch f {
         case .favoriten: "Favoriten"
         case .medienart(let art): art.titel
+        case .ohneAlbum: "In keinem Album"
         default: "Fotos"
         }
     }
@@ -379,6 +380,7 @@ struct TimelineInhalt: View {
         case .ort(let stadt, _): ("Keine Fotos", "Aus \(stadt) gibt es keine Fotos mehr.", "mappin.and.ellipse")
         case .ordner: ("Keine Fotos", "In diesem Ordner liegen keine Fotos.", "folder")
         case .tag: ("Keine Fotos", "Von diesem Tag gibt es keine Fotos.", "calendar")
+        case .ohneAlbum: ("Alles einsortiert", "Jedes Foto liegt in mindestens einem Album.", "rectangle.stack")
         case .gesperrt: ("Noch nichts gesperrt", "Wähle unter „Fotos“ Bilder aus und tippe auf „Sperren“. Sie verschwinden dann überall sonst.", "lock")
         case .suche: ("Nichts gefunden", "Versuch es mit anderen Worten, zum Beispiel einem Ort, einem Tier oder einer Farbe.", "magnifyingglass")
         case .album: ("Album ist leer", "Wähle unter „Fotos“ Bilder aus und füge sie diesem Album hinzu.", "rectangle.stack")
@@ -468,6 +470,7 @@ struct TimelineInhalt: View {
                     Picker("Filter", selection: hauptFilter) {
                         Label("Alle Objekte", systemImage: "square.grid.3x3").tag(TimelineFilter.alle)
                         Label("Favoriten", systemImage: "heart").tag(TimelineFilter.favoriten)
+                        Label("In keinem Album", systemImage: "rectangle.stack.badge.minus").tag(TimelineFilter.ohneAlbum)
                     }
                     .pickerStyle(.inline)
                     .labelsHidden()
@@ -815,7 +818,7 @@ private struct MonatsEtikett: View {
                 Text(auswahlText).font(.title.bold())
             } else if umgekehrt ? scroll.amEnde : scroll.anteil < 0.002 {
                 let gesamt = quelle.sections.reduce(0) { $0 + $1.anzahl }
-                Text(titel).font(.largeTitle.bold())
+                Text(titel).font(.largeTitle.bold()).minimumScaleFactor(0.6)
                 Text(gesamt == 1 ? "1 Objekt" : "\(gesamt.formatted()) Objekte")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)

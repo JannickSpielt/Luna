@@ -107,6 +107,21 @@ extension ImmichClient {
         )
     }
 
+    /// Setzt die Bildunterschrift (Immich „Beschreibung“). Leerer Text entfernt sie.
+    public func setzeBeschreibung(id: String, _ text: String) async throws {
+        let output: Operations.UpdateAsset.Output
+        do {
+            output = try await client.updateAsset(path: .init(id: id), body: .json(.init(description: text)))
+        } catch {
+            throw Self.uebersetze(error)
+        }
+        switch output {
+        case .ok: return
+        case .undocumented(statusCode: 401, _): throw ImmichError.sitzungAbgelaufen
+        case .undocumented(let code, _): throw ImmichError.unerwarteteAntwort(code)
+        }
+    }
+
     /// Markiert ein Foto als Favorit oder entfernt die Markierung.
     public func setzeFavorit(id: String, _ favorit: Bool) async throws {
         let output: Operations.UpdateAsset.Output

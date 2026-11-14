@@ -25,6 +25,8 @@ public enum TimelineFilter: Hashable, Sendable {
     case tag(Date)
     /// Der gesperrte Bereich (nur bei entsperrter Sitzung sichtbar).
     case gesperrt
+    /// Fotos, die in keinem Album liegen.
+    case ohneAlbum
 }
 
 /// Ein Album.

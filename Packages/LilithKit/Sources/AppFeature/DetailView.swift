@@ -33,6 +33,8 @@ struct DetailView: View {
     @State private var zeigeAlbumWahl = false
     /// Wird gerade über die Vorschau-Leiste gewischt?
     @State private var leisteAktiv = false
+    /// Diashow läuft (alle paar Sekunden das nächste Foto, Bedienelemente ausgeblendet).
+    @State private var diashow = false
     @State private var freigabe: FreigabeZiel?
     @Environment(BibliothekKontext.self) private var kontext
 
@@ -91,6 +93,22 @@ struct DetailView: View {
         .onKeyPress(.escape) { schliesse(); return .handled }
         .onKeyPress(.leftArrow) { blaettere(-1); return .handled }
         .onKeyPress(.rightArrow) { blaettere(1); return .handled }
+        .task(id: diashow) {
+            guard diashow else { return }
+            #if os(iOS)
+            UIApplication.shared.isIdleTimerDisabled = true
+            defer { UIApplication.shared.isIdleTimerDisabled = false }
+            #endif
+            while diashow, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(3))
+                guard diashow, !Task.isCancelled else { break }
+                guard let aktuell, let i = seiten.firstIndex(of: aktuell), seiten.indices.contains(i + 1) else {
+                    beendeDiashow()   // am Ende angekommen
+                    break
+                }
+                withAnimation(.easeInOut(duration: 0.8)) { self.aktuell = seiten[i + 1] }
+            }
+        }
         .onChange(of: aktuell) { _, neu in
             guard let neu else { return }
             item = quelle.item(section: neu.section, index: neu.index)
@@ -137,8 +155,10 @@ struct DetailView: View {
                     DetailSeite(position: position, quelle: quelle, store: store, istAktuell: position == aktuell,
                                 gezoomt: $gezoomt, zeigeBedienung: zeigeBedienung && !zugAktiv,
                                 verberge: { if !zeigeInfo, !leisteAktiv { withAnimation(.smooth(duration: 0.45)) { zeigeBedienung = false } } }) {
-                        // Mit offenen Infos schließt Antippen die Infos (wie Apple).
-                        if zeigeInfo {
+                        // Antippen beendet die Diashow; mit offenen Infos schließt es die Infos (wie Apple).
+                        if diashow {
+                            beendeDiashow()
+                        } else if zeigeInfo {
                             withAnimation(.smooth(duration: 0.35)) { zeigeInfo = false }
                         } else {
                             withAnimation(.smooth(duration: 0.3)) { zeigeBedienung.toggle() }
@@ -419,6 +439,9 @@ struct DetailView: View {
                     Button("Link teilen …", systemImage: "link") { freigabe = FreigabeZiel(art: .fotos([item.id])) }
                 }
                 Section {
+                    Button("Diashow starten", systemImage: "play.rectangle") { starteDiashow() }
+                }
+                Section {
                     if store?.filter == .archiv {
                         Button("Aus dem Archiv holen", systemImage: "archivebox") { archiviere(false) }
                     } else {
@@ -510,6 +533,19 @@ struct DetailView: View {
                 kontext.pruefe(error)
             }
         }
+    }
+
+    private func starteDiashow() {
+        withAnimation(.smooth(duration: 0.3)) {
+            zeigeInfo = false
+            zeigeBedienung = false
+        }
+        diashow = true
+    }
+
+    private func beendeDiashow() {
+        diashow = false
+        withAnimation(.smooth(duration: 0.3)) { zeigeBedienung = true }
     }
 
     private func zeigeMeldung(_ text: String) {

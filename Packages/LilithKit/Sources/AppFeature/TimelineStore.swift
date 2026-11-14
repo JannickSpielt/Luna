@@ -78,6 +78,10 @@ final class TimelineStore: TimelineQuelle {
             await ladeListe(titel: stadt, untertitel: "neueste zuerst") { try await $0.fotos(inStadt: stadt, land: land) }
             return
         }
+        if filter == .ohneAlbum {
+            await ladeListe(titel: "In keinem Album", untertitel: "neueste zuerst") { try await $0.fotosOhneAlbum() }
+            return
+        }
         if case .medienart(let art) = filter {
             await ladeListe(titel: art.titel, untertitel: "neueste zuerst") { try await $0.medien(art) }
             return

@@ -277,3 +277,11 @@ Plan: `docs/LADEN-PLAN.md`.
 - **Fotos holen** über die normale Fotosuche (`searchAssets`, für „alle“ eine zufällige Seite) statt über Immichs „zufällige Fotos“ – die normale Suche ist auf Immich 3.x erprobt.
 - **Anmeldung** über den gemeinsamen Schlüsselbund wie beim Teilen-Menü; nach An-/Abmelden lädt Luna die Widgets neu.
 - **Antippen** öffnet `luna://foto/<id>?zeit=…`: Luna lädt den Tag des Fotos und öffnet es dort (Weiterblättern durch den Tag).
+- **Widget aufgeräumt:** Datum klein unten links auf einem Verlauf (die Ansicht füllt jetzt das ganze Widget); ohne Server bleibt das zuletzt geladene Foto stehen, neuer Versuch nach 30 Minuten.
+
+## 26. Weitere Apple-Fotos-Funktionen (14.11.2026)
+
+- **Diashow** im „…“-Menü der Fotoansicht: alle 3 Sekunden das nächste Foto, Bedienelemente aus, Bildschirm bleibt an; Antippen beendet sie.
+- **Filter „In keinem Album“** im ≡-Menü (Immich `isNotInAlbum`).
+- **Bildunterschrift** in den Infos bearbeiten (Immich „Beschreibung“); gespeichert wird erst mit „Fertig“ bzw. Return.
+- Parity laut replica-diff: 94,9 / 100. Offen (nur „could“): Sortierung Hinzugefügt/Aufgenommen, „Angepinnt“, „Zuletzt angesehen“ in der Suche.

@@ -7,17 +7,18 @@ import Networking
 struct InfoUnterFoto: View {
     let info: AssetInfo?
     let client: ImmichClient?
+    /// Bildunterschrift, wie sie gerade im Feld steht (wird erst beim Bestätigen gespeichert).
+    @State private var unterschrift = ""
+    @State private var gespeichert = ""
+    @State private var speichert = false
+    @State private var fehler: String?
+    @FocusState private var feldAktiv: Bool
 
     var body: some View {
         ScrollView {
             if let info {
                 VStack(spacing: 16) {
-                    if let text = info.beschreibung, !text.isEmpty {
-                        Text(text)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(16)
-                            .background(LilithColor.flaeche, in: .rect(cornerRadius: 22))
-                    }
+                    unterschriftFeld(info)
                     aufnahmeKarte(info)
                     ortKarte(info)
                     if !info.personen.isEmpty {
@@ -36,6 +37,54 @@ struct InfoUnterFoto: View {
             }
         }
         .scrollIndicators(.hidden)
+    }
+
+    // MARK: Bildunterschrift
+
+    /// Wie Apple: ein Feld „Bildunterschrift hinzufügen“. Gespeichert wird erst mit „Fertig“ bzw. Return.
+    private func unterschriftFeld(_ info: AssetInfo) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                TextField("Bildunterschrift hinzufügen", text: $unterschrift, axis: .vertical)
+                    .focused($feldAktiv)
+                    .submitLabel(.done)
+                    .onSubmit { speichere(info) }
+                    .disabled(client == nil || speichert)
+                if feldAktiv || unterschrift != gespeichert {
+                    Button("Fertig") { speichere(info) }
+                        .font(.body.weight(.semibold))
+                        .disabled(speichert)
+                }
+            }
+            .padding(16)
+            .background(LilithColor.flaeche, in: .rect(cornerRadius: 22))
+            if let fehler {
+                Text(fehler).font(.caption).foregroundStyle(.red).padding(.horizontal, 8)
+            }
+        }
+        .task(id: info.id) {
+            unterschrift = info.beschreibung ?? ""
+            gespeichert = unterschrift
+            fehler = nil
+        }
+    }
+
+    private func speichere(_ info: AssetInfo) {
+        feldAktiv = false
+        let text = unterschrift.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard text != gespeichert, let client else { unterschrift = gespeichert; return }
+        speichert = true
+        Task {
+            do {
+                try await client.setzeBeschreibung(id: info.id, text)
+                gespeichert = text
+                unterschrift = text
+                fehler = nil
+            } catch {
+                fehler = "Nicht gespeichert: \(error.localizedDescription)"
+            }
+            speichert = false
+        }
     }
 
     // MARK: Datum, Datei, Kamera, Belichtung
