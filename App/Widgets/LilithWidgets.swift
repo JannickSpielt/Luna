@@ -7,6 +7,7 @@ import LiveAktivitaet
 struct LilithWidgets: WidgetBundle {
     var body: some Widget {
         UploadLiveActivity()
+        FotoWidget()
     }
 }
 

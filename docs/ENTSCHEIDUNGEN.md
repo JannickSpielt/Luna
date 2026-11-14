@@ -269,3 +269,11 @@ Plan: `docs/LADEN-PLAN.md`.
 - **Reihenfolge wie Apple:** In „Fotos“ liegen beim Blättern und in der Vorschau-Leiste ältere Fotos links, das neueste ganz rechts (wie im Raster unten rechts). In Alben und Filtern bleibt es „Neuestes zuerst“, passend zu deren Raster (`DetailView.aeltereLinks`).
 - **Videos wie Apple:** Oben die Video-Leiste (Abspielen, Zeitleiste, Ton; Zeiten nur beim Ziehen), darunter die Vorschau-Leiste, darunter die Knöpfe. Die Video-Leiste ist im hellen Modus hell getöntes Glas mit dunklen Symbolen (`lilithGlas(in:toenung:)`).
 - **Version 0.10.0** (Build 3) mit allen Änderungen der Apple-Fotos-Runde.
+
+## 25. Foto-Widget (14.11.2026)
+
+- **Widget „Foto“** (klein, mittel, groß) in der vorhandenen Widget-Erweiterung: ein Foto randlos, unten Datum und Ort; wechselt etwa alle 3 Stunden (vier Fotos pro Ladevorgang, verkleinert für wenig Speicher).
+- **Auswahl beim Bearbeiten:** Zufällig aus allen, Favoriten, Heute in früheren Jahren, Album (`WidgetConfigurationIntent`, Alben werden vom Server geholt).
+- **Fotos holen** über die normale Fotosuche (`searchAssets`, für „alle“ eine zufällige Seite) statt über Immichs „zufällige Fotos“ – die normale Suche ist auf Immich 3.x erprobt.
+- **Anmeldung** über den gemeinsamen Schlüsselbund wie beim Teilen-Menü; nach An-/Abmelden lädt Luna die Widgets neu.
+- **Antippen** öffnet `luna://foto/<id>?zeit=…`: Luna lädt den Tag des Fotos und öffnet es dort (Weiterblättern durch den Tag).

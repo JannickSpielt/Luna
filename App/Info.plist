@@ -22,6 +22,18 @@
 		<string>app.lilith.backup.kurz</string>
 		<string>app.lilith.Lilith.jetzt.*</string>
 	</array>
+	<!-- Links vom Widget: luna://foto/<id> öffnet das Foto in Luna. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.lilith.foto</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>luna</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

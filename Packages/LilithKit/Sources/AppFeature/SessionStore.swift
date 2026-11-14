@@ -1,6 +1,9 @@
 import Foundation
 import Observation
 import Networking
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 /// Hält die Anmeldung: wer angemeldet ist und bei welchem Server.
 @MainActor
@@ -123,6 +126,14 @@ public final class SessionStore {
         client = ImmichClient(address: account.server.address, credential: credential)
         hinweis = nil
         phase = .angemeldet(account)
+        Self.widgetsNeuLaden()
+    }
+
+    /// Nach An- oder Abmelden: das Foto-Widget soll gleich das richtige Konto zeigen.
+    private static func widgetsNeuLaden() {
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 
     private func beende(_ account: Account, hinweis: String?) {
@@ -132,5 +143,6 @@ public final class SessionStore {
         letzteAdresse = account.server.address.description
         self.hinweis = hinweis
         phase = .abgemeldet
+        Self.widgetsNeuLaden()
     }
 }

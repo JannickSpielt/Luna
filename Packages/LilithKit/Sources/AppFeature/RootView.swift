@@ -139,6 +139,8 @@ struct HauptView: View {
                         withAnimation(.easeOut(duration: 0.4)) { zeigeVollmond = true }
                     }
                 }
+                // Vom Widget: das angetippte Foto öffnen (inmitten seines Tages, zum Weiterblättern).
+                .onOpenURL { url in oeffneLink(url) }
                 .onChange(of: szene) { _, neu in
                     switch neu {
                     case .active:
@@ -193,6 +195,31 @@ struct HauptView: View {
         }
         .sheet(isPresented: $zeigeKonto) {
             KontoView(account: account, backup: kontext?.backup, uploads: kontext?.uploads, client: session.client)
+        }
+    }
+
+    private func oeffneLink(_ url: URL) {
+        guard let (id, aufgenommen) = FotoLink.lies(url) else { return }
+        auswahl = .bibliothek
+        Task {
+            // Beim Kaltstart kurz warten, bis die Anmeldung steht.
+            var versuche = 0
+            while (kontext?.client == nil) && versuche < 50 {
+                try? await Task.sleep(for: .milliseconds(100)); versuche += 1
+            }
+            guard let kontext, let client = kontext.client else { return }
+            let tag = TimelineStore(client: client, filter: .tag(aufgenommen))
+            await tag.laden()
+            var start = DetailPosition(section: 0, index: 0)
+            suche: for s in tag.sections.indices {
+                for i in 0..<tag.sections[s].anzahl where tag.item(section: s, index: i)?.id == id {
+                    start = DetailPosition(section: s, index: i)
+                    break suche
+                }
+            }
+            guard !tag.sections.isEmpty else { return }
+            kontext.detail = DetailAnzeige(quelle: tag, store: tag, start: start, rahmen: .zero, loeschen: nil,
+                                           schliessen: { [weak kontext] _ in kontext?.detail = nil })
         }
     }
 

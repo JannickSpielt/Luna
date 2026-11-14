@@ -64,10 +64,12 @@ targets:
     platform: iOS
     sources:
       - path: Widgets
-        excludes: [Info.plist]
+        excludes: [Info.plist, Widgets.entitlements]
     dependencies:
       - package: LilithKit
         product: LiveAktivitaet
+      - package: LilithKit
+        product: Networking
       - sdk: WidgetKit.framework
       - sdk: SwiftUI.framework
     settings:
@@ -77,6 +79,8 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Widgets/Info.plist
         INFOPLIST_KEY_CFBundleDisplayName: Luna
+        # Gemeinsamer Schlüsselbund (Anmeldung für das Foto-Widget), wie beim Teilen-Menü.
+        CODE_SIGN_ENTITLEMENTS: Widgets/Widgets.entitlements
         TARGETED_DEVICE_FAMILY: "1,2"
         SKIP_INSTALL: YES
   LilithTeilen:
