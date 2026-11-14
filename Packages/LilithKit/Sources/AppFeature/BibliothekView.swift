@@ -305,11 +305,12 @@ struct TimelineInhalt: View {
                     .overlay(alignment: .top) {
                         // Weicher Verlauf, damit Titel und Leiste über hellen Fotos lesbar bleiben.
                         // Wie Apple: im hellen Modus ein heller Schleier, im dunklen ein dunkler.
-                        LinearGradient(stops: [.init(color: LilithColor.hintergrund.opacity(0.95), location: 0),
-                                               .init(color: LilithColor.hintergrund.opacity(0.75), location: 0.55),
+                        // Nur so tief wie nötig: Bei Filtern beginnen die Fotos unter dem Titel und bleiben klar.
+                        LinearGradient(stops: [.init(color: LilithColor.hintergrund.opacity(0.92), location: 0),
+                                               .init(color: LilithColor.hintergrund.opacity(0.55), location: 0.45),
                                                .init(color: LilithColor.hintergrund.opacity(0), location: 1)],
                                        startPoint: .top, endPoint: .bottom)
-                            .frame(height: fenster + (konto != nil ? 150 : 90))
+                            .frame(height: fenster + (konto != nil && umgekehrt ? 130 : 60))
                             .ignoresSafeArea()
                             .allowsHitTesting(false)
                     }
@@ -835,6 +836,8 @@ private struct MonatsEtikett: View {
         }
         .lineLimit(1)
         .truncationMode(.tail)
+        // Leichter Schein, damit Titel und Anzahl auch über hellen bzw. dunklen Fotos lesbar bleiben.
+        .shadow(color: LilithColor.hintergrund.opacity(0.7), radius: 6)
         .accessibilityElement(children: .combine)
     }
 }

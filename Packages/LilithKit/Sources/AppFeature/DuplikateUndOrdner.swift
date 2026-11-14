@@ -1,3 +1,4 @@
+import OSLog
 import SwiftUI
 import DesignSystem
 import Networking
@@ -217,6 +218,7 @@ struct OrdnerView: View {
 /// Immichs gesperrter Bereich: Fotos darin tauchen nirgends sonst auf. Öffnen mit Face ID
 /// (die Immich-PIN liegt geschützt im Schlüsselbund) oder mit der PIN.
 struct GesperrtView: View {
+    static let log = Logger(subsystem: "app.lilith", category: "Gesperrt")
     @Environment(BibliothekKontext.self) private var kontext
 
     enum Stand: Equatable { case prueft, einrichten, pin, offen, fehler(String) }
@@ -293,12 +295,16 @@ struct GesperrtView: View {
         guard let client = kontext.client else { stand = .fehler("Keine Verbindung zum Server."); return }
         do {
             let status = try await client.sperrStatus()
-            if status.entsperrt { stand = .offen; return }
+            // Nie einer schon entsperrten Sitzung vertrauen (z. B. von vorhin oder aus dem Browser):
+            // erst wieder sperren, dann immer Face ID bzw. PIN verlangen.
+            Self.log.info("Gesperrt: PIN \(status.hatPin), entsperrt \(status.entsperrt)")
+            if status.entsperrt { await client.sperreSitzung() }
             guard status.hatPin else { stand = .einrichten; return }
             // Gespeicherte PIN per Face ID holen und damit entsperren.
             if PinSafe.hatGespeichert(konto: konto), let gemerkt = await PinSafe.lies(konto: konto) {
                 do {
                     try await client.entsperre(pin: gemerkt)
+                    Self.log.info("Gesperrt: mit gemerkter PIN geöffnet")
                     stand = .offen
                     return
                 } catch {

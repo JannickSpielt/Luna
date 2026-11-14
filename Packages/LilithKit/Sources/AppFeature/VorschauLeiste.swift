@@ -8,6 +8,8 @@ struct VorschauLeiste: View {
     let aktuell: DetailPosition?
     let quelle: TimelineQuelle
     let waehle: (DetailPosition) -> Void
+    /// Meldet, ob gerade über die Leiste gewischt wird (dann nichts automatisch ausblenden).
+    var wischt: (Bool) -> Void = { _ in }
 
     /// Wie viele Nachbarn auf jeder Seite. Rückt mit dem aktuellen Foto mit, endet also nie vor Anfang oder Ende.
     private static let radius = 120
@@ -41,6 +43,7 @@ struct VorschauLeiste: View {
         .frame(height: 34)
         .onScrollPhaseChange { _, phase in
             nutzerWischt = phase == .interacting || phase == .decelerating
+            wischt(nutzerWischt)
         }
         // Wischt der Nutzer über die Leiste, blättert das Foto mit.
         .onChange(of: mitte) { _, neu in

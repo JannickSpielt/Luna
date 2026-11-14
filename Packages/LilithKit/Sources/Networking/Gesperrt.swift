@@ -87,17 +87,23 @@ public enum PinSafe {
         guard status == errSecSuccess else { throw NSError(domain: NSOSStatusErrorDomain, code: Int(status)) }
     }
 
-    /// Liest die PIN; iOS fragt dabei nach Face ID. `nil`: keine gespeichert oder abgebrochen.
+    /// Liest die PIN – aber erst nach sichtbarer Bestätigung mit Face ID / Touch ID / Gerätecode.
+    /// Hat das Gerät nichts davon eingerichtet, gibt es die PIN nicht heraus (dann muss man sie eintippen).
+    /// `nil`: keine gespeichert, abgebrochen oder keine Gerätesperre.
     public static func lies(konto: String, grund: String = "Gesperrten Bereich öffnen") async -> String? {
         await Task.detached {
             let kontext = LAContext()
-            kontext.localizedReason = grund
+            var fehler: NSError?
+            // Ausdrücklich prüfen statt sich nur auf den Schlüsselbund zu verlassen (der Simulator setzt dessen Schutz nicht immer durch).
+            guard kontext.canEvaluatePolicy(.deviceOwnerAuthentication, error: &fehler) else { return nil }
+            guard (try? await kontext.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: grund)) == true else { return nil }
             let anfrage: [String: Any] = [
                 kSecClass as String: kSecClassGenericPassword,
                 kSecAttrService as String: dienst,
                 kSecAttrAccount as String: konto,
                 kSecUseDataProtectionKeychain as String: true,
                 kSecReturnData as String: true,
+                // Schon bestätigt: kein zweites Nachfragen.
                 kSecUseAuthenticationContext as String: kontext,
             ]
             var ergebnis: CFTypeRef?

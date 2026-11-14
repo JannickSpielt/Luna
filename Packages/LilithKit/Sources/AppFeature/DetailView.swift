@@ -31,6 +31,8 @@ struct DetailView: View {
     @FocusState private var fokus: Bool
     @Environment(\.colorScheme) private var umgebung
     @State private var zeigeAlbumWahl = false
+    /// Wird gerade über die Vorschau-Leiste gewischt?
+    @State private var leisteAktiv = false
     @State private var freigabe: FreigabeZiel?
     @Environment(BibliothekKontext.self) private var kontext
 
@@ -134,7 +136,7 @@ struct DetailView: View {
                 ForEach(seiten, id: \.self) { position in
                     DetailSeite(position: position, quelle: quelle, store: store, istAktuell: position == aktuell,
                                 gezoomt: $gezoomt, zeigeBedienung: zeigeBedienung && !zugAktiv,
-                                verberge: { if !zeigeInfo { withAnimation(.smooth(duration: 0.45)) { zeigeBedienung = false } } }) {
+                                verberge: { if !zeigeInfo, !leisteAktiv { withAnimation(.smooth(duration: 0.45)) { zeigeBedienung = false } } }) {
                         // Mit offenen Infos schließt Antippen die Infos (wie Apple).
                         if zeigeInfo {
                             withAnimation(.smooth(duration: 0.35)) { zeigeInfo = false }
@@ -275,9 +277,10 @@ struct DetailView: View {
             .opacity(zeigeInfo ? 0 : 1)
             .allowsHitTesting(!zeigeInfo)
             Spacer()
-            // Bei Videos sitzt dort die Zeitleiste (wie bei Apple).
-            if seiten.count > 1, item?.art != .video, !zeigeInfo {
-                VorschauLeiste(aktuell: aktuell, quelle: quelle) { ziel in
+            // Auch bei Videos sichtbar (über der Video-Leiste): Würde die Leiste beim Wischen über ein Video
+            // verschwinden, bräche das Wischen mittendrin ab.
+            if seiten.count > 1, !zeigeInfo {
+                VorschauLeiste(aktuell: aktuell, quelle: quelle, waehle: { ziel in
                     var t = Transaction()
                     t.disablesAnimations = true
                     withTransaction(t) {
@@ -285,8 +288,8 @@ struct DetailView: View {
                         if !seiten.contains(ziel) { seiten = Self.fenster(um: ziel, quelle: quelle) }
                         aktuell = ziel
                     }
-                }
-                .padding(.bottom, 6)
+                }, wischt: { leisteAktiv = $0 })
+                .padding(.bottom, item?.art == .video ? 76 : 6)
             }
             if let lokal = item?.lokal {
                 lokaleLeiste(lokal)
@@ -543,7 +546,8 @@ struct DetailView: View {
     /// Mit Infos so hoch wie das Foto bei voller Breite (keine Lücke), höchstens gut die Hälfte des Bildschirms.
     private func fotoHoeheMitInfo(_ groesse: CGSize) -> CGFloat {
         guard let b = info?.breite, let h = info?.hoehe, b > 0, h > 0 else { return groesse.height * 0.42 }
-        return min(groesse.width * CGFloat(h) / CGFloat(b), groesse.height * 0.55)
+        // Hochformat bleibt kleiner, damit die Infos gleich darunter zu sehen sind.
+        return min(groesse.width * CGFloat(h) / CGFloat(b), groesse.height * (h > b ? 0.45 : 0.55))
     }
 
     /// Heller Hintergrund, solange die Bedienelemente zu sehen sind.
