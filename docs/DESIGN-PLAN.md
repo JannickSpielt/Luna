@@ -1,6 +1,6 @@
 # Luna – Designs zum Auswählen
 
-Stand: 14.11.2026 · Status: **freigegeben (14.11.2026), diese vier Designs**
+Stand: 14.11.2026 · Status: **freigegeben und gebaut (14.11.2026)**
 
 ## Was du bekommst
 
@@ -35,3 +35,11 @@ Mittel bis groß: Die Farben müssen an vielen Stellen auf das Design umgestellt
 
 - [ ] So bauen?
 - [ ] Diese vier Designs, oder andere bzw. weitere? Möglich wären zum Beispiel „Pastell“ oder „Hoher Kontrast“.
+
+## Was gebaut wurde (14.11.2026)
+
+- Konto → Darstellung → Design: Vorschau-Karten in zwei Spalten, live gezeichnet. Antippen wechselt sofort.
+- Standard, Schwarz (echtes Schwarz), Nacht (Blauschwarz, Sterne hinter den Sammlungen, Mondgold) und Weihnachten (nur 1.12. bis 6.1.).
+- Weihnachtsregel mit Tests: Am 1. Dezember automatisch, eine eigene Wahl bleibt, am 7. Januar zurück zum vorherigen Design.
+- Der alte Schalter „Weihnachtszeit“ ist weg.
+- Systemlisten wie Konto behalten die Apple-Farben; die eigenen Flächen der App folgen dem Design.

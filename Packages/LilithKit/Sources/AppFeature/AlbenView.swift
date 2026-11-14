@@ -78,7 +78,7 @@ struct AlbenView: View {
                 }
                 .padding(.vertical, 12)
             }
-            .background(LilithColor.hintergrund)
+            .background { DesignGrund().ignoresSafeArea() }
             .navigationTitle("Sammlungen")
             .modifier(GrosserTitelInDerLeiste())
             #if os(macOS)

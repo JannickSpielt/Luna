@@ -25,15 +25,16 @@ public struct RGB: Equatable, Sendable {
 public enum LilithColor {
     /// Akzent für Buttons, Auswahl und Favoriten.
     /// Kirschrot. Hell 5,9 : 1 auf Weiß, dunkel 6,5 : 1 auf Schwarz.
-    public static let nachtrose = Color.lilith(light: 0xC8102E, dark: 0xFF4D6A)
+    /// Im Design „Nacht“ Mondgold.
+    @MainActor public static var nachtrose: Color { DesignZustand.shared.design.palette.akzent }
     /// Akzent als Fläche (Button-Hintergrund), in beiden Modi gleich.
-    public static let nachtroseFill = Color.lilith(light: 0xC8102E, dark: 0xC8102E)
+    @MainActor public static var nachtroseFill: Color { DesignZustand.shared.design.palette.akzentFlaeche }
     /// Nur für den Mond (Backup-Ring, Statuskarte, Start). Hell 3,5 : 1 auf Weiß.
     public static let mondlicht = Color.lilith(light: 0xA8843E, dark: 0xEBD9B4)
     /// Grundfläche der App.
-    public static let hintergrund = system(ui: "systemBackground", mac: "windowBackgroundColor")
+    @MainActor public static var hintergrund: Color { DesignZustand.shared.design.palette.hintergrund }
     /// Flächen wie Sidebar, Karten und Sheets.
-    public static let flaeche = system(ui: "secondarySystemBackground", mac: "controlBackgroundColor")
+    @MainActor public static var flaeche: Color { DesignZustand.shared.design.palette.flaeche }
     /// Haupttext.
     public static let text = Color.primary
     /// Nebentext.

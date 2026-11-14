@@ -18,6 +18,7 @@ public struct RootView: View {
     @State private var session = SessionStore()
     /// Noch im allerersten Startbildschirm.
     @State private var warStart = true
+    @Environment(\.scenePhase) private var szenePhase
 
     public init() {}
 
@@ -43,6 +44,9 @@ public struct RootView: View {
         .environment(session)
         .lilithSperre()
         .tint(LilithColor.nachtrose)
+        .preferredColorScheme(DesignZustand.shared.design.schema)
+        // Kommt die App wieder nach vorn, gilt vielleicht ein anderes Design (Beginn oder Ende der Weihnachtszeit).
+        .onChange(of: szenePhase) { _, neu in if neu == .active { DesignZustand.shared.pruefe() } }
         // Vom Startbildschirm aus ohne Überblenden: Zwei halb durchsichtige Ebenen ergäben ein graues Bild.
         .animation(warStart ? nil : .smooth, value: session.phase)
         .onChange(of: session.phase) { _, _ in warStart = false }

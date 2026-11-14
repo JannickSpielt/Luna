@@ -1,23 +1,15 @@
 import SwiftUI
 
-/// Weihnachtszeit: vom 1. Dezember bis 6. Januar automatisch, abschaltbar in den Einstellungen.
+/// Weihnachtszeit: vom 1. Dezember bis 6. Januar. Dann gibt es das Design „Weihnachten“ und es geht von selbst an.
 public enum Weihnachten {
-    public static let schluessel = "luna.weihnachten"
-
     /// Liegt das Datum in der Weihnachtszeit?
     public static func zeitraum(_ datum: Date = .now, kalender: Calendar = .current) -> Bool {
         let t = kalender.dateComponents([.month, .day], from: datum)
         return t.month == 12 || (t.month == 1 && (t.day ?? 99) <= 6)
     }
 
-    /// Weihnachtsdesign zeigen? (Zeitraum und Schalter; zum Ansehen: „-LilithWeihnachten YES“.)
-    public static var aktiv: Bool {
-        #if DEBUG
-        if UserDefaults.standard.bool(forKey: "LilithWeihnachten") { return true }
-        #endif
-        let an = UserDefaults.standard.object(forKey: schluessel) as? Bool ?? true
-        return an && zeitraum()
-    }
+    /// Ist das Design „Weihnachten“ an? (Zum Ansehen in der Entwickler-Version: „-LilithWeihnachten YES“.)
+    @MainActor public static var aktiv: Bool { DesignZustand.shared.design == .weihnachten }
 
     /// Tannengrün als zweiter, festlicher Akzent neben dem Kirschrot.
     public static let tanne = Color.lilith(light: 0x1E6B45, dark: 0x5FC48F)

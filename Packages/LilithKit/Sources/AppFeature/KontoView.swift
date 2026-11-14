@@ -13,7 +13,6 @@ struct KontoView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var frageAbmelden = false
     @AppStorage(Entsperren.schluessel) private var sperreAn = false
-    @AppStorage(Weihnachten.schluessel) private var weihnachten = true
     #if os(iOS)
     @AppStorage(VideoEinstellung.schluesselBildInBild) private var bildInBild = true
     #endif
@@ -87,11 +86,17 @@ struct KontoView: View {
                 #endif
 
                 Section {
-                    Toggle("Weihnachtszeit", isOn: $weihnachten).tint(LilithColor.schalter)
+                    NavigationLink {
+                        DesignAuswahl()
+                    } label: {
+                        LabeledContent {
+                            Text(DesignZustand.shared.design.name)
+                        } label: {
+                            Label { Text("Design") } icon: { Image(systemName: "paintpalette").foregroundStyle(.secondary) }
+                        }
+                    }
                 } header: {
                     Text("Darstellung")
-                } footer: {
-                    Text("Vom 1. Dezember bis 6. Januar: leiser Schnee, ein Stern am Mond und „Frohe Weihnachten“ beim Start.")
                 }
 
                 Section {
