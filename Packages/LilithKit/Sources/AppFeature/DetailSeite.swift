@@ -353,10 +353,10 @@ struct VideoSeite: View {
         #if os(iOS)
         .overlay(alignment: .bottom) {
             if let modell, zeigeBedienung {
-                // Über der Leiste mit Teilen, Favorit und Info.
+                // Wie Apple: über der Vorschau-Leiste, darunter die Leiste mit Teilen, Favorit und Info.
                 VideoBedienung(modell: modell)
                     .padding(.horizontal, 16)
-                    .padding(.bottom, VideoSeite.fensterRand().bottom + 72)
+                    .padding(.bottom, VideoSeite.fensterRand().bottom + 126)
                     .transition(.opacity.combined(with: .offset(y: 6)))
             }
         }

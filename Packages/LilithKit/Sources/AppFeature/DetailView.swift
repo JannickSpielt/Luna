@@ -294,8 +294,8 @@ struct DetailView: View {
             .opacity(zeigeInfo ? 0 : 1)
             .allowsHitTesting(!zeigeInfo)
             Spacer()
-            // Auch bei Videos sichtbar (über der Video-Leiste): Würde die Leiste beim Wischen über ein Video
-            // verschwinden, bräche das Wischen mittendrin ab.
+            // Auch bei Videos sichtbar (unter der Video-Leiste, wie Apple): Würde die Leiste beim Wischen
+            // über ein Video verschwinden, bräche das Wischen mittendrin ab.
             if seiten.count > 1, !zeigeInfo {
                 VorschauLeiste(aktuell: aktuell, quelle: quelle, aeltereLinks: aeltereLinks, waehle: { ziel in
                     var t = Transaction()
@@ -306,7 +306,7 @@ struct DetailView: View {
                         aktuell = ziel
                     }
                 }, wischt: { leisteAktiv = $0 })
-                .padding(.bottom, item?.art == .video ? 76 : 6)
+                .padding(.bottom, 6)
             }
             if let lokal = item?.lokal {
                 lokaleLeiste(lokal)

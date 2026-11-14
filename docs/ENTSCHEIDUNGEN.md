@@ -267,3 +267,5 @@ Plan: `docs/LADEN-PLAN.md`.
 - **Etappe 5 (Suche):** Suchfeld unten mit ✕ war schon wie bei Apple; „Zuletzt angesehen“ fehlt noch.
 - **Test (replica-test):** Testplan in `replica/test-plan.md`, Fehler in `replica/bugs.md`. Wichtigster Fund (S1): Der gesperrte Bereich ging mit gemerkter PIN ohne sichtbare Bestätigung auf. Jetzt fragt Luna immer ausdrücklich nach Face ID bzw. Gerätecode, bevor die PIN aus dem Schlüsselbund gelesen wird; ohne Gerätesperre muss die PIN eingetippt werden.
 - **Reihenfolge wie Apple:** In „Fotos“ liegen beim Blättern und in der Vorschau-Leiste ältere Fotos links, das neueste ganz rechts (wie im Raster unten rechts). In Alben und Filtern bleibt es „Neuestes zuerst“, passend zu deren Raster (`DetailView.aeltereLinks`).
+- **Videos wie Apple:** Oben die Video-Leiste (Abspielen, Zeitleiste, Ton; Zeiten nur beim Ziehen), darunter die Vorschau-Leiste, darunter die Knöpfe. Die Video-Leiste ist im hellen Modus hell getöntes Glas mit dunklen Symbolen (`lilithGlas(in:toenung:)`).
+- **Version 0.10.0** (Build 3) mit allen Änderungen der Apple-Fotos-Runde.

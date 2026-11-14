@@ -12,4 +12,14 @@ extension View {
             background(.ultraThinMaterial, in: form)
         }
     }
+
+    /// Glas mit leichter Tönung, z. B. hell über dunklen Videos (wie Apple).
+    @ViewBuilder
+    public func lilithGlas<S: Shape>(in form: S, toenung: Color) -> some View {
+        if #available(iOS 26, macOS 26, *) {
+            glassEffect(.regular.tint(toenung), in: form)
+        } else {
+            background(toenung, in: form).background(.ultraThinMaterial, in: form)
+        }
+    }
 }

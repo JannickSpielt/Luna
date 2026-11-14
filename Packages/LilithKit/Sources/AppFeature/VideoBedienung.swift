@@ -125,6 +125,7 @@ struct AirPlayKnopf: UIViewRepresentable {
 /// Eigene Bedienung: eine Glas-Kapsel mit Abspielen, Zeitleiste, Ton, Bild-in-Bild und AirPlay.
 struct VideoBedienung: View {
     let modell: PlayerModell
+    @Environment(\.colorScheme) private var schema
 
     var body: some View {
         HStack(spacing: 4) {
@@ -136,15 +137,22 @@ struct VideoBedienung: View {
             }
             .accessibilityLabel(modell.spielt ? "Pause" : "Abspielen")
 
-            Text(Self.zeit(modell.zeit))
-                .font(.caption.monospacedDigit())
-                .frame(minWidth: 34, alignment: .trailing)
+            // Wie Apple: nur Abspielen, Zeitleiste und Ton. Die Zeiten erscheinen beim Ziehen.
+            if modell.zieht {
+                Text(Self.zeit(modell.zeit))
+                    .font(.caption.monospacedDigit())
+                    .frame(minWidth: 34, alignment: .trailing)
+                    .transition(.opacity)
+            }
             Zeitleiste(modell: modell)
                 .padding(.horizontal, 6)
-            Text("-" + Self.zeit(max(modell.dauer - modell.zeit, 0)))
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 38, alignment: .leading)
+            if modell.zieht {
+                Text("-" + Self.zeit(max(modell.dauer - modell.zeit, 0)))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 38, alignment: .leading)
+                    .transition(.opacity)
+            }
 
             Button { modell.tonUmschalten() } label: {
                 Image(systemName: modell.stumm ? "speaker.slash.fill" : "speaker.wave.2.fill")
@@ -155,9 +163,11 @@ struct VideoBedienung: View {
 
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white)
+        // Wie Apple: im hellen Modus hell getöntes Glas mit dunklen Symbolen, im dunklen wie bisher.
+        .foregroundStyle(schema == .dark ? Color.white : Color.black)
         .padding(.horizontal, 8)
-        .lilithGlas(in: .capsule, klar: true)
+        .animation(.easeOut(duration: 0.15), value: modell.zieht)
+        .lilithGlas(in: .capsule, toenung: schema == .dark ? Color.black.opacity(0.25) : Color.white.opacity(0.38))
     }
 
     static func zeit(_ s: Double) -> String {
@@ -175,8 +185,8 @@ private struct Zeitleiste: View {
         GeometryReader { geo in
             let anteil = modell.dauer > 0 ? min(max(modell.zeit / modell.dauer, 0), 1) : 0
             ZStack(alignment: .leading) {
-                Capsule().fill(.white.opacity(0.3))
-                Capsule().fill(.white).frame(width: geo.size.width * anteil)
+                Capsule().fill(.primary.opacity(0.25))
+                Capsule().fill(.primary).frame(width: geo.size.width * anteil)
             }
             .frame(height: modell.zieht ? 8 : 4)
             .frame(maxHeight: .infinity)
