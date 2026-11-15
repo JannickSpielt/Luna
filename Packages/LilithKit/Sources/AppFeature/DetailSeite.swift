@@ -416,7 +416,7 @@ struct VideoSeite: View {
     #if os(iOS)
     /// Abstände zu Notch und Home-Leiste des Fensters (die Detailansicht selbst nutzt den ganzen Bildschirm).
     static func fensterRand() -> UIEdgeInsets {
-        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.safeAreaInsets ?? .zero
+        AktivesFenster.fenster?.safeAreaInsets ?? .zero
     }
     #endif
 }

@@ -7,6 +7,8 @@ import Networking
 struct InfoUnterFoto: View {
     let info: AssetInfo?
     let client: ImmichClient?
+    /// Platz unten, damit nichts unter der unteren Leiste verschwindet (in der Info-Spalte rechts weniger).
+    var untenPlatz: CGFloat = 110
     /// Bildunterschrift, wie sie gerade im Feld steht (wird erst beim Bestätigen gespeichert).
     @State private var unterschrift = ""
     @State private var gespeichert = ""
@@ -31,7 +33,7 @@ struct InfoUnterFoto: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
                 // Platz für die untere Leiste.
-                .padding(.bottom, 110)
+                .padding(.bottom, untenPlatz)
             } else {
                 ProgressView().padding(.top, 40)
             }

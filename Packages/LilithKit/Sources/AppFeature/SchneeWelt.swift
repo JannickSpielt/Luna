@@ -344,9 +344,7 @@ final class LeistenOrtung {
     }
 
     private func suche() {
-        let fenster = UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.keyWindow }.first
-        guard let fenster, let leiste = Self.finde(UITabBar.self, in: fenster) else { kapseln = []; return }
+        guard let fenster = AktivesFenster.fenster, let leiste = Self.finde(UITabBar.self, in: fenster) else { kapseln = []; return }
         var gefunden: [UIView] = []
         Self.sammleKapseln(in: leiste, nach: &gefunden)
         kapseln = gefunden.map(Schwach.init)
