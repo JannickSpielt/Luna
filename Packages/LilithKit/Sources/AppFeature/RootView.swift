@@ -67,9 +67,12 @@ struct HauptView: View {
     @Environment(\.scenePhase) private var szene
     @State private var zeigeVollmond = false
     /// Der Ladebildschirm bleibt, bis die Bibliothek das erste Mal geladen ist.
-    @State private var startVorbei = false
+    /// Weitere Fenster (iPad) öffnen ohne Mond: Die App läuft ja schon.
+    @State private var startVorbei = HauptView.schonGestartet
     /// 0 = Mond, 1 = App ganz offen.
-    @State private var startOeffnung = 0.0
+    @State private var startOeffnung = HauptView.schonGestartet ? 1.0 : 0.0
+    /// Hat schon ein Fenster den Mond-Start gezeigt?
+    @MainActor static var schonGestartet = false
     @State private var startVollmond = false
     @State private var startGeladen = false
     @Environment(\.accessibilityReduceMotion) private var wenigBewegung
@@ -104,6 +107,8 @@ struct HauptView: View {
                     }
                 }
                 .task {
+                    guard !startVorbei else { return }
+                    HauptView.schonGestartet = true
                     // Höchstens 5 Sekunden: Ist der Server langsam, zeigt die Bibliothek selbst an, dass sie lädt.
                     let start = Date.now
                     while timeline?.zustand == .laedt, Date.now.timeIntervalSince(start) < 5 {
@@ -155,6 +160,10 @@ struct HauptView: View {
                         kontext.backup?.aktualisiereZugriff()
                         kontext.backup?.starte()
                     case .background:
+                        #if os(iOS)
+                        // Mehrere Fenster (iPad): Schließt man eines, läuft Luna im anderen weiter.
+                        if AktivesFenster.nochEinesSichtbar { break }
+                        #endif
                         // Uploads an iOS übergeben (laufen ohne Lilith weiter) und die nächsten Läufe anmelden.
                         BackupZentrale.shared.inDenHintergrund()
                     default:

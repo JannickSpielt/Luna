@@ -285,3 +285,8 @@ Plan: `docs/LADEN-PLAN.md`.
 - **Filter „In keinem Album“** im ≡-Menü (Immich `isNotInAlbum`).
 - **Bildunterschrift** in den Infos bearbeiten (Immich „Beschreibung“); gespeichert wird erst mit „Fertig“ bzw. Return.
 - Parity laut replica-diff: 94,9 / 100. Offen (nur „could“): Sortierung Hinzugefügt/Aufgenommen, „Angepinnt“, „Zuletzt angesehen“ in der Suche.
+
+## 27. iPad: Info-Spalte und mehrere Fenster (15.11.2026)
+
+- **Info-Spalte rechts:** Ab 900 pt Fensterbreite (iPad quer, großes iPad hochkant, Mac) stehen die Infos als 360 pt breite Spalte rechts neben dem Foto statt darunter. Das Foto bleibt groß, obere Leiste, Vorschau-Leiste und Blättern bleiben dabei bedienbar. Schmalere Fenster (iPhone, Split View) behalten die Infos unter dem Foto.
+- **Mehrere Fenster (iPad):** `UIApplicationSupportsMultipleScenes` ist an. Jedes Fenster hat seine eigene Ansicht, Upload und Backup gibt es nur einmal. Der Mond-Start läuft nur im ersten Fenster. Schließt man eines von mehreren Fenstern, läuft das Backup weiter. Teilen, Fotoauswahl und Schnee gehören zum Fenster, in dem gerade getippt wurde (`AktivesFenster`).

@@ -216,8 +216,7 @@ struct BackupKarte: View {
     }
 
     private func aendereAuswahl() {
-        let szene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
-        guard var oben = szene?.keyWindow?.rootViewController else { return }
+        guard var oben = AktivesFenster.fenster?.rootViewController else { return }
         while let weiter = oben.presentedViewController { oben = weiter }
         PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: oben) { _ in
             Task { @MainActor in

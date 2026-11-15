@@ -19,6 +19,8 @@ struct DetailView: View {
     @State private var item: Kachel?
     @State private var info: AssetInfo?
     @State private var zeigeInfo = false
+    /// Breites Fenster (iPad quer, großes iPad, Mac): Die Infos stehen rechts neben dem Foto statt darunter.
+    @State private var breit = false
     @State private var zeigeBedienung = true
     @State private var gezoomt = false
     @State private var zug: CGFloat = 0
@@ -58,21 +60,32 @@ struct DetailView: View {
                 .opacity(zugAktiv ? 0 : 1)
                 .animation(.easeOut(duration: 0.25), value: zugAktiv)
                 .ignoresSafeArea()
-            GeometryReader { geo in
-                VStack(spacing: 0) {
-                    blaetterer
-                        // Nur dieser kleine Baustein liest den Zug: So wird beim Ziehen nicht die ganze Ansicht neu aufgebaut.
-                        .modifier(Wegziehen(zug: $zug))
-                        // Mit Infos rutscht das Foto nach oben (wie Apple), sonst füllt es alles.
-                        .frame(height: zeigeInfo ? fotoHoeheMitInfo(geo.size) : nil)
-                    if zeigeInfo {
-                        InfoUnterFoto(info: info, client: store?.client)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+            HStack(spacing: 0) {
+                ZStack {
+                    GeometryReader { geo in
+                        VStack(spacing: 0) {
+                            blaetterer
+                                // Nur dieser kleine Baustein liest den Zug: So wird beim Ziehen nicht die ganze Ansicht neu aufgebaut.
+                                .modifier(Wegziehen(zug: $zug))
+                                // Mit Infos rutscht das Foto nach oben (wie Apple), sonst füllt es alles.
+                                .frame(height: infoUnten ? fotoHoeheMitInfo(geo.size) : nil)
+                            if infoUnten {
+                                InfoUnterFoto(info: info, client: store?.client)
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                            }
+                        }
+                    }
+                    // Die Bedienelemente gehören zum Foto: Mit der Info-Spalte bleiben sie links über dem Foto.
+                    if zeigeBedienung && !zugAktiv {
+                        bedienung.transition(.opacity)
                     }
                 }
-            }
-            if zeigeBedienung && !zugAktiv {
-                bedienung.transition(.opacity)
+                if infoSpalte {
+                    infoSpalteAnsicht
+                        // Beim Wegziehen bleibt die Breite (sonst springt das Foto), die Spalte blendet nur aus.
+                        .opacity(zugAktiv ? 0 : 1)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
             }
             if let meldung {
                 Label(meldung, systemImage: "checkmark.circle.fill")
@@ -89,6 +102,7 @@ struct DetailView: View {
         .animation(.smooth(duration: 0.3), value: zeigeBedienung && !zugAktiv)
         .animation(.smooth(duration: 0.3), value: hell)
         .environment(\.colorScheme, hell ? umgebung : .dark)
+        .onGeometryChange(for: Bool.self) { $0.size.width >= Self.spaltenBreiteAb } action: { breit = $0 }
         .focusable()
         .focusEffectDisabled()
         .focused($fokus)
@@ -157,11 +171,11 @@ struct DetailView: View {
                 ForEach(seiten, id: \.self) { position in
                     DetailSeite(position: position, quelle: quelle, store: store, istAktuell: position == aktuell,
                                 gezoomt: $gezoomt, zeigeBedienung: zeigeBedienung && !zugAktiv,
-                                verberge: { if !zeigeInfo, !leisteAktiv { withAnimation(.smooth(duration: 0.45)) { zeigeBedienung = false } } }) {
+                                verberge: { if !infoUnten, !leisteAktiv { withAnimation(.smooth(duration: 0.45)) { zeigeBedienung = false } } }) {
                         // Antippen beendet die Diashow; mit offenen Infos schließt es die Infos (wie Apple).
                         if diashow {
                             beendeDiashow()
-                        } else if zeigeInfo {
+                        } else if infoUnten {
                             withAnimation(.smooth(duration: 0.35)) { zeigeInfo = false }
                         } else {
                             withAnimation(.smooth(duration: 0.3)) { zeigeBedienung.toggle() }
@@ -187,7 +201,7 @@ struct DetailView: View {
         // Am Bildschirm messen, nicht am Foto: Das Foto bewegt sich ja mit, sonst springt es beim langsamen Ziehen.
         DragGesture(minimumDistance: 10, coordinateSpace: .global)
             .onChanged { wert in
-                if zeigeInfo { return }
+                if infoUnten { return }
                 if !zugAktiv {
                     // Starten, sobald die Bewegung eher nach unten als zur Seite geht (sonst ist es Blättern).
                     guard wert.translation.height > abs(wert.translation.width) else { return }
@@ -197,7 +211,7 @@ struct DetailView: View {
                 zug = max(0, wert.translation.height)
             }
             .onEnded { wert in
-                if zeigeInfo {
+                if infoUnten {
                     if wert.translation.height > 60, wert.translation.height > abs(wert.translation.width) {
                         withAnimation(.smooth(duration: 0.35)) { zeigeInfo = false }
                     }
@@ -315,12 +329,12 @@ struct DetailView: View {
                 }
             }
             .padding(.horizontal, 16)
-            .opacity(zeigeInfo ? 0 : 1)
-            .allowsHitTesting(!zeigeInfo)
+            .opacity(infoUnten ? 0 : 1)
+            .allowsHitTesting(!infoUnten)
             Spacer()
             // Auch bei Videos sichtbar (unter der Video-Leiste, wie Apple): Würde die Leiste beim Wischen
             // über ein Video verschwinden, bräche das Wischen mittendrin ab.
-            if seiten.count > 1, !zeigeInfo {
+            if seiten.count > 1, !infoUnten {
                 VorschauLeiste(aktuell: aktuell, quelle: quelle, aeltereLinks: aeltereLinks, waehle: { ziel in
                     var t = Transaction()
                     t.disablesAnimations = true
@@ -607,6 +621,39 @@ struct DetailView: View {
         return min(groesse.width * CGFloat(h) / CGFloat(b), groesse.height * (h > b ? 0.45 : 0.55))
     }
 
+    /// Ab dieser Fensterbreite stehen die Infos als Spalte rechts (iPad quer, großes iPad hochkant, Mac).
+    static let spaltenBreiteAb: CGFloat = 900
+
+    /// Infos unter dem Foto (iPhone, iPad hochkant, schmale Fenster).
+    private var infoUnten: Bool { zeigeInfo && !breit }
+    /// Infos als Spalte rechts neben dem Foto.
+    private var infoSpalte: Bool { zeigeInfo && breit }
+
+    /// Die Info-Spalte rechts: Titel mit Schließen-Knopf, darunter dieselben Karten wie unter dem Foto.
+    private var infoSpalteAnsicht: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Informationen").font(.headline)
+                Spacer()
+                Button {
+                    withAnimation(.smooth(duration: 0.35)) { zeigeInfo = false }
+                } label: {
+                    Image(systemName: "xmark").font(.body.weight(.semibold)).frame(width: 36, height: 36)
+                }
+                .buttonStyle(.plain)
+                .lilithGlas(in: .circle, klar: true)
+                .accessibilityLabel("Informationen schließen")
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            InfoUnterFoto(info: info, client: store?.client, untenPlatz: 24)
+        }
+        .frame(width: 360)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(LilithColor.hintergrund)
+        .overlay(alignment: .leading) { Divider().ignoresSafeArea() }
+    }
+
     /// Heller Hintergrund, solange die Bedienelemente zu sehen sind.
     /// Beim Ziehen bleibt das Farbschema, wie es ist (der Hintergrund ist dann ohnehin ausgeblendet);
     /// ein Wechsel hell → dunkel genau beim Start würde alles neu zeichnen und ruckeln.
@@ -690,8 +737,7 @@ enum TeilenBlatt {
             return fortschritt
         }
         let blatt = UIActivityViewController(activityItemsConfiguration: UIActivityItemsConfiguration(itemProviders: [anbieter]))
-        guard let szene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first(where: { $0.activationState == .foregroundActive }),
-              let fenster = szene.keyWindow, var oben = fenster.rootViewController else { return }
+        guard let fenster = AktivesFenster.fenster, var oben = fenster.rootViewController else { return }
         while let weiter = oben.presentedViewController { oben = weiter }
         // iPad: als Popover unten mittig, wo der Knopf sitzt.
         blatt.popoverPresentationController?.sourceView = fenster
