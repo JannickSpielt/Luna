@@ -59,13 +59,8 @@ struct FotoWidgetEinstellung: WidgetConfigurationIntent {
     @Parameter(title: "Album")
     var album: AlbumEintrag?
 
-    static var parameterSummary: some ParameterSummary {
-        When(\FotoWidgetEinstellung.$quelle, .equalTo, .album) {
-            Summary("\(\FotoWidgetEinstellung.$quelle): \(\FotoWidgetEinstellung.$album)")
-        } otherwise: {
-            Summary("\(\FotoWidgetEinstellung.$quelle)")
-        }
-    }
+    // Keine eigene parameterSummary: Die bedingte Zusammenfassung (When/Summary) baut mit
+    // Swift 6 und Xcode 26.6 nicht (Key-Path-Typ/Sendable). Ohne sie zeigt iOS beide Felder als Liste.
 
     var zufallsQuelle: ZufallsQuelle {
         switch quelle {
