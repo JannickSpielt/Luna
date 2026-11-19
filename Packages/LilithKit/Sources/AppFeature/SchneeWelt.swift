@@ -85,10 +85,16 @@ final class SchneeSimulation {
 
     /// Kapseln nachführen. Fährt die Leiste schneller weg, als Schnee fallen kann, bleibt er in der Luft.
     private func aktualisiereKapseln(ursprung: CGPoint, dt: CGFloat) {
-        let neu = ortung.rahmen()
-            .map { $0.offsetBy(dx: -ursprung.x, dy: -ursprung.y) }
-            .filter { $0.width > 20 && $0.maxY > 0 && $0.minY < groesse.height }
-            .sorted { $0.minX < $1.minX }
+        // In Einzelschritten mit festen Typen, sonst braucht der Compiler zu lange für die Typprüfung.
+        let hoehe: CGFloat = groesse.height
+        let roh: [CGRect] = ortung.rahmen()
+        let verschoben: [CGRect] = roh.map { (r: CGRect) -> CGRect in r.offsetBy(dx: -ursprung.x, dy: -ursprung.y) }
+        let sichtbar: [CGRect] = verschoben.filter { (r: CGRect) -> Bool in
+            if r.width <= 20 { return false }
+            if r.maxY <= 0 { return false }
+            return r.minY < hoehe
+        }
+        let neu: [CGRect] = sichtbar.sorted { (a: CGRect, b: CGRect) -> Bool in a.minX < b.minX }
         if neu.count != kapseln.count {
             // Leiste neu oder anders aufgeteilt: Was lag, fällt herunter; die neuen Kapseln haben schon etwas Schnee.
             for k in kapseln { loese(k, vy: 0) }
@@ -330,7 +336,9 @@ final class LeistenOrtung {
 
     func rahmen() -> [CGRect] {
         let jetzt = CACurrentMediaTime()
-        if kapseln.isEmpty || kapseln.contains(where: { $0.view?.window == nil }) ? jetzt - zuletztGesucht > 0.5 : jetzt - zuletztGesucht > 3 {
+        let unvollstaendig: Bool = kapseln.isEmpty || kapseln.contains(where: { $0.view?.window == nil })
+        let abstand: CFTimeInterval = unvollstaendig ? 0.5 : 3
+        if jetzt - zuletztGesucht > abstand {
             suche()
             zuletztGesucht = jetzt
         }
