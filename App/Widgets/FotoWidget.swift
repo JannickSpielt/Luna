@@ -60,10 +60,10 @@ struct FotoWidgetEinstellung: WidgetConfigurationIntent {
     var album: AlbumEintrag?
 
     static var parameterSummary: some ParameterSummary {
-        When(\.$quelle, .equalTo, .album) {
-            Summary("\(\.$quelle): \(\.$album)")
+        When(\FotoWidgetEinstellung.$quelle, .equalTo, .album) {
+            Summary("\(\FotoWidgetEinstellung.$quelle): \(\FotoWidgetEinstellung.$album)")
         } otherwise: {
-            Summary("\(\.$quelle)")
+            Summary("\(\FotoWidgetEinstellung.$quelle)")
         }
     }
 
